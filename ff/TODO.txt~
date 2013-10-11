@@ -1,0 +1,55 @@
+* Create a separate thread (or two) that helps all liquidTick and blockMark scheduling (this is almost half of the simulation time!)
+
+Let water fall "through" some opaque blocks - to prevent them from beeing stuck above torches etc
+
+Rain that hits existing water give extra much content??
+
+Recompute light levels when lava is moved / removed?
+
+Too difficult to get OUT of water?
+
+water flowing over an edge into a liquid with which it can interact?
+
+- Configuration file settings
+   - Additional liquids to handle (by block tile name)
+
+
+- Making volcaninc eruptions
+- Make it rain lava in the nether?
+- Make oil cause explosions when touching lava?
+
+- Test how the nether works
+- Test how the END works
+- Test mystcraft
+
+Make a patch for mobs that are partly falling through the ground? (Both client and server side?)
+
+
+Client side: sideways water drops on a block through which we may seep water?
+
+ *  TODO: deal with waterfalls and direct erosion below them
+
+
+Make trees that actually grow
+
+Check out plasmacraft - make compatible?
+http://www.minecraftforum.net/topic/1305647-151smpssp-plasmacraft-032-the-legacy-continues62212/page__hl__%20industrialcraft2
+
+
+Determine best direction for trees to fall in
+
+Small chance of evaporation into direct air?
+Chance of evaporation when lava is near?
+
+
+Make octupuses eat water lillies?
+
+More plants can grow?
+
+Make hostile mobs attack BlockEntities
+
+Animal hearding behaviour?
+
+Spread plants only in direct line-of-sight? (or with a random walk?)
+
+Check that plants have sunlight, otherwise die

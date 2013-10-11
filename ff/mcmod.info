@@ -1,0 +1,15 @@
+[
+{
+"modid": "FysiksFun",
+"name": "FysiksFun",
+"description": "Have fun while playing around with a somewhat more advanced physics for liquids and a few others blocks",
+"version": "",
+"credits": "Created by mbrx",
+"mcversion": "1.5.1",
+"updateUrl": "",
+"authors": [ "mbrx" ],
+"parent":"",
+"screenshots": [],
+"dependencies": []
+}
+]

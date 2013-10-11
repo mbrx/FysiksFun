@@ -1,0 +1,200 @@
+package mbrx.ff;
+
+import net.minecraft.block.Block;
+import net.minecraft.world.World;
+import net.minecraft.world.biome.BiomeGenBase;
+import net.minecraft.world.chunk.Chunk;
+import net.minecraft.world.chunk.IChunkProvider;
+
+public class Evaporation {
+  /**
+   * Evaporation removes water blocks from world surface from the chunk with
+   * chunk center XZ
+   */
+  public static void doEvaporation(World w, int x, int z) {
+    doDirectEvaporation(w, x, z);
+    if (FysiksFun.settings.undergroundWater) {
+      doWorldHeatbasedEvaporation(w, x, z);
+      doHumidification(w, x, z);
+    }
+    doIndirectEvaporation(w, x, z);
+    doDirectHeatEvaporation(w, x, z);
+  }
+
+  /** Looks for heat sources (fire, lava) and evaporates any nearby water */
+  private static void doDirectHeatEvaporation(World w, int x, int z) {
+    if (FysiksFun.rand.nextInt(4) != 0) return;
+
+    int y = (int) FysiksFun.rand.nextInt(160) + 2;
+    Chunk c = w.getChunkFromChunkCoords(x >> 4, z >> 4);
+    for (int dx = 0; dx < 16; dx++) {
+      for (int dz = 0; dz < 16; dz++) {
+        int id = c.getBlockID(dx, y, dz);
+        int heat=0;
+        if(id == Block.fire.blockID) heat=1;
+        else if(id == Fluids.stillLava.blockID || id == Fluids.flowingLava.blockID) heat=Fluids.stillLava.getBlockContent(w, x+dx, y, z+dz)/2+1;
+        for (int range = 0; range < heat; range++) {
+          for (int tries = 0; tries < 8; tries++) {
+            int ddx = FysiksFun.rand.nextInt(range * 2 + 1) - range;
+            int ddz = FysiksFun.rand.nextInt(range * 2 + 1) - range;
+            int x2 = x + dx + ddx;
+            int z2 = z + dz + ddz;
+            Chunk c2 = c;
+            if (x2 >> 4 != x >> 4 || z2 >> 4 != z >> 4) {
+              if (!w.blockExists(x2, y, z2)) continue;
+              else c2 = w.getChunkFromChunkCoords(x2 >> 4, z2 >> 4);
+            }
+            for (int ddy = 3; ddy >= -1; ddy--) {
+              int y2 = y + ddy;
+              int id2 = c2.getBlockID(x2 & 15, y2, z2 & 15);
+              if (id2 == Fluids.stillWater.blockID || id2 == Fluids.flowingWater.blockID) {
+                Fluids.stillWater.evaporate(w, c2, x2, y2, z2, 1);               
+                Counters.heatEvaporation++;
+                heat = -1;
+                tries = 100;
+                break;
+              }
+            }
+          }
+        }
+        
+        
+        /*if (id == Fluids.stillWater.blockID || id == Fluids.flowingWater.blockID) {
+          int amount = Fluids.stillWater.getBlockContent(w, x + dx, y, z + dz);
+          Fluids.stillWater.setBlockContent(w, x + dx, y, z + dz, amount > 0 ? amount - 1 : 0);
+          Counters.evaporationCounter++;
+          // Only evaporate atmost one level per chunk tick
+          return;
+        }*/
+        
+      }
+    }    
+  }
+
+  /**
+   * Evaporates water liquid at very low world altitudes (y < 25) due to subterreanean
+   * heat
+   */
+  private static void doWorldHeatbasedEvaporation(World w, int x, int z) {
+    if (FysiksFun.rand.nextInt(71) != 0) return;
+
+    int y = (int) Math.round(Math.sqrt(1.0 * FysiksFun.rand.nextInt(24 * 24))) + 1;
+    Chunk c = w.getChunkFromChunkCoords(x >> 4, z >> 4);
+    int tries;
+    for (tries = 0; tries < 16; tries++) {
+      int dx = FysiksFun.rand.nextInt(16);
+      int dz = FysiksFun.rand.nextInt(16);
+
+      int id = c.getBlockID(dx, y, dz);
+      if (id == Fluids.stillWater.blockID || id == Fluids.flowingWater.blockID) {
+        int amount = Fluids.stillWater.getBlockContent(w, x + dx, y, z + dz);
+        Fluids.stillWater.setBlockContent(w, x + dx, y, z + dz, amount > 0 ? amount - 1 : 0);
+        Counters.worldHeatEvaporation++;
+        // Only evaporate atmost one level per chunk tick
+        return;
+      }
+    }
+
+  }
+
+  /**
+   * Evaporates water liquid at a slow rate everywhere in a world
+   */
+  private static void doIndirectEvaporation(World w, int x, int z) {
+    if (FysiksFun.rand.nextInt(921) != 0) return;
+    Chunk c = w.getChunkFromChunkCoords(x >> 4, z >> 4);
+
+    for (int tries = 0; tries < 5; tries++) {
+      int y = 30 + FysiksFun.rand.nextInt(128);
+      int dx = FysiksFun.rand.nextInt(16);
+      int dz = FysiksFun.rand.nextInt(16);
+      int id = c.getBlockID(dx, y, dz);
+      if (id == Fluids.stillWater.blockID || id == Fluids.flowingWater.blockID) {
+        int id2 = c.getBlockID(dx, y - 1, dz);
+        if (id2 == Block.glass.blockID || id2 == Fluids.stillWater.blockID || id2 == Fluids.flowingWater.blockID) continue;
+       
+        Fluids.stillWater.evaporate(w, c, x+dx, y, z+dz, 1);                       
+        /*int amount = Fluids.stillWater.getBlockContent(w, x + dx, y, z + dz);
+        Fluids.stillWater.setBlockContent(w, x + dx, y, z + dz, amount > 0 ? amount - 1 : 0);*/
+        
+        Counters.indirectEvaporation++;
+        // Do atmost one evaporation event per chunk... thus oceans and rivers wont evaporate too much from this step
+        break;
+      }
+    }
+  }
+
+  /**
+   * Creates water at altitudes y=24 - y=54 in air cells that are adjacent to a
+   * dirt cell
+   */
+  private static void doHumidification(World w, int x, int z) {
+    if (FysiksFun.rand.nextInt(51) != 0) return;
+
+    // TODO - let the biome affect this?
+
+    Chunk c = w.getChunkFromChunkCoords(x >> 4, z >> 4);
+    for (int tries = 0; tries < 20; tries++) {
+      int dx = FysiksFun.rand.nextInt(16);
+      int dz = FysiksFun.rand.nextInt(16);
+      int y = 24 + FysiksFun.rand.nextInt(17) + FysiksFun.rand.nextInt(17);
+
+      int id = c.getBlockID(dx, y, dz);
+      if (id == 0) {
+        for (int dir = 0; dir < 6; dir++) {
+          int dx2 = Util.dirToDx(dir);
+          int dy2 = Util.dirToDy(dir);
+          int dz2 = Util.dirToDz(dir);
+          int id2 = w.getBlockId(x + dx + dx2, y + dy2, z + dz2);
+          if (id2 == Block.dirt.blockID || id2 == Block.gravel.blockID || id2 == Block.cobblestone.blockID) {
+            Fluids.flowingWater.setBlockContent(w, x + dx, y, z + dz, 1);
+            Counters.humidification++;
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  /** Evaporates water liquids that are in direct sunlight */
+  public static void doDirectEvaporation(World w, int x, int z) {
+
+    IChunkProvider chunkProvider = w.getChunkProvider();
+    Chunk chunk = chunkProvider.provideChunk(x>>4, z>>4);
+    
+    // Gives the current time of the day, so we only evaporate during daylight
+    long timeNow = w.getWorldInfo().getWorldTime();
+    if (w.rainingStrength == 0.0 && FysiksFun.rand.nextInt(500) == 0) {
+      double sunIntensity = Math.cos(((double) (timeNow - 5000)) / 6000.0 * 1.57);
+      if (sunIntensity < 0.0) return;
+      for (int i = 0; i < 20; i++) {
+        int dx = (FysiksFun.rand.nextInt(117) + 13 * Counters.tick) % 16;
+        int dz = (FysiksFun.rand.nextInt(187) + 17 * Counters.tick) % 16;
+        BiomeGenBase biome = w.getBiomeGenForCoords(x + dx, z + dz);
+        if (i < biome.getFloatTemperature() * biome.getFloatTemperature() * FysiksFun.settings.waterEvaporationRate * 0.5) {
+          for (int y2 = 256; y2 > 1; y2--) {
+            int id = w.getBlockId(x + dx, y2, z + dz);
+            if (id != 0) {
+              if (id == Fluids.stillWater.blockID || id == Fluids.flowingWater.blockID) {
+                try {
+                  BlockFluid.preventSetBlockLiquidFlowover = true;
+                  int waterAmount = Fluids.flowingWater.getBlockContent(w, x + dx, y2, z + dz);
+                  // Tweak to make large bodies of water not evaporate as quick - should promote larger pools of liquids rather than small pools                  
+                  int idBelow = w.getBlockId(x + dx, y2-1, z + dz);
+                  if((waterAmount >= BlockFluid.maximumContent/2 || idBelow == Fluids.stillWater.blockID || idBelow == Fluids.flowingWater.blockID) && FysiksFun.rand.nextInt(3) != 0) continue;
+                  Fluids.flowingWater.evaporate(w, chunk, x+dx, y2, z+dz, 1);
+                  Counters.directEvaporation++;
+                } finally {
+                  BlockFluid.preventSetBlockLiquidFlowover = false;
+                }
+              }
+              break;
+            }
+          }
+        }
+      }
+    }
+
+  }
+
+}

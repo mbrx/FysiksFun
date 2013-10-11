@@ -1,0 +1,141 @@
+Analog signals using the ChunkTempData system? 
+Pressure meters? Poor material type objects (wooden pressure meters) etc can break under high pressure. Diamond etc. doesnt. 
+
+
+Gravity = weight * dY
+
+(1) Check pressure in this cell and in neighbours
+(2) Force = pressure difference + gravity
+(3) Move a tiny bit of liquid OUT as long as force is positive.
+    Liquids can never move IN to a cell (that will happen later). 
+    Schedule a tick for all cells to whom we move a unit INTO
+    
+(4) Recompute pressure in this cell after moving liquids
+    P(c) = max_i P(i) + gravity-from(i) - 1
+
+(5) Recompute pressure in every neighbour, 
+    but considering only us if it was changed then schedule a tick for them
+ 
+-------------
+
+Assume that we have an infinite loop involving a chain of nodes 1...N where the nodes are repeatedly
+sceduled in the order: 1,2,3, ... N, 1, 2,3 ... N etc.
+
+Every time that node X is called, then the pressure of the neighbours of X must have changed in order for X+1 to be scheduled
+The the pressure of X must have changed during this update. 
+(1)  If P(X) has increased, then P(X+1) needs to be called
+(2)  If P(X) has decreased, then P(X+1) needs to be called
+
+For (1) to happen we have two cases, 
+
+
+
+
+-------------
+
+Special blocks that extends the range with which water looks for fine equilibriums and/or faster water movement in general
+
+Save "add liquid here" + maximuze pressure when we are failing to put liquid into a cell after flow-over
+
+Explosive behaviour when acid hits water - move half of it to neighbouring cells (also up), create fires?
+
+New liquid: blood
+
+Associate 'genes' to all breedable mobs
+Create mob behaviour for "swimming to shore" - possibly higher priority than attacking 
+
+Move liquids "down" much faster by explicitly looping over them 
+
+Move partial liquids fast downwards
+
+Non-compressible fluids:
+  if content >= 8 && neighbour-with-air:
+    content = 0
+    add content(8, the-neighbour)
+    update all blocks except block above in 1 step
+    update neighbour in 5 steps (or so)
+  my-pressure = max(my-pressure, neighbour-pressure-at-same-level, pressure-above+1,pressure-below -1)
+
+Boiling water only creates gases below a pressure point depending on the type of boiler. 
+Each gasturbine moves one single gas to a lower pressure point. Needs a stack of them for efficiency
+
+Implement fluid turbines also  
+  
+
+Block below's pressure = max(block-belows-pressure, my-pressure+1)
+
+
+
+Create higher pressure versions of fluids
+
+
+in "doExpensiveTicks" check for small liquidlevels on top of another non-liquid block and schedule some extra ticks just for them. 
+
+
+Use the ORIENTATION of logs to figure out what is the main trunk of a tree!!!!!
+
+Make oil and fuel combustible so it can burn (consuming it slowly in the process)
+Make burning oil/fuel turn water above it into boiling water and finally steam
+Make flowing blocks for buildcraft fuel?
+
+Make it work with
+Block. Name: tile.Flowing Hydrochloric Acid. ID: 2669
+Block. Name: tile.Still Hydrochloric Acid. ID: 2670
+
+
+
+* Create a separate thread (or two) that helps all liquidTick and blockMark scheduling (this is almost half of the simulation time!)
+
+Let water fall "through" some opaque blocks - to prevent them from beeing stuck above torches etc
+
+Water go through fences (makes a good grate)
+
+Recompute light levels when lava is moved / removed?
+
+Too difficult to get OUT of water?
+
+water flowing over an edge into a liquid with which it can interact?
+
+- Configuration file settings
+   - Additional liquids to handle (by block tile name)
+
+
+- Making volcaninc eruptions
+- Make it rain lava in the nether?
+- Make oil cause explosions when touching lava?
+
+- Test how the nether works
+- Test how the END works
+- Test mystcraft
+
+Make a patch for mobs that are partly falling through the ground? (Both client and server side?)
+
+
+Client side: sideways water drops on a block through which we may seep water?
+
+ *  TODO: deal with waterfalls and direct erosion below them
+
+
+Make trees that actually grow
+
+Check out plasmacraft - make compatible?
+http://www.minecraftforum.net/topic/1305647-151smpssp-plasmacraft-032-the-legacy-continues62212/page__hl__%20industrialcraft2
+
+
+Determine best direction for trees to fall in
+
+Small chance of evaporation into direct air?
+Chance of evaporation when lava is near?
+
+
+Make octupuses eat water lillies?
+
+More plants can grow?
+
+Make hostile mobs attack BlockEntities
+
+Animal hearding behaviour?
+
+Spread plants only in direct line-of-sight? (or with a random walk?)
+
+Check that plants have sunlight, otherwise die
