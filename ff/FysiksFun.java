@@ -137,7 +137,7 @@ public class FysiksFun {
 
 	private static BlockUpdateState tempBlockUpdateState = new BlockUpdateState();
 	public static void removeBlockTick(World w, Block block, int x, int y, int z, int maxDelay) {
-		logger.log(Level.INFO, Util.logHeader()+"Removing ticks for "+Util.xyzString(x, y, z));
+		//logger.log(Level.INFO, Util.logHeader()+"Removing ticks for "+Util.xyzString(x, y, z));
 		BlockUpdateState state = tempBlockUpdateState;
 		state.set(w, block, x, y, z);
 		
@@ -152,11 +152,11 @@ public class FysiksFun {
 		}
 	}
 
-	public static void scheduleBlockTick(World w, Block block, int x, int y, int z, int delay) {
+	public static void scheduleBlockTick(World w, Block block, int x, int y, int z, int delay) {		
 		scheduleBlockTick(w,block,x,y,z,delay,"");
 	}	
-	public static void scheduleBlockTick(World w, Block block, int x, int y, int z, int delay,String explanation) {
-		logger.log(Level.INFO, Util.logHeader()+"Scheduling "+Util.xyzString(x, y, z)+" for "+(Counters.tick+delay)+" (+"+delay+")"+" "+explanation);
+	public static void scheduleBlockTick(World w, Block block, int x, int y, int z, int delay,String explanation) {		
+		//logger.log(Level.INFO, Util.logHeader()+"Scheduling "+Util.xyzString(x, y, z)+" for "+(Counters.tick+delay)+" (+"+delay+")"+" "+explanation);
 		
 		if (delay <= 0 || delay >= 300)
 			return;		
@@ -167,10 +167,10 @@ public class FysiksFun {
 		if (inWorldTick && size >= 40000)
 			return;
 		BlockUpdateState state;
-		/*if (blockTickQueueFreePool.size() > 0)
+		if (blockTickQueueFreePool.size() > 0)
 			state = blockTickQueueFreePool.pop();
-		else*/
-		state = new BlockUpdateState();
+		else
+			state = new BlockUpdateState();
 		state.set(w, block, x, y, z);
 
 		/*
@@ -294,9 +294,9 @@ public class FysiksFun {
 			
 			int totsize2=blockTickQueueFreePool.size();
 			for(int i=0;i<300;i++) totsize2 += ((Set<BlockUpdateState>) blockTickQueueRing[i]).size();
-			if(totsize2 < totsize) {
+			/*if(totsize2 < totsize) {
 				System.out.println("Size of allocated blockTickUpdates have decreased... from: "+totsize+" to: "+totsize2);
-			}
+			}*/
 			
 		} finally {
 			inWorldTick = false;

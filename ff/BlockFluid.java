@@ -91,7 +91,7 @@ public class BlockFluid extends BlockFlowing {
 	public final static int			pressurePerY									= 256;
 	public final static int			pressurePerContent						= pressurePerY / 8;
 
-	public final static boolean	logExcessively								= true;
+	public final static boolean	logExcessively								= false;
 
 	public String								name;
 
@@ -275,14 +275,38 @@ public class BlockFluid extends BlockFlowing {
 		IChunkProvider chunkProvider = world.getChunkProvider();
 
 		int id0 = chunk0.getBlockID(x0 & 15, y0, z0 & 15);
-		if (!isSameLiquid(id0))
+		/* Since we was asked to update, but now are empty. It might be that one of our neighbours needs to be updated instead. */
+		if (!isSameLiquid(id0)) {
+			for(int dir=0;dir<6;dir++) {
+				int dX = Util.dirToDx(dir);
+				int dY = Util.dirToDy(dir);
+				int dZ = Util.dirToDz(dir);
+				int x1 = x0 + dX;
+				int y1 = y0 + dY;
+				int z1 = z0 + dZ;
+				if (y1 < 0 || y1 > 255)
+					continue;
+
+				Chunk chunk1;
+				if (x1 >> 4 == chunkX0 && z1 >> 4 == chunkZ0)
+					chunk1 = chunk0;
+				else if (chunkProvider.chunkExists(x1 >> 4, z1 >> 4))
+					chunk1 = chunkProvider.provideChunk(x1 >> 4, z1 >> 4);
+				else
+					continue;
+
+				int id1 = chunk1.getBlockID(x1 & 15, y1, z1 & 15);
+				if(id1 != 0 && isSameLiquid(id1)) updateTickSafe(world, chunk1, x1, y1, z1, r);				
+			}
+		
 			return;
+		}
 
 		try {
 			preventSetBlockLiquidFlowover = true;
 			preventExtraNotifications = true;
-			boolean delayAbove=false;
-			
+			boolean delayAbove = false;
+
 			// Variable naming conventions
 			// abc0 : is the node currently under consideration
 			// abc1 : is a direct neighbour node
@@ -394,12 +418,18 @@ public class BlockFluid extends BlockFlowing {
 							+ dir + " id1: " + id1 + " content1: " + content1);
 
 				int prevContent0 = content0;
-				if (dY < 0 && content1 < maximumContent) {
-					// Move liquid downwards
-					content0 = Math.max(0, Math.min(maximumContent, content0) + content1 - maximumContent);
-					content1 = Math.min(maximumContent, content1 + prevContent0);
-					setBlockContent(world, chunk1, tempData1, x1, y1, z1, content1, "[Fall down]");
-					FysiksFun.scheduleBlockTick(world, this, x1, y1, z1, liquidUpdateRate, "[Fall down]");
+				if (dY < 0) {
+					if (content1 < maximumContent) {
+						// Move liquid downwards
+						content0 = Math.max(0, Math.min(maximumContent, content0) + content1 - maximumContent);
+						content1 = Math.min(maximumContent, content1 + prevContent0);
+						setBlockContent(world, chunk1, tempData1, x1, y1, z1, content1, "[Fall down]");
+						FysiksFun.scheduleBlockTick(world, this, x1, y1, z1, liquidUpdateRate, "[Fall down]");
+					} else if (content1 < content0 + pressurePerY - pressureLossPerStep) {
+						content1 = content0 + pressurePerY - pressureLossPerStep;
+						setBlockContent(world, chunk1, tempData1, x1, y1, z1, content1, "[Pressure down]");
+						FysiksFun.scheduleBlockTick(world, this, x1, y1, z1, liquidUpdateRate, "[Fall down]");
+					}
 				} else if (dY > 0 && content0 >= maximumContent + pressurePerY + pressureLossPerStep) {
 					if (content1 < maximumContent) {
 						content0 = content1;
@@ -407,12 +437,12 @@ public class BlockFluid extends BlockFlowing {
 						setBlockContent(world, chunk1, tempData1, x1, y1, z1, content1, "[Flowing up]");
 						FysiksFun.removeBlockTick(world, this, x1, y1, z1, liquidUpdateRate);
 						FysiksFun.scheduleBlockTick(world, this, x1, y1, z1, liquidUpdateRate, "[Flowing up]");
-						delayAbove=true;
+						delayAbove = true;
 					} else if (content0 - pressurePerY - pressureLossPerStep > content1) {
 						content1 = content0 - pressurePerY - pressureLossPerStep;
 						setBlockContent(world, chunk1, tempData1, x1, y1, z1, content1, "[Pressure up]");
 						FysiksFun.scheduleBlockTick(world, this, x1, y1, z1, liquidUpdateRate, "[Pressure up]");
-						delayAbove=true; // not needed?
+						delayAbove = true; // not needed?
 					}
 				} else if (dY == 0 && content0 > content1) {
 					if (content1 < maximumContent) {
@@ -429,6 +459,75 @@ public class BlockFluid extends BlockFlowing {
 						FysiksFun.scheduleBlockTick(world, this, x1, y1, z1, pressurizedLiquidUpdateRate, "[Pressure sideways]");
 					}
 				}
+			}
+
+			/*
+			 * If we have made a pressurized move, make a random walk towards lower
+			 * pressures until we find a node we can steal liquid from
+			 */
+			if (oldContent0 >= maximumContent && content0 < maximumContent) {
+				int steps;
+				int xN = x0, yN = y0, zN = z0;
+				int currPressure = maximumContent;
+				Chunk chunkN = chunk0;
+				ChunkTempData tempDataN = tempData0;
+
+				for (steps = 0; steps < 256; steps++) {
+					int bestDir=-1;
+					int bestPressure = 0;
+					for (int dir = 0; dir < 6; dir++) {
+						int dX = Util.dirToDx(dir);
+						int dY = Util.dirToDy(dir);
+						int dZ = Util.dirToDz(dir);
+						int xM = xN + dX;
+						int yM = yN + dY;
+						int zM = zN + dZ;
+						if (yM < 0 || yM > 255)
+							continue;
+
+						Chunk chunkM;
+						ChunkTempData tempDataM;
+						if (xM >> 4 == xN >> 4 && zM >> 4 == zN >> 4)
+							chunkM = chunkN;
+						else {
+							if (!chunkProvider.chunkExists(xM >> 4, zM >> 4))
+								continue;
+							chunkM = chunkProvider.provideChunk(xM >> 4, zM >> 4);
+						}
+						int idM = chunkM.getBlockID(xM & 15, yM, zM & 15);
+						if (!isSameLiquid(idM))
+							continue;
+
+						if (xM >> 4 == xN >> 4 && zM >> 4 == zN >> 4)
+							tempDataM = tempDataN;
+						else
+							tempDataM = ChunkTempData.getChunk(world, xM, yM, zM);
+						int contentM = getBlockContent(chunkM, tempDataM, xM, yM, zM);
+						int modifiedPressure = contentM + pressurePerY * dY;
+						if (modifiedPressure > bestPressure) {
+							bestDir = dir;
+							bestPressure = modifiedPressure;
+						}
+					}
+					if (bestPressure < currPressure)
+						break;
+					xN += Util.dirToDx(bestDir);
+					yN += Util.dirToDy(bestDir);
+					zN += Util.dirToDz(bestDir);
+				}
+				/* Steal as much as possible from N */
+				int contentN = getBlockContent(chunkN, tempDataN, xN, yN, zN);
+				int toMove = Math.min(contentN, maximumContent - content0);
+				contentN -= toMove;
+				content0 += toMove;
+				setBlockContent(world, chunkN, tempDataN, xN, yN, zN, contentN, "[Propagated pressurized liquid]");
+				if(contentN > 0)
+					FysiksFun.scheduleBlockTick(world, this, xN, yN, zN, liquidUpdateRate, "[Propagated pressurized liquid]");				
+				for(int dir=0;dir<6;dir++)
+					FysiksFun.scheduleBlockTick(world, this, xN+Util.dirToDx(dir), yN+Util.dirToDy(dir), zN+Util.dirToDz(dir), liquidUpdateRate, "[Neighbour of pressurized liquid]");
+							 
+				if(content0 == maximumContent) 
+					content0 = oldContent0;   
 			}
 
 			/* Write our updated content to the world if it has changed */
@@ -471,7 +570,7 @@ public class BlockFluid extends BlockFlowing {
 						if (delayAbove && dY == +1) {
 						} else {
 							FysiksFun.scheduleBlockTick(world, this, x1, y1, z1, content1 < maximumContent ? liquidUpdateRate
-									: pressurizedLiquidUpdateRate, "[Pressure updates] DA:"+delayAbove);
+									: pressurizedLiquidUpdateRate, "[Pressure updates] DA:" + delayAbove);
 						}
 				}
 			}
