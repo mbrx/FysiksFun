@@ -244,11 +244,6 @@ public class BlockFluid extends BlockFlowing {
 			c.setBlockIDWithMetadata(x & 15, y, z & 15, newId, newMetaData);
 		tempData.setTempData(x, y, z, content);
 
-		int foo = tempData.getTempData(x, y, z);
-		if (foo != content) {
-			FysiksFun.logger.log(Level.SEVERE, "Something is still fucked up with java and bytes");
-		}
-
 		if (oldId != newId || oldMetaData != newMetaData)
 			ChunkMarkUpdater.scheduleBlockMark(w, x, y, z);
 	}
@@ -268,7 +263,8 @@ public class BlockFluid extends BlockFlowing {
 
 	/** Called only when we KNOW that the original chunk is loaded */
 	public void updateTickSafe(World world, Chunk chunk0, int x0, int y0, int z0, Random r) {
-
+		Counters.fluidUpdates++;
+		
 		int oldIndent = Util.loggingIndentation;
 
 		int chunkX0 = x0 >> 4, chunkZ0 = z0 >> 4;
@@ -424,25 +420,25 @@ public class BlockFluid extends BlockFlowing {
 						content0 = Math.max(0, Math.min(maximumContent, content0) + content1 - maximumContent);
 						content1 = Math.min(maximumContent, content1 + prevContent0);
 						setBlockContent(world, chunk1, tempData1, x1, y1, z1, content1, "[Fall down]");
-						FysiksFun.scheduleBlockTick(world, this, x1, y1, z1, liquidUpdateRate, "[Fall down]");
+						//FysiksFun.scheduleBlockTick(world, this, x1, y1, z1, liquidUpdateRate, "[Fall down]");
 					} else if (content1 < content0 + pressurePerY - pressureLossPerStep) {
 						content1 = content0 + pressurePerY - pressureLossPerStep;
 						setBlockContent(world, chunk1, tempData1, x1, y1, z1, content1, "[Pressure down]");
-						FysiksFun.scheduleBlockTick(world, this, x1, y1, z1, liquidUpdateRate, "[Fall down]");
+						//FysiksFun.scheduleBlockTick(world, this, x1, y1, z1, liquidUpdateRate, "[Fall down]");
 					}
 				} else if (dY > 0 && content0 >= maximumContent + pressurePerY + pressureLossPerStep) {
 					if (content1 < maximumContent) {
 						content0 = content1;
 						content1 = Math.min(maximumContent, prevContent0);
 						setBlockContent(world, chunk1, tempData1, x1, y1, z1, content1, "[Flowing up]");
-						FysiksFun.removeBlockTick(world, this, x1, y1, z1, liquidUpdateRate);
-						FysiksFun.scheduleBlockTick(world, this, x1, y1, z1, liquidUpdateRate, "[Flowing up]");
-						delayAbove = true;
+						//FysiksFun.removeBlockTick(world, this, x1, y1, z1, liquidUpdateRate);
+						//FysiksFun.scheduleBlockTick(world, this, x1, y1, z1, liquidUpdateRate, "[Flowing up]");
+						//delayAbove = true;
 					} else if (content0 - pressurePerY - pressureLossPerStep > content1) {
 						content1 = content0 - pressurePerY - pressureLossPerStep;
 						setBlockContent(world, chunk1, tempData1, x1, y1, z1, content1, "[Pressure up]");
-						FysiksFun.scheduleBlockTick(world, this, x1, y1, z1, liquidUpdateRate, "[Pressure up]");
-						delayAbove = true; // not needed?
+						//FysiksFun.scheduleBlockTick(world, this, x1, y1, z1, liquidUpdateRate, "[Pressure up]");
+						//delayAbove = true; // not needed?
 					}
 				} else if (dY == 0 && content0 > content1) {
 					if (content1 < maximumContent) {
@@ -451,12 +447,12 @@ public class BlockFluid extends BlockFlowing {
 							content0 -= toMove;
 							content1 += toMove;
 							setBlockContent(world, chunk1, tempData1, x1, y1, z1, content1, "[Flowing sideways]");
-							FysiksFun.scheduleBlockTick(world, this, x1, y1, z1, liquidUpdateRate, "[Flowing sideways]");
+							//FysiksFun.scheduleBlockTick(world, this, x1, y1, z1, liquidUpdateRate, "[Flowing sideways]");
 						}
 					} else if (content0 - pressureLossPerStep > content1) {
 						content1 = content0 - pressureLossPerStep;
 						setBlockContent(world, chunk1, tempData1, x1, y1, z1, content1, "[Pressure sideways]");
-						FysiksFun.scheduleBlockTick(world, this, x1, y1, z1, pressurizedLiquidUpdateRate, "[Pressure sideways]");
+						//FysiksFun.scheduleBlockTick(world, this, x1, y1, z1, pressurizedLiquidUpdateRate, "[Pressure sideways]");
 					}
 				}
 			}
@@ -535,11 +531,11 @@ public class BlockFluid extends BlockFlowing {
 				if (logExcessively)
 					FysiksFun.logger.log(Level.INFO, Util.logHeader() + "self update, oldContent0: " + oldContent0);
 				setBlockContent(world, chunk0, tempData0, x0, y0, z0, content0, "[Final self update]");
-				FysiksFun.scheduleBlockTick(world, this, x0, y0, z0, liquidUpdateRate, "[Final self update]");
+				//FysiksFun.scheduleBlockTick(world, this, x0, y0, z0, liquidUpdateRate, "[Final self update]");
 			}
 
 			/* Schedule updates to neighbours if our content has changed */
-			if (content0 != oldContent0) {
+			if (content0 != oldContent0 && oldContent0 == -1) {
 				for (int dir = 0; dir < 6; dir++) {
 					int dX = Util.dirToDx(dir);
 					int dY = Util.dirToDy(dir);
@@ -990,14 +986,14 @@ public class BlockFluid extends BlockFlowing {
 		// w.isAirBlock(x, y, z - 1) || w.isAirBlock(x, y, z + 1) || w.isAirBlock(x,
 		// y - 1, z))
 		// w.scheduleBlockUpdate(x, y, z, this.blockID, liquidUpdateRate);
-		if (!preventExtraNotifications)
-			FysiksFun.scheduleBlockTick(w, this, x, y, z, liquidUpdateRate, "[onNeighbour changed]");
+		//if (!preventExtraNotifications)
+		//	FysiksFun.scheduleBlockTick(w, this, x, y, z, liquidUpdateRate, "[onNeighbour changed]");
 	}
 
 	public void onBlockAdded(World w, int x, int y, int z) {
 		// if(FysiksFun.inWorldTick)
-		if (!preventExtraNotifications)
-			FysiksFun.scheduleBlockTick(w, this, x, y, z, liquidUpdateRate, "[On block added]");
+		//if (!preventExtraNotifications)
+		//	FysiksFun.scheduleBlockTick(w, this, x, y, z, liquidUpdateRate, "[On block added]");
 	}
 
 	/** Called when this block is OVERWRITTEN by another world.setBlock */
@@ -1038,7 +1034,7 @@ public class BlockFluid extends BlockFlowing {
 
 					ChunkTempData tempData = ChunkTempData.getChunk(w, x, y, z);
 					setBlockContent(w, chunk, tempData, x, y + dy, z, newContent, "[From displaced block]");
-					FysiksFun.scheduleBlockTick(w, this, x, y + dy, z, liquidUpdateRate, "[From displaced block]");
+					//FysiksFun.scheduleBlockTick(w, this, x, y + dy, z, liquidUpdateRate, "[From displaced block]");
 					break;
 					/* Doesnt work */
 					/*
@@ -1232,9 +1228,10 @@ public class BlockFluid extends BlockFlowing {
 
 	@Override
 	public void velocityToAddToEntity(World w, int x, int y, int z, Entity entity, Vec3 velocity) {
+	    /*
 		Vec3 vec = this.getFFFlowVector(w, x, y, z);
 
-		if (vec.lengthVector() > 0.0D && entity.func_96092_aw()) {
+		if (vec.lengthVector() > 0.0D && entity.isPushedByWater()) {
 			double d1 = 0.005d; // 0.014D;
 			entity.motionX += vec.xCoord * d1;
 			entity.motionY += vec.yCoord * d1;
@@ -1243,7 +1240,7 @@ public class BlockFluid extends BlockFlowing {
 			velocity.yCoord += vec.yCoord;
 			velocity.zCoord += vec.zCoord;
 		}
-
+        */
 	}
 
 	private Vec3 getFFFlowVector(World w, int x, int y, int z) {

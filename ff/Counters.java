@@ -18,7 +18,8 @@ public class Counters {
   public static int directEvaporation   = 0;
   public static int indirectEvaporation = 0;
   public static int treeCounter                = 0;
-
+  public static int fluidUpdates							 = 0;
+  
   public static int treeDrink                  = 0;
   public static int treeKill                   = 0;
   public static int cropsDrink                 = 0;
@@ -29,6 +30,7 @@ public class Counters {
 
   public static int heatEvaporation            = 0;
 
+  
   public static void printStatistics() {
        
   	int totsize=0;
@@ -36,9 +38,16 @@ public class Counters {
   		HashSet set = (HashSet) FysiksFun.blockTickQueueRing[i];
   		totsize += set.size();
   	}
+  	System.out.println("Liquid Tick Queue: " + (liquidQueueCounter) + " per tick (" + totsize + " used "+ FysiksFun.blockTickQueueFreePool.size() + " free pool) smallLiquidExtraTicks: "+smallLiquidExtraTicks);
+  	System.out.println("Fluid updates: "+fluidUpdates);
+  	fluidUpdates=0;  	
+    System.out.println("Mark counter: " + (markQueueCounter) + " per tick");
+    
+    /*
     System.out.println("Liquid Tick Queue: " + (liquidQueueCounter / 300) + " per tick (" + totsize + " used "+ FysiksFun.blockTickQueueFreePool.size() + " free pool) smallLiquidExtraTicks: "+smallLiquidExtraTicks/300);
     System.out.println("Mark counter: " + (markQueueCounter / 300) + " per tick");
-    System.out.println("Erosion events: " + erosionCounter);
+    */
+    //System.out.println("Erosion events: " + erosionCounter);
     //System.out.println("Rain: +" + rainCounter + " evaporation: " + directEvaporation + "/" + worldHeatEvaporation + "/" + indirectEvaporation + " humidification: +" + humidification);
     //System.out.println("Trees processed: " + treeCounter + " drinks: " + treeDrink + " treeKill: " + treeKill);
     //System.out.println("Crops drink: " + cropsDrink + " spreads: " + cropsSpread + " dies: " + cropsDie);
