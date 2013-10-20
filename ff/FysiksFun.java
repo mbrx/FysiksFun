@@ -133,38 +133,38 @@ public class FysiksFun {
     // Gases.postInit();
   }
 
+  /**
+   * Temporary variable for quickly creating a blockUpdateState without risking
+   * GC'ing
+   */
   private static BlockUpdateState tempBlockUpdateState = new BlockUpdateState();
 
+  /**
+   * Utility function for removing a specific block-update from the queue.
+   * Currently not used.
+   */
   public static void removeBlockTick(World w, Block block, int x, int y, int z, int maxDelay) {
-    // logger.log(Level.INFO,
-    // Util.logHeader()+"Removing ticks for "+Util.xyzString(x, y, z));
     BlockUpdateState state = tempBlockUpdateState;
     state.set(w, block, x, y, z);
-    
-    /*
-     * Set<BlockUpdateState> mySet = (Set<BlockUpdateState>)
-     * blockTickQueueRing[(Counters.tick + 10) % 300]; logger.log(Level.INFO,
-     * Util.logHeader()+"Content of tick %d"+(Counters.tick+10));
-     * for(BlockUpdateState fooState : mySet) { logger.log(Level.INFO,
-     * Util.logHeader()+"  "+Util.xyzString(fooState.x, fooState.y,
-     * fooState.z)); }
-     */
+
     for (int d = 1; d <= maxDelay; d++) {
-      // logger.log(Level.INFO,
-      // Util.logHeader()+"  removing previous schedule at +"+d);
       ((Set<BlockUpdateState>) blockTickQueueRing[(Counters.tick + d) % 300]).remove(state);
     }
   }
 
+  /** Schedules a block for updates, without giving an explanation */
   public static void scheduleBlockTick(World w, Block block, int x, int y, int z, int delay) {
     scheduleBlockTick(w, block, x, y, z, delay, "");
   }
 
+  /**
+   * Schedules a block for updates, with the given explanation (printed only in
+   * debug mode)
+   */
   public static void scheduleBlockTick(World w, Block block, int x, int y, int z, int delay, String explanation) {
-    // logger.log(Level.INFO,
-    // Util.logHeader()+"Scheduling "+Util.xyzString(x, y,
-    // z)+" for "+(Counters.tick+delay)+" (+"+delay+")"+" "+explanation);
-        
+    /*logger.log(Level.INFO, Util.logHeader() + "Scheduling " + Util.xyzString(x, y, z) + " for " + (Counters.tick + delay) + " (+" + delay + ")" + " "
+        + explanation);*/
+
     if (delay <= 0 || delay >= 300) return;
     Set<BlockUpdateState> q = (Set<BlockUpdateState>) blockTickQueueRing[(Counters.tick + delay) % 300];
     int size = q.size();
@@ -189,71 +189,9 @@ public class FysiksFun {
         blockTickQueueFreePool.push(state);
         return;
       }
-
     q.add(state);
   }
 
-  /**
-   * Schedules a block to be "marked". On a server this will either send the
-   * block to clients. private static BlockUpdateState tmpLookupState = new
-   * BlockUpdateState();
-   * 
-   * /** Returns true if the two liquids given by blockID's can mix and cause an
-   * interaction
-   */
-  public static boolean liquidsCanInteract(int block1, int block2) {
-    if (Block.blocksList[block1] != null && Block.blocksList[block2] != null) {
-      if (Block.blocksList[block1].blockMaterial == Material.lava) return Block.blocksList[block2].blockMaterial == Material.water;
-      else if (Block.blocksList[block1].blockMaterial == Material.water) return Block.blocksList[block2].blockMaterial == Material.lava;
-    }
-    return false;
-  }
-
-  /**
-   * Create the effect of interaction between the two liquids mixing in the
-   * given cell. Returns the amount of incoming liquid should be LEFT after the
-   * interaction
-   */
-  public static int liquidInteract(World w, int x, int y, int z, int incomingBlockID, int incommingAmount, int targetBlockID, int targetAmount) {
-    int lavaAmount = 0, waterAmount = 0;
-    if (Block.blocksList[incomingBlockID].blockMaterial == Material.lava) {
-      lavaAmount = incommingAmount;
-      waterAmount = targetAmount;
-    } else if (Block.blocksList[targetBlockID].blockMaterial == Material.lava) {
-      lavaAmount = targetAmount;
-      waterAmount = incommingAmount;
-    }
-    int nReactions = Math.min(lavaAmount, waterAmount); // / 2);
-    lavaAmount -= nReactions;
-    waterAmount -= nReactions; // Math.max(1, nReactions * 2);
-    boolean generated = false;
-
-    for (int i = 0; i < nReactions; i++) {
-      int r = w.rand.nextInt(10);
-      if (r == 0) {
-        w.setBlock(x, y, z, Block.obsidian.blockID, 0, 0x02);
-        generated = true;
-        break;
-      } else if (r <= 2) {
-        w.setBlock(x, y, z, Block.cobblestone.blockID, 0, 0x02);
-        generated = true;
-        break;
-      }
-    }
-    w.playSoundEffect((double) ((float) x + 0.5F), (double) ((float) y + 0.5F), (double) ((float) z + 0.5F), "random.fizz", 0.5F,
-        2.6F + (w.rand.nextFloat() - w.rand.nextFloat()) * 0.8F);
-    for (int i = 0; i < nReactions + waterAmount * 2; i++) {
-      w.spawnParticle("largesmoke", (double) x + Math.random(), (double) y + 1.2D, (double) z + Math.random(), 0.0D, 0.0D, 0.0D);
-    }
-
-    if (Block.blocksList[incomingBlockID].blockMaterial == Material.lava) {
-      if (!generated) w.setBlock(x, y, z, targetBlockID, 8 - waterAmount, 0x02);
-      return lavaAmount;
-    } else {
-      if (!generated) w.setBlock(x, y, z, targetBlockID, 8 - lavaAmount, 0x02);
-      return waterAmount;
-    }
-  }
 
   /**
    * Performs the ticks that should be done once per server tick loop, including
@@ -342,7 +280,6 @@ public class FysiksFun {
     int rainTime = w.getWorldInfo().getRainTime();
     if (rainTime > settings.weatherSpeed - 1) w.getWorldInfo().setRainTime(rainTime + 1 - settings.weatherSpeed);
 
-    
     for (Object o : w.activeChunkSet) {
       ChunkCoordIntPair xz = (ChunkCoordIntPair) o;
       Chunk c = w.getChunkFromChunkCoords(xz.chunkXPos, xz.chunkZPos);
@@ -352,7 +289,6 @@ public class FysiksFun {
       int x = xz.getCenterXPos() & 0xfffffff0;
       int z = xz.getCenterZPosition() & 0xfffffff0;
 
-
       /*
        * Gases.doChunkTick(w, x, z); Rain.doPrecipation(w, x, z);
        * Evaporation.doEvaporation(w, x, z); Trees.doTrees(w, x, z);
@@ -360,9 +296,9 @@ public class FysiksFun {
        * NetherFun.doNetherFun(w, x, z);
        */
     }
-    
+
     Fluids.doWorldTick(w);
-    //System.out.println("Active chunks: "+w.activeChunkSet.size());
+    // System.out.println("Active chunks: "+w.activeChunkSet.size());
 
   }
 

@@ -21,6 +21,7 @@ public class Fluids {
 
   private static class WorldUpdateState {
     int sweepY;
+    int sweepCounter;
   };
 
   private static Hashtable<World, WorldUpdateState> worldUpdateState = new Hashtable<World, WorldUpdateState>();
@@ -48,9 +49,9 @@ public class Fluids {
     // Register new blocks
     flowingWater = new BlockFluid(Block.waterMoving.blockID, Material.water, Block.waterStill.blockID, Block.waterMoving.blockID, "water");
     stillWater = new BlockFluid(Block.waterStill.blockID, Material.water, Block.waterStill.blockID, Block.waterMoving.blockID, "water");
-    flowingWater.setLiquidUpdateRate(20); // was: 10);
+    flowingWater.setLiquidUpdateRate(1); // was: 10);
     flowingWater.setTickRandomly(false);
-    stillWater.setLiquidUpdateRate(20); // was: 10);
+    stillWater.setLiquidUpdateRate(1); // was: 10);
     stillWater.setTickRandomly(false);
     flowingWater.canCauseErosion = true;
     stillWater.canCauseErosion = true;
@@ -68,8 +69,8 @@ public class Fluids {
     // Register new blocks
     flowingLava = new BlockFluid(Block.lavaMoving.blockID, Material.lava, Block.lavaStill.blockID, Block.lavaMoving.blockID, "lava");
     stillLava = new BlockFluid(Block.lavaStill.blockID, Material.lava, Block.lavaStill.blockID, Block.lavaMoving.blockID, "lava");
-    flowingLava.setLiquidUpdateRate(60);
-    stillLava.setLiquidUpdateRate(60);
+    flowingLava.setLiquidUpdateRate(2);
+    stillLava.setLiquidUpdateRate(2);
     flowingLava.setTickRandomly(false);
     stillLava.setTickRandomly(false);
     flowingLava.canCauseErosion = true;
@@ -85,10 +86,10 @@ public class Fluids {
     registerLiquidBlock(flowingLava);
 
     if (FysiksFun.settings.flowingLiquidOil) {
-      patchModLiquid("oilStill", "oilMoving", 20, false, false);
+      patchModLiquid("oilStill", "oilMoving", 1, false, false);
     }
     if (FysiksFun.settings.flowingHydrochloricAcid) {
-      patchModLiquid("Still Hydrochloric Acid", "Flowing Hydrochloric Acid", 20, true, true);
+      patchModLiquid("Still Hydrochloric Acid", "Flowing Hydrochloric Acid", 1, true, true);
     }
 
   }
@@ -134,8 +135,9 @@ public class Fluids {
   }
 
   /**
-   * Performs random expensive ticks on every block in a randomly selected layer
-   * of each chunk it is called for (chunk center XZ).
+   * Performs the main ticks for all fluids by circulating over all layers in
+   * multiple ticks. Ie, going down from layer 255 to bedrock and then starting
+   * over.
    */
   public static void doWorldTick(World w) {
     WorldUpdateState wstate = worldUpdateState.get(w);
@@ -143,26 +145,89 @@ public class Fluids {
       wstate = new WorldUpdateState();
       worldUpdateState.put(w, wstate);
     }
-    for (int step = 0; step < 20; step++) {
-      wstate.sweepY--;
-      if (wstate.sweepY < 2) wstate.sweepY = 254;
+    for (int step = 0; step < 50; step++) {
+      wstate.sweepY++;
+      if (wstate.sweepY > 192) { wstate.sweepY = 1; wstate.sweepCounter++; }
       int y = wstate.sweepY;
       for (Object o : w.activeChunkSet) {
         ChunkCoordIntPair xz = (ChunkCoordIntPair) o;
         Chunk c = w.getChunkFromChunkCoords(xz.chunkXPos, xz.chunkZPos);
-        int x = xz.chunkXPos<<4;
-        int z = xz.chunkZPos<<4;
+        int x = xz.chunkXPos << 4;
+        int z = xz.chunkZPos << 4;
 
         for (int dx = 0; dx < 16; dx++)
           for (int dz = 0; dz < 16; dz++) {
             int id = c.getBlockID(dx, y, dz);
             if (isLiquid[id]) {
               BlockFluid b = (BlockFluid) Block.blocksList[id];
-              b.updateTickSafe(w, c, x + dx, y, z+dz, FysiksFun.rand);
+              b.updateTickSafe(w, c, x + dx, y, z + dz, FysiksFun.rand,wstate.sweepCounter);
             }
           }
       }
     }
   }
+  
+  /**
+   * Schedules a block to be "marked". On a server this will either send the
+   * block to clients. private static BlockUpdateState tmpLookupState = new
+   * BlockUpdateState();
+   * 
+   * /** Returns true if the two liquids given by blockID's can mix and cause an
+   * interaction
+   */
+  public static boolean liquidCanInteract(int block1, int block2) {
+    if (Block.blocksList[block1] != null && Block.blocksList[block2] != null) {
+      if (Block.blocksList[block1].blockMaterial == Material.lava) return Block.blocksList[block2].blockMaterial == Material.water;
+      else if (Block.blocksList[block1].blockMaterial == Material.water) return Block.blocksList[block2].blockMaterial == Material.lava;
+    }
+    return false;
+  }
 
+  /**
+   * Create the effect of interaction between the two liquids mixing in the
+   * given cell. Returns the amount of incoming liquid should be LEFT after the
+   * interaction
+   */
+  public static int liquidInteract(World w, int x, int y, int z, int incomingBlockID, int incommingAmount, int targetBlockID, int targetAmount) {
+    int lavaAmount = 0, waterAmount = 0;
+    if (Block.blocksList[incomingBlockID].blockMaterial == Material.lava) {
+      lavaAmount = incommingAmount;
+      waterAmount = targetAmount;
+    } else if (Block.blocksList[targetBlockID].blockMaterial == Material.lava) {
+      lavaAmount = targetAmount;
+      waterAmount = incommingAmount;
+    }
+    int nReactions = Math.min(lavaAmount, waterAmount); // / 2);
+    lavaAmount -= nReactions;
+    waterAmount -= nReactions; // Math.max(1, nReactions * 2);
+    boolean generated = false;
+
+    for (int i = 0; i < nReactions; i++) {
+      int r = w.rand.nextInt(40);
+      if (r == 0) {
+        w.setBlock(x, y, z, Block.obsidian.blockID, 0, 0x02);
+        generated = true;
+        break;
+      } else if (r <= 4) {
+        w.setBlock(x, y, z, Block.cobblestone.blockID, 0, 0x02);
+        generated = true;
+        break;
+      }
+    }
+    w.playSoundEffect((double) ((float) x + 0.5F), (double) ((float) y + 0.5F), (double) ((float) z + 0.5F), "random.fizz", 0.5F,
+        2.6F + (w.rand.nextFloat() - w.rand.nextFloat()) * 0.8F);
+    for (int i = 0; i < nReactions + waterAmount * 2; i++) {
+      w.spawnParticle("largesmoke", (double) x + Math.random(), (double) y + 1.2D, (double) z + Math.random(), 0.0D, 0.0D, 0.0D);
+    }
+
+    if (Block.blocksList[incomingBlockID].blockMaterial == Material.lava) {
+      if (!generated) w.setBlock(x, y, z, targetBlockID, 8 - waterAmount, 0x02);
+      return lavaAmount;
+    } else {
+      if (!generated) w.setBlock(x, y, z, targetBlockID, 8 - lavaAmount, 0x02);
+      return waterAmount;
+    }
+  }
+
+  
 }
