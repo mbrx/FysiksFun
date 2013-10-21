@@ -23,6 +23,8 @@ import java.util.Set;
 import java.util.Stack;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import cpw.mods.fml.common.FMLCommonHandler;
 import cpw.mods.fml.common.Mod;
@@ -86,6 +88,7 @@ public class FysiksFun {
   public static Random                       rand;
 
   public static Settings                     settings               = new Settings();
+  public static ExecutorService              executor               = Executors.newFixedThreadPool(8);
 
   public static class WorldObserver {
     World w;
@@ -162,8 +165,11 @@ public class FysiksFun {
    * debug mode)
    */
   public static void scheduleBlockTick(World w, Block block, int x, int y, int z, int delay, String explanation) {
-    /*logger.log(Level.INFO, Util.logHeader() + "Scheduling " + Util.xyzString(x, y, z) + " for " + (Counters.tick + delay) + " (+" + delay + ")" + " "
-        + explanation);*/
+    /*
+     * logger.log(Level.INFO, Util.logHeader() + "Scheduling " +
+     * Util.xyzString(x, y, z) + " for " + (Counters.tick + delay) + " (+" +
+     * delay + ")" + " " + explanation);
+     */
 
     if (delay <= 0 || delay >= 300) return;
     Set<BlockUpdateState> q = (Set<BlockUpdateState>) blockTickQueueRing[(Counters.tick + delay) % 300];
@@ -191,7 +197,6 @@ public class FysiksFun {
       }
     q.add(state);
   }
-
 
   /**
    * Performs the ticks that should be done once per server tick loop, including
@@ -302,7 +307,7 @@ public class FysiksFun {
 
   }
 
-  public static void setBlockWithMetadataAndPriority(World w, int x, int y, int z, int id, int meta, int pri) {
+  public static synchronized void setBlockWithMetadataAndPriority(World w, int x, int y, int z, int id, int meta, int pri) {
     IChunkProvider chunkProvider = w.getChunkProvider();
     if (!chunkProvider.chunkExists(x >> 4, z >> 4)) return;
 

@@ -272,14 +272,14 @@ public class BlockFluid extends BlockFlowing {
       // abc12 : is a node two steps away from abc1
       // Invariant: abc10 is the same as abc1
 
-      int content0 = getBlockContent(world, chunk0, x0, y0, z0);
+      
+      ChunkTempData tempData0 = ChunkTempData.getChunk(world, x0, y0, z0);
+      int content0 = getBlockContent(chunk0, tempData0, x0, y0, z0);
       int oldContent0 = content0;
-
       if (logExcessively) FysiksFun.logger.log(Level.INFO, Util.logHeader() + "Updating " + Util.xyzString(x0, y0, z0) + " content0: " + content0);
       Util.loggingIndentation++;
 
-      ChunkTempData tempData0 = ChunkTempData.getChunk(world, x0, y0, z0);
-
+      
       final int directions[][] = {{-1,-1},{0,-1},{1,-1},{-1,0},{1,0},{-1,+1},{0,+1},{1,+1}};
 
       /* Recompute our own pressure before moving blocks */

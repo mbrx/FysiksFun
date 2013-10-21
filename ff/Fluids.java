@@ -1,7 +1,12 @@
 package mbrx.ff;
 
+import java.util.ArrayList;
 import java.util.Hashtable;
+import java.util.List;
 import java.util.logging.Level;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
@@ -145,28 +150,112 @@ public class Fluids {
       wstate = new WorldUpdateState();
       worldUpdateState.put(w, wstate);
     }
-    for (int step = 0; step < 50; step++) {
-      wstate.sweepY++;
-      if (wstate.sweepY > 192) { wstate.sweepY = 1; wstate.sweepCounter++; }
-      int y = wstate.sweepY;
+    // 1: ~15ms
+    // 5: ~25ms
+    // 20: ~80ms
+    // 50: ~200ms
+    // 3ms per step? Variation over time due to sweeping over areas with more
+    // water
+    // Dynamically change amount of steps?
+    // int maxSteps=20;
+    // if(wstate.sweepY > 80) maxSteps += 30;
+    // if(wstate.sweepY < 50) maxSteps += 30;
+
+    int mi, ma;
+    wstate.sweepY++;
+
+    // TODO - change the iteration order, from bottom to top!
+    switch (wstate.sweepY % 5) {
+    case 0:
+      mi = 1;
+      ma = 48;
+      break;
+    case 1:
+      mi = 49;
+      ma = 58;
+      break;
+    case 2:
+      mi = 59;
+      ma = 65;
+      break;
+    case 3:
+      mi = 66;
+      ma = 100;
+      break;
+    default:
+      mi = 101;
+      ma = 255;
+      wstate.sweepCounter++;
+    }
+    // if(wstate.sweepY % 3 == 0) { mi=255; ma=75; }
+    // else if(wstate.sweepY % 3 == 1) { mi=50; ma=75; }
+    // else {mi = 1; ma=50; wstate.sweepCounter++; }
+    // wstate.sweepY++;
+    // for (int step = 0; step < 1; step++) {
+
+    class WorkerThread implements Runnable {
+      ChunkCoordIntPair xz;
+      World             w;
+      int               minY, maxY;
+      WorldUpdateState  wstate;
+
+      public WorkerThread(World w, WorldUpdateState wstate, ChunkCoordIntPair xz, int minY, int maxY) {
+        this.xz = xz;
+        this.w = w;
+        this.minY = minY;
+        this.maxY = maxY;
+        this.wstate = wstate;
+      }
+
+      @Override
+      public void run() {
+        for (int y = minY; y <= maxY; y++) {
+          Chunk c = w.getChunkFromChunkCoords(xz.chunkXPos, xz.chunkZPos);
+          int x = xz.chunkXPos << 4;
+          int z = xz.chunkZPos << 4;
+          for (int dx = 0; dx < 16; dx++)
+            for (int dz = 0; dz < 16; dz++) {
+              int id = c.getBlockID(dx, y, dz);
+              if (isLiquid[id]) {
+                BlockFluid b = (BlockFluid) Block.blocksList[id];
+                b.updateTickSafe(w, c, x + dx, y, z + dz, FysiksFun.rand, wstate.sweepCounter);
+              }
+            }
+        }
+      }
+    }
+
+    /*
+     * ExecutorService executor = Executors.newFixedThreadPool(1); List<Future>
+     * toWaitFor = new ArrayList<Future>(); for (int oddeven = 0; oddeven < 2;
+     * oddeven++) { for (Object o : w.activeChunkSet) { ChunkCoordIntPair xz =
+     * (ChunkCoordIntPair) o; if ((xz.chunkXPos + xz.chunkZPos) % 2 == oddeven)
+     * { Runnable worker = new WorkerThread(w, wstate, xz, mi, ma); Future f =
+     * executor.submit(worker); toWaitFor.add(f); } } }
+     * System.out.println("Futures: "+toWaitFor.size()); for (Future f :
+     * toWaitFor) { try { if (f != null) f.get(); } catch (Exception e) {
+     * e.printStackTrace(); } }
+     */
+
+    for (int y = mi; y <= ma; y++) {
       for (Object o : w.activeChunkSet) {
         ChunkCoordIntPair xz = (ChunkCoordIntPair) o;
         Chunk c = w.getChunkFromChunkCoords(xz.chunkXPos, xz.chunkZPos);
         int x = xz.chunkXPos << 4;
         int z = xz.chunkZPos << 4;
-
         for (int dx = 0; dx < 16; dx++)
           for (int dz = 0; dz < 16; dz++) {
             int id = c.getBlockID(dx, y, dz);
             if (isLiquid[id]) {
               BlockFluid b = (BlockFluid) Block.blocksList[id];
-              b.updateTickSafe(w, c, x + dx, y, z + dz, FysiksFun.rand,wstate.sweepCounter);
+              b.updateTickSafe(w, c, x + dx, y, z + dz, FysiksFun.rand, wstate.sweepCounter);
             }
           }
       }
     }
+
   }
-  
+
   /**
    * Schedules a block to be "marked". On a server this will either send the
    * block to clients. private static BlockUpdateState tmpLookupState = new
@@ -229,5 +318,4 @@ public class Fluids {
     }
   }
 
-  
 }
