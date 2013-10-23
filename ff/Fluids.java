@@ -292,7 +292,7 @@ public class Fluids {
 
         // Don't process some of the chunks, when the current chunk has too much
         // fluids in it (is probably some kind of ocean)
-        if (wstate.sweepCounter % 2 == 1) {
+        if (wstate.sweepCounter % 3 != 0) {
           int cnt = 0;
           for (int y2 = 1; y2 < 255; y2++)
             cnt += tempData0.getFluidHistogram(y2);
@@ -302,7 +302,7 @@ public class Fluids {
           // Don't check layers that are not know to contain water, except for
           // every 4 complete sweeps
           // (since water might have been added externally)
-          if (wstate.sweepCounter % 4 != 0) {
+          if (wstate.sweepCounter % 6 != 0) {
             boolean checkCarefully = false;
             if (tempData0.getFluidHistogram(y) != 0) checkCarefully = true;
             // Check layers above/below water, since it may be propagated
