@@ -1,3 +1,6 @@
+
+Let the player / entities occupy space that pushes away water (and gases?)
+
 Analog signals using the ChunkTempData system? 
 Pressure meters? Poor material type objects (wooden pressure meters) etc can break under high pressure. Diamond etc. doesnt. 
 

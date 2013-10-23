@@ -36,7 +36,7 @@ public class CoordinateWXYZ {
     recomputeHash();
   }
   private void recomputeHash() {
-   // this.hash = Objects.hashCode(w, x, y, z);
+    // this.hash = Objects.hashCode(w, x, y, z);
     this.hash = (y&0x1ff) | ((x & 0xfff)<<9) | ((z & 0xfff)<<21);
   }
   @Override

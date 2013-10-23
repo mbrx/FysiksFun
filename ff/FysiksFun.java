@@ -88,7 +88,7 @@ public class FysiksFun {
   public static Random                       rand;
 
   public static Settings                     settings               = new Settings();
-  public static ExecutorService              executor               = Executors.newFixedThreadPool(8);
+  public static ExecutorService              executor               = Executors.newFixedThreadPool(4);
 
   public static class WorldObserver {
     World w;
@@ -255,9 +255,11 @@ public class FysiksFun {
    */
   public static void doWorldTick(World w) {
 
+    /*
     AnimalAIRewriter.rewriteAnimalAIs(w);
     Gases.doWorldTick(w);
-
+     */
+    
     /*
      * if(true) { //((Counters.tick/3) % 50) == 0) { int loadedChunks=0;
      * IChunkProvider chunkProvider = w.getChunkProvider(); for(int
@@ -315,6 +317,7 @@ public class FysiksFun {
     c.setBlockIDWithMetadata(x & 15, y, z & 15, id, meta);
     ChunkMarkUpdater.scheduleBlockMark(w, x, y, z);
   }
+ 
 
   public static void tickPlayer(Player player, World w) {}
 

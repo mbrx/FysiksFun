@@ -64,7 +64,7 @@ public class OceanRepairGenerator implements IWorldGenerator {
 					for (; y > 1; y--) { 
 						int idHere = c.getBlockID(x, y, z);
 						if(idHere == 0) {							
-							Fluids.stillWater.setBlockContent(world, c, ChunkTempData.getChunk(world,x,y,z), x, y, z, BlockFluid.maximumContent,"[repair ocean]");
+							Fluids.stillWater.setBlockContent(world, c, ChunkTempData.getChunk(world,x,y,z), x, y, z, BlockFluid.maximumContent,"[repair ocean]", null);
 							repairCnt++;
 						}
 					}

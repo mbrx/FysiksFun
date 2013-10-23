@@ -85,9 +85,19 @@ class ChunkMarkUpdater {
     } finally {
       mutex.release();
     }
-
   }
-
+  /** Assumes that we are called in a non-threaded environment */
+  public static void scheduleBlockMarkSingleThread(World w, int x, int y, int z) {
+    ChunkMarkUpdater cml = getAndScheduleChunkMarkList(w, x >> 4, z >> 4);
+    tmpCoordinateWXYZ.set(w, x, y, z);
+    if (cml.markList.contains(tmpCoordinateWXYZ)) return;
+    CoordinateWXYZ coord = coordinateWXYZFreePool.poll();
+    if (coord == null) {
+      coord = new CoordinateWXYZ(w, x, y, z);
+    } else coord.set(w, x, y, z);
+    cml.markList.add(coord);
+  }
+    
   public ChunkMarkUpdater(World w, int chunkX, int chunkZ) {
     coordinate = new CoordinateWXZ(w, chunkX, chunkZ);
     markList = new HashSet<CoordinateWXYZ>();
