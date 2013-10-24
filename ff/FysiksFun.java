@@ -115,7 +115,7 @@ public class FysiksFun {
     MinecraftForge.EVENT_BUS.register(eventListener);
 
     Fluids.load();
-    // Gases.load();
+    Gases.load();
 
     // TickRegistry.registerTickHandler(worldTickHandler, Side.CLIENT);
     TickRegistry.registerTickHandler(worldTickHandler, Side.SERVER);
@@ -133,7 +133,7 @@ public class FysiksFun {
     // if (settings.repairOceans)
     // GameRegistry.registerWorldGenerator(new OceanRepairGenerator());
     Fluids.postInit();
-    // Gases.postInit();
+    Gases.postInit();
   }
 
   /**
@@ -205,7 +205,7 @@ public class FysiksFun {
   public static void tickServer() {
     /* Update world tick and print statistics */
     Counters.tick++;
-    if (Counters.tick % 30 == 0) {
+    if (Counters.tick % 300 == 0 && false)  {
       Counters.printStatistics();
     }
 
@@ -255,19 +255,8 @@ public class FysiksFun {
    */
   public static void doWorldTick(World w) {
 
-    /*
     AnimalAIRewriter.rewriteAnimalAIs(w);
     Gases.doWorldTick(w);
-     */
-    
-    /*
-     * if(true) { //((Counters.tick/3) % 50) == 0) { int loadedChunks=0;
-     * IChunkProvider chunkProvider = w.getChunkProvider(); for(int
-     * x=-200;x<200;x++) for(int z=-200;z<200;z++) { if
-     * (chunkProvider.chunkExists(x, z)) loadedChunks++; } System.out.println
-     * ("[WARN] Chunks loaded: "+loadedChunks+" in world "+
-     * w.getWorldInfo().getWorldName()); }
-     */
 
     if (!w.isRemote) {
       List allEntities = w.loadedEntityList;
@@ -296,12 +285,13 @@ public class FysiksFun {
       int x = xz.getCenterXPos() & 0xfffffff0;
       int z = xz.getCenterZPosition() & 0xfffffff0;
 
-      /*
-       * Gases.doChunkTick(w, x, z); Rain.doPrecipation(w, x, z);
-       * Evaporation.doEvaporation(w, x, z); Trees.doTrees(w, x, z);
-       * Plants.doPlants(w, x, z); if (w.provider.dimensionId == -1)
-       * NetherFun.doNetherFun(w, x, z);
-       */
+      // Gases.doChunkTick(w, x, z);
+      Rain.doPrecipation(w, x, z);
+      Evaporation.doEvaporation(w, x, z);
+      Trees.doTrees(w, x, z);
+      Plants.doPlants(w, x, z);
+      if (w.provider.dimensionId == -1) NetherFun.doNetherFun(w, x, z);
+
     }
 
     Fluids.doWorldTick(w);
@@ -317,7 +307,6 @@ public class FysiksFun {
     c.setBlockIDWithMetadata(x & 15, y, z & 15, id, meta);
     ChunkMarkUpdater.scheduleBlockMark(w, x, y, z);
   }
- 
 
   public static void tickPlayer(Player player, World w) {}
 

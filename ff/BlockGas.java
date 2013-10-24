@@ -106,6 +106,7 @@ public class BlockGas extends Block {
 
     try {
       preventSetBlockGasFlowover = true;
+      BlockFluid.preventSetBlockLiquidFlowover = true;
 
       int oldID = origChunk.getBlockID(x & 15, y, z & 15);
       if (oldID != blockID) return;
@@ -206,6 +207,7 @@ public class BlockGas extends Block {
 
     } finally {
       preventSetBlockGasFlowover = false;
+      BlockFluid.preventSetBlockLiquidFlowover = false;
     }
   }
 

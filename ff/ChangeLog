@@ -51,3 +51,10 @@ v0.3.5
     * Allowed variable "water falling speed" to quickly move water blocks in eg. water falls downwards. This saves lots of computations, especially when spawning the ocean.
     * Fixed bug with water not flowing out of the world when there are holes in the bedrock   
     * 
+    
+    
+v0.4.0
+    * Implemented completely new fluid dynamics, acceptable computational cost near oceans. 
+    * Support for pressure levels of fluids. 
+    * Steam is generated when water interacts with lava
+    * 

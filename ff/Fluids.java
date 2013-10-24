@@ -354,6 +354,7 @@ public class Fluids {
    */
   public static int liquidInteract(World w, int x, int y, int z, int incomingBlockID, int incommingAmount, int targetBlockID, int targetAmount) {
     int lavaAmount = 0, waterAmount = 0;
+    int reactionStepSize = BlockFluid.maximumContent/8;
     if (Block.blocksList[incomingBlockID].blockMaterial == Material.lava) {
       lavaAmount = incommingAmount;
       waterAmount = targetAmount;
@@ -361,9 +362,10 @@ public class Fluids {
       lavaAmount = targetAmount;
       waterAmount = incommingAmount;
     }
-    int nReactions = Math.min(lavaAmount, waterAmount); // / 2);
-    lavaAmount -= nReactions;
-    waterAmount -= nReactions; // Math.max(1, nReactions * 2);
+    int nReactions = Math.min(lavaAmount, waterAmount) / reactionStepSize + 1;
+    lavaAmount = Math.max(0,  lavaAmount - nReactions * reactionStepSize);
+    waterAmount = Math.max(0,  waterAmount - nReactions * reactionStepSize); 
+    int steamAmount = nReactions;
     boolean generated = false;
 
     for (int i = 0; i < nReactions; i++) {
@@ -384,11 +386,27 @@ public class Fluids {
       w.spawnParticle("largesmoke", (double) x + Math.random(), (double) y + 1.2D, (double) z + Math.random(), 0.0D, 0.0D, 0.0D);
     }
 
+    for(int dist=1;dist<2&&steamAmount>0;dist++) {
+     for(int dir0=4;dir0<6+4&&steamAmount>0;dir0++) {
+       int dir=dir0%6;
+       int x1=x+Util.dirToDx(dir)*dist;
+       int y1=y+Util.dirToDy(dir)*dist;
+       int z1=z+Util.dirToDz(dir)*dist;
+       int id = w.getBlockId(x1, y1, z1);
+       if(id == 0 || id == Gases.steam.blockID) {
+         int amount = Gases.steam.getBlockContent(w, x1, y1, z1) + steamAmount; 
+         if(amount > 15) { steamAmount = amount - 15; amount=15; }
+         else steamAmount=0;
+         Gases.steam.setBlockContent(w, x1, y1, z1, amount);         
+       }
+     }
+    }
+    
     if (Block.blocksList[incomingBlockID].blockMaterial == Material.lava) {
-      if (!generated) w.setBlock(x, y, z, targetBlockID, 8 - waterAmount, 0x02);
+      if (!generated) flowingWater.setBlockContent(w, x, y, z, waterAmount); 
       return lavaAmount;
     } else {
-      if (!generated) w.setBlock(x, y, z, targetBlockID, 8 - lavaAmount, 0x02);
+      if (!generated) flowingLava.setBlockContent(w, x, y, z, lavaAmount); 
       return waterAmount;
     }
   }

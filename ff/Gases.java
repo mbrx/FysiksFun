@@ -45,7 +45,8 @@ public class Gases {
     steam.setUnlocalizedName("steam");
     steam.setCreativeTab(CreativeTabs.tabBlock);
     steam.setHardness(0.0F);
-    steam.setIconName("FysiksFun:steam");
+    // Was FysiksFun:steam
+    steam.setIconName("fysiksfun:steam");
     steam.setLighterThanAir(true);
     steam.setDamageToEntity(1, 20);
     

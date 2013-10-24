@@ -17,6 +17,7 @@ public class Rain {
       int dz = (FysiksFun.rand.nextInt(187) + 11 * Counters.tick) % 16;
       BiomeGenBase biome = w.getBiomeGenForCoords(x + dx, z + dz);
       int rainChance = (int) (250.0 / (0.001 + FysiksFun.settings.waterRainRate * biome.rainfall * (FysiksFun.settings.alwaysRaining ? 1.0 : w.rainingStrength)));
+      if(rainChance<1) rainChance=1;
       
       if (!FysiksFun.settings.rainInOceans && (biome == BiomeGenBase.ocean || biome == BiomeGenBase.frozenOcean)) {
         // do nothing
@@ -24,7 +25,7 @@ public class Rain {
         for (int y2 = 256; y2 > 1; y2--) {
           int id = c.getBlockID(dx, y2, dz);
           if (id != 0) {
-            // The follow plants will drink the rain water
+            // The following plants will drink the rain water
             /*if (id == Block.crops.blockID) break;
             if (id == Block.mushroomRed.blockID) break;
             if (id == Block.mushroomBrown.blockID) break;

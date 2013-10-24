@@ -1,3 +1,41 @@
+Typhoons / Volcanoes
+Pyroplasm - lava turns into a gas, that can turn back into lava when it's at the top of the world
+
+
+Implement "Wind" to move all gases
+ - Push gases up when the terrain moves up (assuming they are above the highest terrain).  
+ - Higher ground pushes winds "up" faster
+ - Whenever gas reaches altitude 128, no more moving up. Chance each tick to become rain.
+
+Client side: different drawing style of lone pieces of water in the sky "rain drop"
+
+Liquid Reaction of Lava+Water: make steam.
+Lava (or other heat sources) that boils water have a chance to turn into cobblestone
+Fires that boil water have a chance to consume the block they are burning on
+
+----------------------- 
+
+Test that features still work
+
+- Verify that trees fall correctly
+- Test that fluids work with buildcraft 
+
+Neccesarry implementations
+
+- Script for moving textures into the deployed folder
+- A clean MC+Forge to test the deployed zip against
+
+Good to make implementation
+
+- Redo the initialization scripts (pre-init/post-init) since they are depracated
+
+Missing features / "removed" for now
+- Erosion
+- Items that are overflowed by liquids
+
+-----------------------
+
+New Zombie AI: Tries to eat dropped brains/meat as a distraction.
 
 Let the player / entities occupy space that pushes away water (and gases?)
 

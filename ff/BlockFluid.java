@@ -171,16 +171,18 @@ public class BlockFluid extends BlockFlowing {
     IChunkProvider chunkProvider = w.getChunkProvider();
     return getBlockContent(chunkProvider.provideChunk(x >> 4, z >> 4), ChunkTempData.getChunk(w, x, y, z), x, y, z);
   }
-  public int getBlockContent(World w, int x, int y, int z,int oldMetaData) {
+
+  public int getBlockContent(World w, int x, int y, int z, int oldMetaData) {
     IChunkProvider chunkProvider = w.getChunkProvider();
     Chunk c = chunkProvider.provideChunk(x >> 4, z >> 4);
     ChunkTempData tempData = ChunkTempData.getChunk(w, x, y, z);
     int temp = tempData.getTempData(x, y, z);
     /*if(temp == 0)
       return (8 - oldMetaData) * (maximumContent / 8);
-    else*/ // DEBUG
-       return temp;
+    else*/// DEBUG
+    return temp;
   }
+
   public int getBlockContent(World w, Chunk c, int x, int y, int z) {
     return getBlockContent(c, ChunkTempData.getChunk(w, x, y, z), x, y, z);
   }
@@ -208,7 +210,8 @@ public class BlockFluid extends BlockFlowing {
    * neutral
    */
 
-  public void setBlockContent(World w, Chunk c, ChunkTempData tempData, int x, int y, int z, int content, String explanation,Set<CoordinateWXYZ> delayedBlockMarkSet) {
+  public void setBlockContent(World w, Chunk c, ChunkTempData tempData, int x, int y, int z, int content, String explanation,
+      Set<CoordinateWXYZ> delayedBlockMarkSet) {
     int oldId = c.getBlockID(x & 15, y, z & 15);
     int newId = (content == 0 ? 0 : (content < maximumContent ? movingID : stillID));
     int oldContent = (isSameLiquid(oldId) ? getBlockContent(c, tempData, x, y, z) : 0);
@@ -233,10 +236,8 @@ public class BlockFluid extends BlockFlowing {
     tempData.setTempData(x, y, z, content);
 
     if (oldId != newId || oldMetaData != newMetaData) {
-      if(delayedBlockMarkSet == null)
-        ChunkMarkUpdater.scheduleBlockMark(w, x, y, z);
-      else
-        delayedBlockMarkSet.add(new CoordinateWXYZ(w,x,y,z));
+      if (delayedBlockMarkSet == null) ChunkMarkUpdater.scheduleBlockMark(w, x, y, z);
+      else delayedBlockMarkSet.add(new CoordinateWXYZ(w, x, y, z));
     }
   }
 
@@ -254,10 +255,11 @@ public class BlockFluid extends BlockFlowing {
   }
 
   /** Called only when we KNOW that the original chunk is loaded */
-  public void updateTickSafe(World world, Chunk chunk0, ChunkTempData tempData0, int x0, int y0, int z0, Random r, int sweep,Set<CoordinateWXYZ> delayedBlockMarkSet) {
+  public void updateTickSafe(World world, Chunk chunk0, ChunkTempData tempData0, int x0, int y0, int z0, Random r, int sweep,
+      Set<CoordinateWXYZ> delayedBlockMarkSet) {
     Counters.fluidUpdates++;
-    if(sweep % liquidUpdateRate != 0) return;
-    
+    if (sweep % liquidUpdateRate != 0) return;
+
     int oldIndent = Util.loggingIndentation;
 
     int chunkX0 = x0 >> 4, chunkZ0 = z0 >> 4;
@@ -279,37 +281,39 @@ public class BlockFluid extends BlockFlowing {
       // abc12 : is a node two steps away from abc1
       // Invariant: abc10 is the same as abc1
 
-      
       int content0 = getBlockContent(chunk0, tempData0, x0, y0, z0);
       int oldContent0 = content0;
       if (logExcessively) FysiksFun.logger.log(Level.INFO, Util.logHeader() + "Updating " + Util.xyzString(x0, y0, z0) + " content0: " + content0);
       Util.loggingIndentation++;
 
-      
-      final int directions[][] = {{-1,-1},{0,-1},{1,-1},{-1,0},{1,0},{-1,+1},{0,+1},{1,+1}};
+      final int directions[][] = { { -1, -1 }, { 0, -1 }, { 1, -1 }, { -1, 0 }, { 1, 0 }, { -1, +1 }, { 0, +1 }, { 1, +1 } };
 
       /* Recompute our own pressure before moving blocks */
       if (content0 >= maximumContent) {
         content0 = maximumContent;
         for (int dir0 = 0; dir0 < 10; dir0++) {
-          int dX,dY,dZ;
-          boolean isDiagonal=false;
-          if(dir0 == 0) {
-            dX=0; dY=-1; dZ=0;
-          } else if(dir0 == 9) {
-            dX=0; dY=+1; dZ=0;
+          int dX, dY, dZ;
+          boolean isDiagonal = false;
+          if (dir0 == 0) {
+            dX = 0;
+            dY = -1;
+            dZ = 0;
+          } else if (dir0 == 9) {
+            dX = 0;
+            dY = +1;
+            dZ = 0;
           } else {
-            int dir=dir0-1;
-            dX=directions[dir][0];
-            dY=0;
-            dZ=directions[dir][1];
-            isDiagonal=!(dX==0 || dZ==0);
-          }          
+            int dir = dir0 - 1;
+            dX = directions[dir][0];
+            dY = 0;
+            dZ = directions[dir][1];
+            isDiagonal = !(dX == 0 || dZ == 0);
+          }
           int x1 = x0 + dX;
           int y1 = y0 + dY;
           int z1 = z0 + dZ;
-          if(y1<0 || y1>=256) continue;
-          
+          if (y1 < 0 || y1 >= 256) continue;
+
           Chunk chunk1;
           ChunkTempData tempData1;
           if ((x1 >> 4) == chunkX0 && (z1 >> 4) == chunkZ0) chunk1 = chunk0;
@@ -326,7 +330,7 @@ public class BlockFluid extends BlockFlowing {
           int content1 = getBlockContent(chunk1, tempData1, x1, y1, z1);
           if (content1 < maximumContent) continue;
           int pressure1 = content1 + dY * pressurePerY - pressureLossPerStep;
-          if(isDiagonal) pressure1 -= pressureLossPerStep/2;
+          if (isDiagonal) pressure1 -= pressureLossPerStep / 2;
           if (pressure1 > content0) content0 = pressure1;
         }
       }
@@ -337,38 +341,43 @@ public class BlockFluid extends BlockFlowing {
        * pressure difference to move fluids. If so, perform the moves and
        * schedule new ticks.
        */
-      
-      int dirOffset = FysiksFun.rand.nextInt(8);      
+
+      int dirOffset = FysiksFun.rand.nextInt(8);
       for (int dir0 = 0; dir0 < 10; dir0++) {
         // Compute a direction of interest such that we
         // (a) First consider the down direction
-        // (b) Next consider the horizontal directions (including diagonals) in a SEMI-random order
+        // (b) Next consider the horizontal directions (including diagonals) in
+        // a SEMI-random order
         // (c) Last consider the "up" direction
-        //int dir1 = dir0 % 6;
-        //int dir = dir1 < 4 ? (dir1 ^ dirOffset) & 3 : dir1;
-        int dX,dY,dZ;
-        boolean isDiagonal=false;
-        if(dir0 == 0) {
-          dX=0; dY=-1; dZ=0;
-        } else if(dir0 == 9) {
-          dX=0; dY=+1; dZ=0;
+        // int dir1 = dir0 % 6;
+        // int dir = dir1 < 4 ? (dir1 ^ dirOffset) & 3 : dir1;
+        int dX, dY, dZ;
+        boolean isDiagonal = false;
+        if (dir0 == 0) {
+          dX = 0;
+          dY = -1;
+          dZ = 0;
+        } else if (dir0 == 9) {
+          dX = 0;
+          dY = +1;
+          dZ = 0;
         } else {
-          int dir=(dir0-1+dirOffset)%8;
-          dX=directions[dir][0];
-          dY=0;
-          dZ=directions[dir][1];
-          isDiagonal=!(dX==0 || dZ==0);
+          int dir = (dir0 - 1 + dirOffset) % 8;
+          dX = directions[dir][0];
+          dY = 0;
+          dZ = directions[dir][1];
+          isDiagonal = !(dX == 0 || dZ == 0);
         }
-        
+
         int x1 = x0 + dX;
         int y1 = y0 + dY;
         int z1 = z0 + dZ;
-        if(y1<0) {
+        if (y1 < 0) {
           // Flow out of the world
-          content0=0; 
-          continue; 
+          content0 = 0;
+          continue;
         } else if (y1 >= 256) continue;
-        
+
         Chunk chunk1;
         if ((x1 >> 4) == chunkX0 && (z1 >> 4) == chunkZ0) chunk1 = chunk0;
         else if (chunkProvider.chunkExists(x1 >> 4, z1 >> 4)) chunk1 = chunkProvider.provideChunk(x1 >> 4, z1 >> 4);
@@ -376,7 +385,7 @@ public class BlockFluid extends BlockFlowing {
 
         int id1 = chunk1.getBlockID(x1 & 15, y1, z1 & 15);
         int content1 = 0;
-        if (id1 != 0 && !Fluids.isLiquid[id1]) continue;                       
+        if (id1 != 0 && !Fluids.isLiquid[id1]) continue;
 
         // Get new tempData and get the content of this neighbour
         ChunkTempData tempData1;
@@ -387,17 +396,17 @@ public class BlockFluid extends BlockFlowing {
         }
 
         // Check for special interactions
-        if(id1 != 0 && !isSameLiquid(id1)) {
-          // Allow fluid interactions, but only sideways and down; or up when pressurized 
-          if(Fluids.liquidCanInteract(movingID,id1) && (dY<1 || content0>maximumContent)) {
-            content0 = Fluids.liquidInteract(world,x1,y1,z1,movingID,content0, id1, content1);
+        if (id1 != 0 && !isSameLiquid(id1)) {
+          // Allow fluid interactions, but only sideways and down; or up when
+          // pressurized
+          if (Fluids.liquidCanInteract(movingID, id1) && (dY < 1 || content0 > maximumContent)) {
+            content0 = Fluids.liquidInteract(world, x1, y1, z1, movingID, content0, id1, content1);
           }
           continue;
-        } 
-        
+        }
+
         if (logExcessively)
-          FysiksFun.logger.log(Level.INFO, Util.logHeader() + "considering " + Util.xyzString(x1, y1, z1) + " id1: " + id1 + " content1: "
-              + content1);
+          FysiksFun.logger.log(Level.INFO, Util.logHeader() + "considering " + Util.xyzString(x1, y1, z1) + " id1: " + id1 + " content1: " + content1);
 
         int prevContent0 = content0;
         if (dY < 0) {
@@ -416,8 +425,8 @@ public class BlockFluid extends BlockFlowing {
         } else if (dY == 0 && content0 > content1) {
           if (content1 < maximumContent) {
             int toMove = Math.min((content0 - content1) / 2, maximumContent - content1);
-            if(isDiagonal) toMove -= toMove/3;
-            if (content1 + toMove >= minimumLiquidLevel) {            
+            if (isDiagonal) toMove -= toMove / 3;
+            if (content1 + toMove >= minimumLiquidLevel) {
               content0 -= toMove;
               content1 += toMove;
               setBlockContent(world, chunk1, tempData1, x1, y1, z1, content1, "[Flowing sideways]", delayedBlockMarkSet);
@@ -436,7 +445,7 @@ public class BlockFluid extends BlockFlowing {
                 if (content1b < maximumContent - content0) {
                   content1b += content0;
                   content0 = 0;
-                  setBlockContent(world, chunk1, tempData1, x1, y1-1, z1, content1b, "[Flowing diagonally down]", delayedBlockMarkSet);
+                  setBlockContent(world, chunk1, tempData1, x1, y1 - 1, z1, content1b, "[Flowing diagonally down]", delayedBlockMarkSet);
                 }
               }
             }
@@ -454,9 +463,9 @@ public class BlockFluid extends BlockFlowing {
         int currPressure = maximumContent;
         Chunk chunkN = chunk0;
         ChunkTempData tempDataN = tempData0;
-        Chunk bestChunkM=null;
-        ChunkTempData bestTempDataM=null;
-        
+        Chunk bestChunkM = null;
+        ChunkTempData bestTempDataM = null;
+
         for (steps = 0; steps < 16; steps++) {
           int bestDir = -1;
           int bestPressure = 0;
@@ -483,16 +492,16 @@ public class BlockFluid extends BlockFlowing {
             if (xM >> 4 == xN >> 4 && zM >> 4 == zN >> 4) tempDataM = tempDataN;
             else tempDataM = ChunkTempData.getChunk(world, xM, yM, zM);
             int contentM = getBlockContent(chunkM, tempDataM, xM, yM, zM);
-            int modifiedPressure = contentM + pressurePerY * dY - 2*pressureLossPerStep;
+            int modifiedPressure = contentM + pressurePerY * dY - 2 * pressureLossPerStep;
             if (modifiedPressure > bestPressure) {
               bestDir = dir;
               bestPressure = modifiedPressure;
-              bestChunkM=chunkM;
-              bestTempDataM=tempDataM;
+              bestChunkM = chunkM;
+              bestTempDataM = tempDataM;
             }
           }
-          //WAS if (bestPressure < currPressure) break;
-          if (bestPressure < currPressure) break;         
+          // WAS if (bestPressure < currPressure) break;
+          if (bestPressure < currPressure) break;
           xN += Util.dirToDx(bestDir);
           yN += Util.dirToDy(bestDir);
           zN += Util.dirToDz(bestDir);
@@ -505,12 +514,12 @@ public class BlockFluid extends BlockFlowing {
         int toMove = Math.min(contentN, maximumContent - content0);
         contentN -= toMove;
         content0 += toMove;
-        
+
         // DEBUG
-        if(chunkProvider.provideChunk(xN >> 4, zN >> 4) != chunkN) {
-          System.out.println("Error, incorrect chunkN/chunkM (pressurized stealing)"); 
+        if (chunkProvider.provideChunk(xN >> 4, zN >> 4) != chunkN) {
+          System.out.println("Error, incorrect chunkN/chunkM (pressurized stealing)");
         }
-        
+
         setBlockContent(world, chunkN, tempDataN, xN, yN, zN, contentN, "[Propagated pressurized liquid]", delayedBlockMarkSet);
         // if (contentN > 0) FysiksFun.scheduleBlockTick(world, this, xN, yN,
         // zN, liquidUpdateRate, "[Propagated pressurized liquid]");
@@ -922,28 +931,29 @@ public class BlockFluid extends BlockFlowing {
   }
 
   public void onBlockAdded(World w, int x, int y, int z) {
-    // Override superclass so that checkOnHarden is not called when the block is added. We want to do our own liquid update calculations.
-    //ChunkTempData tempData = ChunkTempData.getChunk(w, x, y, z);
-    //tempData.liquidHistogram(y,+1);
+    // Override superclass so that checkOnHarden is not called when the block is
+    // added. We want to do our own liquid update calculations.
+    // ChunkTempData tempData = ChunkTempData.getChunk(w, x, y, z);
+    // tempData.liquidHistogram(y,+1);
   }
 
   /** Called when this block is OVERWRITTEN by another world.setBlock */
   @Override
   public void breakBlock(World w, int x, int y, int z, int oldId, int oldMetaData) {
- 
-    //ChunkTempData tempData = ChunkTempData.getChunk(w, x, y, z);
-    //tempData.liquidHistogram(y,+1);
-    
+
+    // ChunkTempData tempData = ChunkTempData.getChunk(w, x, y, z);
+    // tempData.liquidHistogram(y,+1);
+
     int x2, y2, z2;
 
     if (preventSetBlockLiquidFlowover) {
-      //ChunkTempData.setTempData(w, x, y, z, 0);
-      return;      
+      // ChunkTempData.setTempData(w, x, y, z, 0);
+      return;
     }
-    
-    try {     
-      preventSetBlockLiquidFlowover=true;
-      
+
+    try {
+      preventSetBlockLiquidFlowover = true;
+
       IChunkProvider chunkProvider = w.getChunkProvider();
       if (!chunkProvider.chunkExists(x >> 4, z >> 4)) return;
       Chunk chunk = chunkProvider.provideChunk(x >> 4, z >> 4);
@@ -953,173 +963,40 @@ public class BlockFluid extends BlockFlowing {
       // Overwriting AIR into a block means that the block should be deleted...
 
       int thisContent = getBlockContent(w, x, y, z, oldMetaData);
-      if(thisContent > maximumContent) thisContent = maximumContent;      
-           
+      if (thisContent > maximumContent) thisContent = maximumContent;
+
       for (int dy = 1; dy < 50 && y + dy < 255 && thisContent > 0; dy++) {
         int id = w.getBlockId(x, y + dy, z);
         if (id == stillID) continue;
-        else if (id == 0 || id == movingID) {                   
-          int newContent = Math.min(maximumContent, getBlockContent(w, x, y, z));          
-          if (id == 0) { newContent = thisContent; thisContent=0; }
-          else {
+        else if (id == 0 || id == movingID) {
+          int newContent = Math.min(maximumContent, getBlockContent(w, x, y, z));
+          if (id == 0) {
+            newContent = thisContent;
+            thisContent = 0;
+          } else {
             newContent += thisContent;
             if (newContent > maximumContent) {
-              thisContent = newContent - maximumContent;              
+              thisContent = newContent - maximumContent;
               newContent = maximumContent;
             } else thisContent = 0;
           }
 
           ChunkTempData tempData = ChunkTempData.getChunk(w, x, y, z);
-          setBlockContent(w, chunk, tempData, x, y + dy, z, newContent, "[From displaced block]", null);          
-          
+          setBlockContent(w, chunk, tempData, x, y + dy, z, newContent, "[From displaced block]", null);
+
           if (thisContent == 0) break;
         } else break;
-      }      
-    } finally {
-      preventSetBlockLiquidFlowover=false;
-      
-      // Remove any temp data. Note that other blocks should not add new temp
-      // data until _after_ they have written their ID into the cell. */
-     // ChunkTempData.setTempData(w, x, y, z, 0);
-    }
-  }
-
-  public void doExpensiveChecks(World w, Chunk origChunk, int x, int y, int z) {
-    // Make a random walk to see if we should deposit one of our water points to
-    // someone else
-    int chunkX = x >> 4, chunkZ = z >> 4;
-    IChunkProvider chunkProvider = w.getChunkProvider();
-    // Chunk origChunk = chunkProvider.provideChunk(chunkX, chunkZ);
-
-    int origId = origChunk.getBlockID(x & 15, y, z & 15);
-    // int origId = w.getBlockId(x, y, z);
-    if (origId != stillID && origId != movingID) return;
-
-    /*
-     * 
-     * for (int range = 1; range < maxRange; range++) for (int side = 0; side <
-     * 3; side++) { int x3 = range * dx + (side==0?0:(side==1?-1:1))*dz + x; int
-     * z3 = range * dz + (side==0?0:(side==1?-1:1))*dx + z;
-     */
-
-    int dir = w.rand.nextInt(4);
-    int x2 = x, z2 = z;
-
-    Chunk chunkCache = origChunk;
-    int chunkCacheX = x2 >> 4, chunkCacheZ = z2 >> 4;
-
-    try {
-      preventSetBlockLiquidFlowover = true;
-
-      switch (dir % 4) {
-      case 0:
-        x2++;
-        break;
-      case 1:
-        x2--;
-        break;
-      case 2:
-        z2++;
-        break;
-      case 3:
-        z2--;
-        break;
-      }
-      if (x2 >> 4 != chunkCacheX || z2 >> 4 != chunkCacheZ) {
-        if (!chunkProvider.chunkExists(x2 >> 4, z2 >> 4)) return;
-        chunkCache = chunkProvider.provideChunk(x2 >> 4, z2 >> 4);
-        chunkCacheX = x2 >> 4;
-        chunkCacheZ = z2 >> 4;
-      }
-      /*
-       * if (!w.blockExists(x2, y, z2)) return;
-       */
-      int id = chunkCache.getBlockID(x2 & 15, y, z2 & 15);
-      // int id = w.getBlockId(x2, y, z2);
-      if (id != stillID && id != movingID && id != 0) return;
-      // int contentHere = getBlockContent(w, x, y, z);
-      int contentHere = 8 - origChunk.getBlockMetadata(x & 15, y, z & 15);
-      int contentNN;
-      if (id == 0) contentNN = 0;
-      else {
-        contentNN = 8 - chunkCache.getBlockMetadata(x2 & 15, y, z2 & 15);
-        // contentNN = getBlockContent(w, x2, y, z2);
-      }
-      if (contentNN > contentHere) return;
-      int toMove = 0;
-
-      int idNNBelow = chunkCache.getBlockID(x2 & 15, y - 1, z2 & 15);
-      // int idNNBelow = w.getBlockId(x2, y - 1, z2);
-      if (contentNN + 1 < contentHere || idNNBelow == 0 || idNNBelow == movingID) toMove = 1;
-      if (toMove == 0 && toMove == -1) {
-        /* Keep walking to see if we could support this liquid in another cell */
-        int x3 = x2, z3 = z2;
-        for (int i = 0; i < 4; i++) {
-          int dir2 = w.rand.nextInt(4);
-          int oldX3 = x3, oldZ3 = z3;
-          int idMM = 0, j;
-          for (j = 0; j < 4; j++) {
-            x3 = oldX3;
-            z3 = oldZ3;
-            switch ((dir2 + j) % 4) {
-            case 0:
-              x3++;
-              break;
-            case 1:
-              x3--;
-              break;
-            case 2:
-              z3++;
-              break;
-            case 3:
-              z3--;
-              break;
-            }
-            if (x3 >> 4 != chunkCacheX || z3 >> 4 != chunkCacheZ) {
-              if (!chunkProvider.chunkExists(x3 >> 4, z3 >> 4)) return;
-              chunkCache = chunkProvider.provideChunk(x3 >> 4, z3 >> 4);
-              chunkCacheX = x3 >> 4;
-              chunkCacheZ = z3 >> 4;
-            }
-            /*
-             * if (!w.blockExists(x3, y, z3)) return;
-             */
-            idMM = chunkCache.getBlockID(x3 & 15, y, z3 & 15);
-            // idMM = w.getBlockId(x3, y, z3);
-            if (idMM == stillID || idMM == movingID || idMM == 0) break;
-          }
-          if (j == 4) return;
-          if (idMM == 0 && chunkCache.getBlockID(x3 & 15, y - 1, z3 & 15) == 0) {
-            // if (idMM == 0 && w.getBlockId(x3, y - 1, z3) == 0) {
-            toMove = 1;
-            break;
-          }
-          if (idMM == stillID || idMM == movingID) {
-            int contentMM = 8 - chunkCache.getBlockMetadata(x3 & 15, y, z3 & 15);
-            // int contentMM = getBlockContent(w, x3, y, z3);
-            if (contentMM > contentHere) return;
-            int idMMBelow = w.getBlockId(x3, y - 1, z3);
-            if (contentMM + 1 < contentHere || idMMBelow == 0 || idMMBelow == movingID) {
-              toMove = 1;
-              break;
-            }
-          }
-        }
-      }
-      if (toMove != 0) {
-        contentHere = contentHere - toMove;
-        contentNN = contentNN + toMove;
-        FysiksFun.logger.log(Level.SEVERE, "We haven't finished rewriting doExpensiveChecks yet");
-        // setBlockContent(w, x2, y, z2, contentNN, "[Expensive checks 1]"); //
-        // id
-        // setBlockContent(w, x, y, z, contentHere, "[Expensive checks 2]"); //
-        // origId
       }
     } finally {
       preventSetBlockLiquidFlowover = false;
+
+      // Remove any temp data. Note that other blocks should not add new temp
+      // data until _after_ they have written their ID into the cell. */
+      // ChunkTempData.setTempData(w, x, y, z, 0);
     }
   }
 
+  
   @Override
   public int getRenderType() {
     if (superWrapper != null) return superWrapper.getRenderType();
@@ -1142,15 +1019,31 @@ public class BlockFluid extends BlockFlowing {
 
   @Override
   public void velocityToAddToEntity(World w, int x, int y, int z, Entity entity, Vec3 velocity) {
-    /*
-     * Vec3 vec = this.getFFFlowVector(w, x, y, z);
-     * 
-     * if (vec.lengthVector() > 0.0D && entity.isPushedByWater()) { double d1 =
-     * 0.005d; // 0.014D; entity.motionX += vec.xCoord * d1; entity.motionY +=
-     * vec.yCoord * d1; entity.motionZ += vec.zCoord * d1; velocity.xCoord +=
-     * vec.xCoord; velocity.yCoord += vec.yCoord; velocity.zCoord += vec.zCoord;
-     * }
-     */
+    Vec3 vec = this.getFFFlowVector(w, x, y, z);
+    Vec3 vec2;
+    // Let the direction of flow also be affected by streams of water one step below us
+    if (isSameLiquid(w.getBlockId(x, y - 1, z))) {
+      vec2 = this.getFFFlowVector(w, x, y - 1, z);
+      vec.xCoord += vec2.xCoord;
+      vec.yCoord += vec2.yCoord;
+    }
+    // Let the direction of flow also be affected by streams of water above us
+    for (int dy = 1; dy < 3; dy++) {
+      if (!isSameLiquid(w.getBlockId(x, y + dy, z))) break;
+      vec2 = this.getFFFlowVector(w, x, y + dy, z);
+      vec.xCoord += vec2.xCoord;
+      vec.yCoord += vec2.yCoord;
+    }
+
+    if (vec.lengthVector() > 0.0D && entity.isPushedByWater()) {
+      double d1 = 0.005d; // 0.014D;
+      entity.motionX += vec.xCoord * d1;
+      entity.motionY += vec.yCoord * d1;
+      entity.motionZ += vec.zCoord * d1;
+      velocity.xCoord += vec.xCoord;
+      velocity.yCoord += vec.yCoord;
+      velocity.zCoord += vec.zCoord;
+    }
   }
 
   private Vec3 getFFFlowVector(World w, int x, int y, int z) {
@@ -1165,7 +1058,7 @@ public class BlockFluid extends BlockFlowing {
     if (idBelow == 0 || idBelow == movingID) {
       int belowContent = (idBelow == 0 ? 0 : getBlockContent(w, x, y - 1, z));
       if (contentHere < belowContent) myvec.yCoord = 0.0;
-      else myvec.yCoord = -10.0 * (contentHere - belowContent) / 8.0;
+      else myvec.yCoord = -5.0 * (contentHere - belowContent) / (1.d * BlockFluid.maximumContent);
 
       myvec.xCoord = 0.0;
       myvec.zCoord = 0.0;
@@ -1184,32 +1077,31 @@ public class BlockFluid extends BlockFlowing {
       if (id2 == 0 || id2 == stillID || id2 == movingID) {
         int content2 = id2 == 0 ? 0 : getBlockContent(w, x + dx, y, z + dz);
         if (Math.abs(contentHere - content2) > 1) {
-          myvec.xCoord += ((double) dx * (contentHere - content2)) * contentHere / 16.d;
-          myvec.zCoord += ((double) dz * (contentHere - content2)) * contentHere / 16.d;
+          int delta = contentHere - content2;
+          if (Math.abs(delta) < BlockFluid.maximumContent / 8) delta = 0;
+          myvec.xCoord += 0.5d * ((double) dx * delta) * contentHere / (1.d * BlockFluid.maximumContent * BlockFluid.maximumContent);
+          myvec.zCoord += 0.5d * ((double) dz * delta) * contentHere / (1.d * BlockFluid.maximumContent * BlockFluid.maximumContent);
         }
       }
     }
     return myvec;
   }
 
-  /* Removes a part of the liquid through evaporation */
+  /* Removes a part of the liquid through evaporation and adds gas instead */
   public void evaporate(World w, Chunk c, int x, int y, int z, int amount) {
-    System.out.println("Evaporate should not be called, yet");
     int content = getBlockContent(w, x, y, z);
-    content = Math.max(0, content - amount * (maximumContent / 8));
+    content = Math.max(0, content - amount);
     setBlockContent(w, x, y, z, content);
     if (this == Fluids.stillWater || this == Fluids.flowingWater) {
       /* Attempt to create steam from this */
-      Gases.steam.produceSteam(w, c, x, y, z, amount);
+      Gases.steam.produceSteam(w, c, x, y, z, amount / (maximumContent/16));
     }
   }
 
   /* Removes a part of the liquid through consumption */
   public void consume(World w, Chunk chunk, int x, int y, int z, int amount) {
-    System.out.println("Consume should not be called, yet");
-    
     int content = getBlockContent(w, x, y, z);
-    content = Math.max(0, content - amount * (maximumContent / 8));
+    content = Math.max(0, content - amount);
     setBlockContent(w, x, y, z, content);
   }
 

@@ -8,7 +8,6 @@ public class Settings {
   
   public double  waterEvaporationRate;
   public double  waterRainRate;
-  public int     expensiveTickRate;
   public int     erosionRate;
   public int     erosionThreshold;
   public boolean rainInOceans;
@@ -66,8 +65,6 @@ public class Settings {
     liquidMetal = config.get(categoryFluids, "flowing-metal", "false",
         "NOT WORKING! Let metals from the mod Tinkers construct (if found) be treated as a flowing liquid", Property.Type.BOOLEAN).getBoolean(false);    
     liquidMetal = false;   
-    expensiveTickRate = config.get(categoryFluids, "expensive-tickrate", "3",
-        "Rate of random (cpu expensive) ticks used to equalise liquids over larger areas", Property.Type.INTEGER).getInt(3);
     netherrackCanMelt = config.get(categoryFluids, "netherrack-can-melt", "true", "If true, burning netherrack slowly turn into lava", Property.Type.BOOLEAN)
         .getBoolean(true);
     repairOceans = config.get(categoryFluids, "repair-oceans", "true", "If true attempt to repair ocean floors to not connect underground caves", Property.Type.BOOLEAN)

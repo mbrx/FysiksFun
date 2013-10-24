@@ -129,12 +129,12 @@ class ChunkMarkUpdater {
       Iterator<ChunkMarkUpdater> iterator = markChunkQueue.iterator();
       ChunkMarkUpdater cml;
       final int markRadiusSq_coarce = 1 * 1; // Measured in chunk coordinates
-      final double markRadiusSq_fine = 8.0d * 8.0d; // Measured in block
+      final double markRadiusSq_fine = 12.0d * 12.0d; // Measured in block
                                                     // coordinates
 
       tmpChunkBlockMarkList.clear();
       while (iterator.hasNext()) {
-        // if (ticksLeft < 1024) break;
+        if (ticksLeft < FysiksFun.settings.maxUpdatesPerTick/2) break;
 
         cml = iterator.next();
         boolean doSend = false;
@@ -148,6 +148,7 @@ class ChunkMarkUpdater {
               double dx2 = o.posX - coord.getX();
               double dy2 = o.posY - coord.getY();
               double dz2 = o.posZ - coord.getZ();
+              if(dy2 > 0) dy2 /= 4; // Makes clouds be updated more often
               if (dx2 * dx2 + dy2 * dy2 + dz2 * dz2 < markRadiusSq_fine) {
                 doSend = true;
                 break;
