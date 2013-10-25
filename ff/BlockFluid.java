@@ -385,8 +385,24 @@ public class BlockFluid extends BlockFlowing {
 
         int id1 = chunk1.getBlockID(x1 & 15, y1, z1 & 15);
         int content1 = 0;
-        if (id1 != 0 && !Fluids.isLiquid[id1]) continue;
+        
+        /* Check if this is a block we can flow over and if we have enough liquid left. */               
+        if (id1 != 0 && !Fluids.isLiquid[id1]) {
+          Material m = Block.blocksList[id1].blockMaterial;
+          if(m.blocksMovement()) continue;
+          else if(content0 > minimumLiquidLevel) {
+            /* Flow over this block, dropping the contents */
+            int metaData1 = chunk1.getBlockMetadata(x1&15, y1, z1&15);            
+            Block.blocksList[id1].dropBlockAsItem(world, x1, y1, z1, metaData1, 0);
+            chunk1.setBlockIDWithMetadata(x1&15, y1, z1&15, 0, 0);
+            id1=0;
+            content1=0;
+          }  else
+            continue;
+        }
 
+        
+        
         // Get new tempData and get the content of this neighbour
         ChunkTempData tempData1;
         if ((x1 >> 4) == (x0 >> 4) && (z1 >> 4) == (z0 >> 4)) tempData1 = tempData0;
@@ -570,14 +586,6 @@ public class BlockFluid extends BlockFlowing {
     else return false;
   }
 
-  /*
-   * Check if neighbour is a liquid, and we have a possible interaction with him
-   */
-  /*
-   * if (FysiksFun.liquidsCanInteract(this.blockID, blockIdNN)) {
-   * newLiquidContent = FysiksFun.liquidInteract(w, x2, y, z2, this.blockID,
-   * newLiquidContent, blockIdNN, getBlockContent(chunk2, x2, y, z2)); }
-   */
 
   /* Full blocks of water with nowhere else to go, MAY leak through dirt */
   // TODO - increase chance or effect exponentially depending on pressure?
