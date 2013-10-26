@@ -157,7 +157,6 @@ public class Evaporation {
           int dz2 = Util.dirToDz(dir);
           int id2 = w.getBlockId(x1 + dx2, y1 + dy2, z1 + dz2);
           if (id2 == Block.dirt.blockID || id2 == Block.gravel.blockID || id2 == Block.cobblestone.blockID) {
-            System.out.println("Creating water at: "+x1+" "+y1+" "+z1);
             Fluids.flowingWater.setBlockContent(w, x1, y1, z1, evaporationStepsize);
             Counters.humidification++;
             break;

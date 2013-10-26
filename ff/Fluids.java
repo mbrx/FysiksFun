@@ -240,7 +240,8 @@ public class Fluids {
     }
 
     boolean useMultithreading = false;
-
+    boolean doRandomWalks = (FysiksFun.rand.nextInt(20) == 0);
+    
     if (useMultithreading) {
       /* Multi threaded implementation of fluid updates */
 
@@ -319,6 +320,7 @@ public class Fluids {
               if (isLiquid[id]) {
                 BlockFluid b = (BlockFluid) Block.blocksList[id];
                 b.updateTickSafe(w, c, tempData0, x + dx, y, z + dz, FysiksFun.rand, wstate.sweepCounter, null);
+                if(doRandomWalks) b.updateRandomWalk(w, c, tempData0, x+dx,y,z+dz,FysiksFun.rand);
                 cnt++;
               }
             }

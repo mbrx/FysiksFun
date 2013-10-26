@@ -76,8 +76,7 @@ public class Plants {
                 FysiksFun.setBlockWithMetadataAndPriority(w, x + dx, y, z + dz, 0, 0, 0);
                 System.out.println("Crop died cause of lack of water: "+x+" "+z);
               }               
-            } else
-              System.out.println("Crop is out of water: "+x+" "+z);
+            }
           } else {
             /* Let them spread naturally */
             if (FysiksFun.rand.nextInt(spreadFailures) == 0) {

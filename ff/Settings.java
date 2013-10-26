@@ -19,7 +19,6 @@ public class Settings {
   public boolean infiniteOceans;
   public boolean flowingLiquidOil;
   public boolean flowingHydrochloricAcid;
-  public int	   waterFallSpeed=5;
   
   public int     treeThirst;
   public int     cropsThirst;
@@ -71,8 +70,6 @@ public class Settings {
         .getBoolean(true);
     infiniteOceans = config.get(categoryFluids, "infinite-oceans", "true", "If true, oceans contain infinite water sources after a certain depth", Property.Type.BOOLEAN)
         .getBoolean(true);
-    waterFallSpeed = config.get(categoryFluids, "water-fall-speed", "3",
-        "Number of blocks a single water block can fall in one update. Default 3.", Property.Type.INTEGER).getInt(3);
     
     alwaysRaining = config.get(categoryFluids, "always-raining", "false",
         "Íf there is continous raining (regardless of actual world rain animation)", Property.Type.BOOLEAN).getBoolean(false);

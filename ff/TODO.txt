@@ -1,3 +1,6 @@
+
+-- DEBUG: check that it works: Small liquid movements can go through plants
+
 Typhoons / Volcanoes
 Pyroplasm - lava turns into a gas, that can turn back into lava when it's at the top of the world
 
