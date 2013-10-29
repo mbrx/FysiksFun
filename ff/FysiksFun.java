@@ -205,7 +205,7 @@ public class FysiksFun {
   public static void tickServer() {
     /* Update world tick and print statistics */
     Counters.tick++;
-    if (Counters.tick % 300 == 0 && false)  {
+    if (Counters.tick % 300 == 0)  {
       Counters.printStatistics();
     }
 
@@ -257,7 +257,8 @@ public class FysiksFun {
 
     AnimalAIRewriter.rewriteAnimalAIs(w);
     Gases.doWorldTick(w);
-
+    Volcanoes.doWorldTick(w);
+    
     if (!w.isRemote) {
       List allEntities = w.loadedEntityList;
       for (Object o : allEntities) {
@@ -285,11 +286,12 @@ public class FysiksFun {
       int x = xz.getCenterXPos() & 0xfffffff0;
       int z = xz.getCenterZPosition() & 0xfffffff0;
 
-      // Gases.doChunkTick(w, x, z);
+      Gases.doChunkTick(w, x, z);
       Rain.doPrecipation(w, x, z);
       Evaporation.doEvaporation(w, x, z);
       Trees.doTrees(w, x, z);
       Plants.doPlants(w, x, z);
+      
       if (w.provider.dimensionId == -1) NetherFun.doNetherFun(w, x, z);
 
     }

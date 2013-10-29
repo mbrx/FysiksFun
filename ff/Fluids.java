@@ -75,10 +75,10 @@ public class Fluids {
     Block.blocksList[Block.lavaStill.blockID] = null;
 
     // Register new blocks
-    flowingLava = new BlockFluid(Block.lavaMoving.blockID, Material.lava, Block.lavaStill.blockID, Block.lavaMoving.blockID, "lava");
-    stillLava = new BlockFluid(Block.lavaStill.blockID, Material.lava, Block.lavaStill.blockID, Block.lavaMoving.blockID, "lava");
-    flowingLava.setLiquidUpdateRate(2);
-    stillLava.setLiquidUpdateRate(2);
+    flowingLava = new BlockLava(Block.lavaMoving.blockID, Material.lava, Block.lavaStill.blockID, Block.lavaMoving.blockID, "lava");    
+    stillLava = new BlockLava(Block.lavaStill.blockID, Material.lava, Block.lavaStill.blockID, Block.lavaMoving.blockID, "lava");    
+    flowingLava.setLiquidUpdateRate(5);
+    stillLava.setLiquidUpdateRate(5);
     flowingLava.setTickRandomly(false);
     stillLava.setTickRandomly(false);
     flowingLava.canCauseErosion = true;
@@ -170,7 +170,7 @@ public class Fluids {
     // TODO - change the iteration order, from bottom to top!
     switch (wstate.sweepSteps % 5) {
     case 0:
-      mi = 1;
+      mi = 0;
       ma = 48;
       break;
     case 1:
@@ -320,7 +320,9 @@ public class Fluids {
               if (isLiquid[id]) {
                 BlockFluid b = (BlockFluid) Block.blocksList[id];
                 b.updateTickSafe(w, c, tempData0, x + dx, y, z + dz, FysiksFun.rand, wstate.sweepCounter, null);
-                if(doRandomWalks) b.updateRandomWalk(w, c, tempData0, x+dx,y,z+dz,FysiksFun.rand);
+                if(FysiksFun.rand.nextInt(10*b.liquidUpdateRate) == 0) 
+                  b.updateRandomWalk(w, c, tempData0, x+dx,y,z+dz,FysiksFun.rand);
+                if(FysiksFun.rand.nextInt(10) == 0) b.expensiveTick(w, c, tempData0, x+dx, y, z+dz, FysiksFun.rand);
                 cnt++;
               }
             }
@@ -387,7 +389,9 @@ public class Fluids {
     for (int i = 0; i < nReactions + waterAmount * 2; i++) {
       w.spawnParticle("largesmoke", (double) x + Math.random(), (double) y + 1.2D, (double) z + Math.random(), 0.0D, 0.0D, 0.0D);
     }
-
+    // DEBUG
+    // steamAmount=0;
+   
     for(int dist=1;dist<2&&steamAmount>0;dist++) {
      for(int dir0=4;dir0<6+4&&steamAmount>0;dir0++) {
        int dir=dir0%6;

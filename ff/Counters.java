@@ -10,6 +10,7 @@ public class Counters {
   public static int tickChangedBlocks          = 0;
   public static int genericCounter             = 0;
   public static int liquidQueueCounter         = 0;
+  public static int gasTicks                   = 0;
   public static int markQueueCounter           = 0;
   public static int erosionCounter             = 0;
   public static int worldHeatEvaporation       = 0;
@@ -38,10 +39,13 @@ public class Counters {
   		HashSet set = (HashSet) FysiksFun.blockTickQueueRing[i];
   		totsize += set.size();
   	}
-  	System.out.println("Liquid Tick Queue: " + (liquidQueueCounter) + " per tick (" + totsize + " used "+ FysiksFun.blockTickQueueFreePool.size() + " free pool) smallLiquidExtraTicks: "+smallLiquidExtraTicks);
-  	System.out.println("Fluid updates: "+fluidUpdates);
+  	//System.out.println("Liquid Tick Queue: " + (liquidQueueCounter) + " per tick (" + totsize + " used "+ FysiksFun.blockTickQueueFreePool.size() + " free pool) smallLiquidExtraTicks: "+smallLiquidExtraTicks);
+  	System.out.println("Fluid updates: "+fluidUpdates);  	
   	fluidUpdates=0;  	
     System.out.println("Mark counter: " + (markQueueCounter) + " per tick");
+    
+    System.out.println("Gas ticks: "+gasTicks);
+    gasTicks=0;
     
     /*
     System.out.println("Liquid Tick Queue: " + (liquidQueueCounter / 300) + " per tick (" + totsize + " used "+ FysiksFun.blockTickQueueFreePool.size() + " free pool) smallLiquidExtraTicks: "+smallLiquidExtraTicks/300);

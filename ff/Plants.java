@@ -74,7 +74,7 @@ public class Plants {
               if (FysiksFun.rand.nextInt((int) Math.round(g.rainfall * 10.0 + 1.0)) <= 5) {
                 Counters.cropsDie++;
                 FysiksFun.setBlockWithMetadataAndPriority(w, x + dx, y, z + dz, 0, 0, 0);
-                System.out.println("Crop died cause of lack of water: "+x+" "+z);
+                //System.out.println("Crop died cause of lack of water: "+x+" "+z);
               }               
             }
           } else {

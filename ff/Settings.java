@@ -20,6 +20,11 @@ public class Settings {
   public boolean flowingLiquidOil;
   public boolean flowingHydrochloricAcid;
   
+  public boolean visualizeVolcanoes;
+  public int     volcanoFrequency;
+  public int     volcanoRadius;
+  public int     volcanoFeeding;
+  
   public int     treeThirst;
   public int     cropsThirst;
   public boolean cropsDrinkContinously;
@@ -99,5 +104,14 @@ public class Settings {
     blockSteamDefaultID = config.get(categoryGases,"block-id-steam", "2250", "Initial attempt at ID for the steam block (may be reallocated to an empty block)", 
         Property.Type.INTEGER).getInt(2250);       
 
+    visualizeVolcanoes = config.get(categoryOther, "visualize-volcanoes", "false", "If true, places a pillar of glas high over volcanoes for finding them before developed", Property.Type.BOOLEAN)
+        .getBoolean(false);
+    volcanoFrequency = config.get(categoryEcology, "volcano-freqency", "100", "Frequency of volcanoes in percent of default occurance", Property.Type.INTEGER)
+        .getInt(100);
+    volcanoRadius = config.get(categoryEcology, "volcano-radius", "5", "Maximum radius of the plume feeding a volcano (default 5)", Property.Type.INTEGER)
+        .getInt(5);
+    volcanoFeeding = config.get(categoryEcology, "volcano-feeding", "20", "Odds for a plume to feed lava / pressure (default 20)", Property.Type.INTEGER)
+        .getInt(20);
+    
   } 
 }

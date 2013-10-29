@@ -89,7 +89,8 @@ public class Gases {
   public static void doChunkTick(World w, int x, int z) {
     
     for (int i = 0; i < 10; i++) {
-      int y = 1 + FysiksFun.rand.nextInt(255);
+      int y = 1 + FysiksFun.rand.nextInt(128);      
+      if(FysiksFun.rand.nextInt(10) == 0) y += 128; // Allow for a smaller chance for very high blocks
       Chunk c = w.getChunkFromChunkCoords(x >> 4, z >> 4);
 
       for (int dx = 0; dx < 16; dx++)

@@ -1,3 +1,7 @@
+Make gas perform randomwalk through water (ie. always move somewhere), so that it can eventually escape from underwater
+Craftable tools that can break bedrock 
+Blocks that can generate infinite water (for creative mode only!) 
+Make diamonds by having coal blocks surrounded by highly pressurized lava
 
 -- DEBUG: check that it works: Small liquid movements can go through plants
 

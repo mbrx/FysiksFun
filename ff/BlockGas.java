@@ -102,7 +102,7 @@ public class BlockGas extends Block {
     IChunkProvider chunkProvider = w.getChunkProvider();
     Chunk origChunk = chunkProvider.provideChunk(chunkX, chunkZ);
     if (y <= 0) return;
-
+    Counters.gasTicks++;
 
     try {
       preventSetBlockGasFlowover = true;
@@ -118,12 +118,43 @@ public class BlockGas extends Block {
         return;
       }
 
-      if(y >= 150 && FysiksFun.rand.nextInt(1000) == 0) {
-        /* Block condensate into water */
-        Fluids.stillWater.setBlockContent(w,  x, y, z, getBlockContent(w, x,y,z));
-        FysiksFun.scheduleBlockTick(w, Fluids.stillWater, x, y, z, 1);
+      if(y >= 120 && FysiksFun.rand.nextInt(100) == 0) {
+        /* Block condensate into water */ 
+        Fluids.stillWater.setBlockContent(w,  x, y, z, newContent * BlockFluid.maximumContent/16);
+        //FysiksFun.scheduleBlockTick(w, Fluids.stillWater, x, y, z, 1);
         return;
       }
+      
+      /* First, move gas in direction of wind with a given probability */
+      float windX = Wind.getWindX(w,x,y,z);
+      float windZ = Wind.getWindZ(w,x,y,z);
+      if(windX > 0.f && r.nextFloat() < windX) {
+        int id1 = w.getBlockId(x+1, y, z);
+        if(id1 == 0) {          
+          setBlockContent(w,x+1,y+computeUpdraft(w,y,x,z,x+1,z),z,newContent);
+          newContent=0;
+        }
+      } else if(windX <0.f && r.nextFloat() < -windX) {
+        int id1 = w.getBlockId(x-1, y, z);
+        if(id1 == 0) {
+          setBlockContent(w,x-1,y+computeUpdraft(w,y,x,z,x-1,z),z,newContent);
+          newContent=0;
+        }        
+      }
+      if(windZ > 0.f && r.nextFloat() < windZ) {
+        int id1 = w.getBlockId(x, y, z+1);
+        if(id1 == 0) {
+          setBlockContent(w,x,y+computeUpdraft(w,y,x,z,x,z+1),z+1,newContent);
+          newContent=0;
+        }
+      } else if(windZ <0.f && r.nextFloat() < -windZ) {
+        int id1 = w.getBlockId(x, y, z-1);
+        if(id1 == 0) {
+          setBlockContent(w,x,y+computeUpdraft(w,y,x,z,x,z-1),z-1,newContent);
+          newContent=0;
+        }        
+      }
+      
             
       int blockIdAbove = w.getBlockId(x, y + 1, z);
       /*if (lighterThanAir && blockIdAbove == 0) {
@@ -168,7 +199,7 @@ public class BlockGas extends Block {
         int dx = x2 - x;
         int dy = y2 - y;
         int dz = z2 - z;
-        if(y2 > y && y2 >= 160) continue; // Top of the world...
+        if(y2 > y && y2 >= 128) continue; // Top of the world...
         
         if(x2 == x && y2 == y && z2 == z) {
           System.out.println("[WARN] Unexpected X2 Y2 Z2 value in BlockGas");
@@ -209,6 +240,25 @@ public class BlockGas extends Block {
       preventSetBlockGasFlowover = false;
       BlockFluid.preventSetBlockLiquidFlowover = false;
     }
+  }
+
+  /** Checks if there should be movement in Y (up/down draft) when moving from x0,z0 to x1,z1 */
+  private int computeUpdraft(World w, int y, int x0, int z0, int x1, int z1) {
+    int height0,height1;
+    
+    if(y >= 128) return 0;
+    
+    IChunkProvider chunkProvider = w.getChunkProvider();
+    Chunk c = chunkProvider.provideChunk(x0>>4, z0>>4);
+    for(height0=y;height0>1;height0--) 
+      if(c.getBlockID(x0&15, height0, z0&15) != 0) break;
+    c = chunkProvider.provideChunk(x1>>4, z1>>4);
+    for(height1=y;height1>1;height1--) 
+      if(c.getBlockID(x1&15, height1, z1&15) != 0) break;
+    if(height1 > height0+2) return +2;
+    else if(height1 > height0) return +1;
+    else if(height1 < height0-1) return -1;
+    else return 0;
   }
 
   /**
