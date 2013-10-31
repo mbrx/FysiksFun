@@ -40,7 +40,7 @@ public class ChunkTempData {
         }
     liquidHistogramData = new short[256];
     liquidHistogramInitialized = false;
-    //initializeHistogram();
+    // initializeHistogram();
     if (chunks.get(coordinate) == null) chunks.put(coordinate, this);
 
   }
@@ -57,8 +57,8 @@ public class ChunkTempData {
     else {
       return;
     }
-    liquidHistogramInitialized=true;
-    
+    liquidHistogramInitialized = true;
+
     for (int y1 = 0; y1 < 256; y1++) {
       int cnt = 0;
       for (int x1 = 0; x1 < 16; x1++)
@@ -69,10 +69,15 @@ public class ChunkTempData {
   }
 
   public static ChunkTempData getChunk(World w, int x, int y, int z) {
-    tempCoordinate.set(w, x >> 4, y >> 8, z >> 4);
+    return getChunk(w, x, z);
+  }
+
+  public static ChunkTempData getChunk(World w, int x, int z) {
+
+    tempCoordinate.set(w, x >> 4, 0, z >> 4);
     ChunkTempData chunk = chunks.get(tempCoordinate);
     if (chunk == null) {
-      chunk = new ChunkTempData(w, x >> 4, y >> 8, z >> 4);
+      chunk = new ChunkTempData(w, x >> 4, 0, z >> 4);
     }
     return chunk;
 
@@ -168,10 +173,10 @@ public class ChunkTempData {
   }
 
   public void addFluidHistogram(int y, int delta) {
-    if(!liquidHistogramInitialized) {
+    if (!liquidHistogramInitialized) {
       initializeHistogram();
     }
-    
+
     liquidHistogramData[y] += delta;
     if (liquidHistogramData[y] < 0 || liquidHistogramData[y] > 256) {
       FysiksFun.logger.log(Level.SEVERE, "Our histogram counter at layer " + y + " has value " + liquidHistogramData[y] + ". This should not happen");
@@ -189,6 +194,7 @@ public class ChunkTempData {
     }*/
     return liquidHistogramData[y];
   }
+
   public void setFluidHistogram(int y, int value) {
     liquidHistogramData[y] = (short) value;
   }

@@ -42,7 +42,7 @@ public class Counters {
   	//System.out.println("Liquid Tick Queue: " + (liquidQueueCounter) + " per tick (" + totsize + " used "+ FysiksFun.blockTickQueueFreePool.size() + " free pool) smallLiquidExtraTicks: "+smallLiquidExtraTicks);
   	System.out.println("Fluid updates: "+fluidUpdates);  	
   	fluidUpdates=0;  	
-    System.out.println("Mark counter: " + (markQueueCounter) + " per tick");
+    System.out.println("Mark counter: " + (markQueueCounter/300) + " per ticks");
     
     System.out.println("Gas ticks: "+gasTicks);
     gasTicks=0;

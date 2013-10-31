@@ -30,11 +30,20 @@ class ChunkMarkUpdater {
 
   private static ArrayDeque<CoordinateWXYZ>                 coordinateWXYZFreePool = new ArrayDeque<CoordinateWXYZ>();
 
+  /**
+   * A queue of CML objects containing all chunks that have blocks that should
+   * be marked
+   */
   private static ArrayDeque<ChunkMarkUpdater>               markChunkQueue         = new ArrayDeque<ChunkMarkUpdater>();
+  /** A hashtable mapping chunk coordinates to the CML for that chunk */
   private static Hashtable<CoordinateWXZ, ChunkMarkUpdater> markChunkHashtable     = new Hashtable<CoordinateWXZ, ChunkMarkUpdater>();
   private static ArrayDeque<ChunkMarkUpdater>               markChunkFreePool      = new ArrayDeque<ChunkMarkUpdater>();
 
-  private static ChunkMarkUpdater getAndScheduleChunkMarkList(World w, int chunkX, int chunkZ) {
+  /**
+   * Gives the chunkMarkUpdater object for a given chunk, this object contains
+   * the list of blocks within that chunk that needs to be updated.
+   */
+  public static ChunkMarkUpdater getAndScheduleChunkMarkList(World w, int chunkX, int chunkZ) {
     // This function is only called by scheduleBlockMark, which acquires the
     // semaphore first
     /*
@@ -42,14 +51,18 @@ class ChunkMarkUpdater {
      * e.printStackTrace(); return null; }
      */
     try {
+      ChunkMarkUpdater cml;
+      // Since we explicitly remove the cml from the cache when it is "released"
+      // then we are safe to cache them like this
       tmpCoordinateWXZ.set(w, chunkX, chunkZ);
-      ChunkMarkUpdater cml = markChunkHashtable.get(tmpCoordinateWXZ);
-      if (cml != null) return cml;
-      cml = markChunkFreePool.poll();
-      if (cml == null) cml = new ChunkMarkUpdater(w, chunkX, chunkZ);
-      else cml.set(w, chunkX, chunkZ);
-      markChunkQueue.add(cml);
-      markChunkHashtable.put(cml.coordinate, cml);
+      cml = markChunkHashtable.get(tmpCoordinateWXZ);
+      if (cml == null) {
+        cml = markChunkFreePool.poll();
+        if (cml == null) cml = new ChunkMarkUpdater(w, chunkX, chunkZ);
+        else cml.set(w, chunkX, chunkZ);
+        markChunkQueue.add(cml);
+        markChunkHashtable.put(cml.coordinate, cml);
+      }
       return cml;
     } finally {
       // mutex.release();
@@ -65,16 +78,17 @@ class ChunkMarkUpdater {
    * in the future
    */
   public static void scheduleBlockMark(World w, int x, int y, int z) {
-    try {
+    /*try {
       mutex.acquire();
     } catch (InterruptedException e) {
       e.printStackTrace();
       return;
-    }
+    }*/
+
     try {
 
       scheduledMarkUpdates++;
-      ChunkMarkUpdater cml = getAndScheduleChunkMarkList(w, x >> 4, z >> 4);
+      ChunkMarkUpdater cml = ChunkCache.getCML(w, x >> 4, z >> 4);
       tmpCoordinateWXYZ.set(w, x, y, z);
       if (cml.markList.contains(tmpCoordinateWXYZ)) return;
       CoordinateWXYZ coord = coordinateWXYZFreePool.poll();
@@ -83,9 +97,10 @@ class ChunkMarkUpdater {
       } else coord.set(w, x, y, z);
       cml.markList.add(coord);
     } finally {
-      mutex.release();
+      // mutex.release();
     }
   }
+
   /** Assumes that we are called in a non-threaded environment */
   public static void scheduleBlockMarkSingleThread(World w, int x, int y, int z) {
     ChunkMarkUpdater cml = getAndScheduleChunkMarkList(w, x >> 4, z >> 4);
@@ -97,16 +112,16 @@ class ChunkMarkUpdater {
     } else coord.set(w, x, y, z);
     cml.markList.add(coord);
   }
-    
+
   public ChunkMarkUpdater(World w, int chunkX, int chunkZ) {
     coordinate = new CoordinateWXZ(w, chunkX, chunkZ);
     markList = new HashSet<CoordinateWXYZ>();
   }
 
   public static void printStatistics() {
-    System.out.println("Mark queue: " + ChunkMarkUpdater.markChunkQueue.size() + " Hashtable:" + markChunkHashtable.size() + " free pool:"
+    System.out.println("Mark queue: " + ChunkMarkUpdater.markChunkQueue.size() + " chunks, Hashtable:" + markChunkHashtable.size() + " free pool:"
         + markChunkFreePool.size());
-    System.out.println("Calls to scheduleBlockMark: " + scheduledMarkUpdates / 300);
+    System.out.println("Calls to scheduleBlockMark: " + scheduledMarkUpdates / 300 + " per tick (avg)");
     scheduledMarkUpdates = 0;
   }
 
@@ -130,11 +145,11 @@ class ChunkMarkUpdater {
       ChunkMarkUpdater cml;
       final int markRadiusSq_coarce = 1 * 1; // Measured in chunk coordinates
       final double markRadiusSq_fine = 12.0d * 12.0d; // Measured in block
-                                                    // coordinates
+      // coordinates
 
       tmpChunkBlockMarkList.clear();
       while (iterator.hasNext()) {
-        if (ticksLeft < FysiksFun.settings.maxUpdatesPerTick/2) break;
+        if (ticksLeft < FysiksFun.settings.maxUpdatesPerTick / 2) break;
 
         cml = iterator.next();
         boolean doSend = false;
@@ -148,7 +163,7 @@ class ChunkMarkUpdater {
               double dx2 = o.posX - coord.getX();
               double dy2 = o.posY - coord.getY();
               double dz2 = o.posZ - coord.getZ();
-              if(dy2 > 0) dy2 /= 4; // Makes clouds be updated more often
+              if (dy2 > 0) dy2 /= 4; // Makes clouds be updated more often
               if (dx2 * dx2 + dy2 * dy2 + dz2 * dz2 < markRadiusSq_fine) {
                 doSend = true;
                 break;
@@ -186,6 +201,7 @@ class ChunkMarkUpdater {
 
   private void releaseChunk() {
     if (markList.size() != 0) System.out.println("ERROR - a ChunkBlockMarkList is released with a non-empty mark list, this is a BUG!");
+    ChunkCache.removeCMLfromCache(coordinate.getWorld(), coordinate.getX(), coordinate.getZ());
     markChunkQueue.remove(this);
     markChunkHashtable.remove(coordinate);
     markChunkFreePool.add(this);

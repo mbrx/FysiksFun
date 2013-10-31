@@ -1,3 +1,17 @@
+Make a class for caching chunk requests and for caching chunkTempData
+  -> Use a "grid" for caching these with a modulo operator for mapping chunks into this grid.
+     IFF there is a conflict in the grid or the grid has not been initialized THEN we need to get the chunk 
+
+To optimize:
+
+Gas updates: ~43-47%
+  -> Majority: setBlockContent -> scheduleBlockMark -> getAndScheduleChunkMarkList ~41%
+
+Volcanoes: ~5% (not so important, but easily fixed)
+   -> getBlockContent: 3.5%
+   
+ Manually call chunk updateSkyLight?  
+   
 Make gas perform randomwalk through water (ie. always move somewhere), so that it can eventually escape from underwater
 Craftable tools that can break bedrock 
 Blocks that can generate infinite water (for creative mode only!) 

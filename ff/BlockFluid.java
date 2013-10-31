@@ -621,7 +621,8 @@ public class BlockFluid extends BlockFlowing {
     IChunkProvider chunkProvider = world.getChunkProvider();
     int id0 = chunk0.getBlockID(x0 & 15, y0, z0 & 15);
     if (!isSameLiquid(id0)) return;
-    int content0 = getBlockContent(world, x0, y0, z0);
+    int content0 = getBlockContent(chunk0, tempData0, x0, y0, z0);
+    
     // This amount can flow by itself, no need for random walks
     if (content0 > 2 * minimumLiquidLevel) return;
 
@@ -639,14 +640,19 @@ public class BlockFluid extends BlockFlowing {
           int y1 = y0;
           int z1 = (int) (z0 + 0.5d + dist * dz);
           if (x1 == x0 && z1 == z0) continue;
-          int id1 = world.getBlockId(x1, y1, z1);
+          
+          Chunk c = ChunkCache.getChunk(world, x1>>4, z1>>4, false);
+          if(c == null) continue;
+          int id1 = c.getBlockID(x1&15, y1, z1&15);
           Material m1 = id1 == 0 ? null : Block.blocksList[id1].blockMaterial;
           if (id1 != 0 && m1.blocksMovement()) break;
-          int id1b = world.getBlockId(x1, y1 - 1, z1);
+          int id1b = c.getBlockID(x1&15, y1-1, z1&15);
+          
           int content1b = 0;
           Material m1b = id1b == 0 ? null : Block.blocksList[id1b].blockMaterial;
           if (Fluids.isLiquid[id1b]) {
-            content1b = getBlockContent(world, x1, y1 - 1, z1);
+            ChunkTempData tempData = ChunkCache.getTempData(world, x1>>4, z1>>4);
+            content1b = getBlockContent(c, tempData, x1, y1 - 1, z1);
           } else if (id1b != 0 && m1b.blocksMovement()) continue;
           if (content1b < maximumContent - minimumLiquidLevel) {
             bestDist = dist;
@@ -669,11 +675,15 @@ public class BlockFluid extends BlockFlowing {
           int x1 = (int) (x0 + 0.5d + dist * bestDx);
           int z1 = (int) (z0 + 0.5d + dist * bestDz);
           int y1 = y0;
-          int id1 = world.getBlockId(x1, y1, z1);
+
+          Chunk c = ChunkCache.getChunk(world, x1>>4, z1>>4, false);
+          ChunkTempData tempData=ChunkCache.getTempData(world, x1>>4, z1>>4);
+          if(c == null) break;
+          int id1 = c.getBlockID(x1&15, y1, z1&15);
           //Material m1 = id1 == 0 ? null : Block.blocksList[id1].blockMaterial;
           if (id1 == 0) {
-            setBlockContent(world, x1, y1, z1, content0);
-            setBlockContent(world, x0, y0, z0, 0);
+            setBlockContent(world, c, tempData, x1, y1, z1, content0, "", null);
+            setBlockContent(world, c, tempData, x0, y0, z0, 0, "", null);
             break;
           }
         }
