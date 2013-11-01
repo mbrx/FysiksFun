@@ -82,25 +82,4 @@ public class Gases {
     }    
   }
   
-  /**
-   * Performs random expensive ticks on every block in a randomly selected layer
-   * of each chunk it is called for (chunk center XZ).
-   */
-  public static void doChunkTick(World w, int x, int z) {
-    
-    for (int i = 0; i < 10; i++) {
-      int y = 1 + FysiksFun.rand.nextInt(128);      
-      if(FysiksFun.rand.nextInt(10) == 0) y += 128; // Allow for a smaller chance for very high blocks
-      Chunk c = w.getChunkFromChunkCoords(x >> 4, z >> 4);
-
-      for (int dx = 0; dx < 16; dx++)
-        for (int dz = 0; dz < 16; dz++) {
-          int id = c.getBlockID(dx, y, dz);
-          if(id > 0 && id < 4096 && isGas[id]) {
-            BlockGas b = (BlockGas) Block.blocksList[id];
-            b.updateTickSafe(w, x + dx, y, dz + z, FysiksFun.rand);
-          }
-        }
-    }
-  }
 }

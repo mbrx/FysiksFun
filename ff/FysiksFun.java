@@ -286,7 +286,6 @@ public class FysiksFun {
       int x = xz.getCenterXPos() & 0xfffffff0;
       int z = xz.getCenterZPosition() & 0xfffffff0;
 
-      Gases.doChunkTick(w, x, z);
       Rain.doPrecipation(w, x, z);
       Evaporation.doEvaporation(w, x, z);
       Trees.doTrees(w, x, z);

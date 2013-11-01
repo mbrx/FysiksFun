@@ -120,6 +120,13 @@ public class BlockGas extends Block {
 
       if(y >= 120 && FysiksFun.rand.nextInt(100) == 0) {
         /* Block condensate into water */ 
+        setBlockContent(w, x, y, z, 0);
+        /* 75% chance that we move the water straight down to where it should go. */
+        if(FysiksFun.rand.nextInt(4) != 0) {
+          for(;y>=1;y--) {
+            if(origChunk.getBlockID(x&15,y-1,z&15) != 0) break;
+          }
+        }
         Fluids.stillWater.setBlockContent(w,  x, y, z, newContent * BlockFluid.maximumContent/16);
         //FysiksFun.scheduleBlockTick(w, Fluids.stillWater, x, y, z, 1);
         return;
@@ -131,12 +138,14 @@ public class BlockGas extends Block {
       if(windX > 0.f && r.nextFloat() < windX) {
         int id1 = w.getBlockId(x+1, y, z);
         if(id1 == 0) {          
+          setBlockContent(w,x,y,z,0);
           setBlockContent(w,x+1,y+computeUpdraft(w,y,x,z,x+1,z),z,newContent);
           newContent=0;
         }
       } else if(windX <0.f && r.nextFloat() < -windX) {
         int id1 = w.getBlockId(x-1, y, z);
         if(id1 == 0) {
+          setBlockContent(w,x,y,z,0);
           setBlockContent(w,x-1,y+computeUpdraft(w,y,x,z,x-1,z),z,newContent);
           newContent=0;
         }        
@@ -144,32 +153,32 @@ public class BlockGas extends Block {
       if(windZ > 0.f && r.nextFloat() < windZ) {
         int id1 = w.getBlockId(x, y, z+1);
         if(id1 == 0) {
+          setBlockContent(w,x,y,z,0);
           setBlockContent(w,x,y+computeUpdraft(w,y,x,z,x,z+1),z+1,newContent);
           newContent=0;
         }
       } else if(windZ <0.f && r.nextFloat() < -windZ) {
         int id1 = w.getBlockId(x, y, z-1);
         if(id1 == 0) {
+          setBlockContent(w,x,y,z,0);
           setBlockContent(w,x,y+computeUpdraft(w,y,x,z,x,z-1),z-1,newContent);
           newContent=0;
         }        
       }
+
+      /* Continue moving depending only on the altitude (so we have less movements at a higher altitude. 
+       * We can blame lower overall air pressure for why there are slightly less updates at y=64 than y=0
+       */
+      if(74+FysiksFun.rand.nextInt(64) < y) return;      
       
-            
       int blockIdAbove = w.getBlockId(x, y + 1, z);
-      /*if (lighterThanAir && blockIdAbove == 0) {
-        // Let the gas move upwards if the block above is empty
-        setBlockContent(w, x, y + 1, z, newContent);
-        FysiksFun.scheduleLiquidTick(w, this, x, y + 1, z, updateRate);
-        newContent = 0;
-      }*/
       if(blockIdAbove > 0 && blockIdAbove < 4096 && Fluids.isLiquid[blockIdAbove]) {
         /* There's a fluid above this block - exchange their positions */
         BlockFluid fluid = Fluids.fluid[blockIdAbove];
         fluid.setBlockContent(w, x, y, z, fluid.getBlockContent(w, x, y+1, z));
         setBlockContent(w, x, y+1, z, newContent);
-        FysiksFun.scheduleBlockTick(w, this, x, y+1, z, updateRate);
-        FysiksFun.scheduleBlockTick(w, fluid, x, y, z, fluid.liquidUpdateRate);
+        //FysiksFun.scheduleBlockTick(w, this, x, y+1, z, updateRate);
+        //FysiksFun.scheduleBlockTick(w, fluid, x, y, z, fluid.liquidUpdateRate);
         // No more checks of this function since we not longer are located at the given x,y,z coordinate
         return;
       }      
@@ -223,18 +232,18 @@ public class BlockGas extends Block {
           blockContentNN += toMove;
           if(blockContentNN >= 16) { newContent += blockContentNN-15; blockContentNN = 15; }
           setBlockContent(w, x2, y2, z2, blockContentNN);
-          FysiksFun.scheduleBlockTick(w, this, x2, y2, z2, updateRate);
+          //FysiksFun.scheduleBlockTick(w, this, x2, y2, z2, updateRate);
         }
 
       }
 
       if (newContent != oldContent) {
         setBlockContent(w, x, y, z, newContent);
-        if (newContent > 0) FysiksFun.scheduleBlockTick(w, this, x, y, z, updateRate);         
-        notifySameGasNeighboursWithMore(w, x, y, z, newContent - 1, updateRate);
-      } else
+        //if (newContent > 0) FysiksFun.scheduleBlockTick(w, this, x, y, z, updateRate);         
+        // notifySameGasNeighboursWithMore(w, x, y, z, newContent - 1, updateRate);
+      } // else
         // Always schedule a tick... a bit expensive but much more responsive
-        FysiksFun.scheduleBlockTick(w, this, x, y, z, updateRate);
+        // FysiksFun.scheduleBlockTick(w, this, x, y, z, updateRate);
 
     } finally {
       preventSetBlockGasFlowover = false;
@@ -267,7 +276,7 @@ public class BlockGas extends Block {
    */
   private void notifySameGasNeighboursWithMore(World w, int x, int y, int z, int limit, int delay) {
     int id;
-
+    /*
     id = w.getBlockId(x + 1, y, z);
     if ((id == blockID) && getBlockContent(w, x + 1, y, z) > limit) {
       FysiksFun.scheduleBlockTick(w, this, x + 1, y, z, delay);
@@ -292,6 +301,7 @@ public class BlockGas extends Block {
     if ((id == blockID) && getBlockContent(w, x, y, z - 1) > limit) {
       FysiksFun.scheduleBlockTick(w, this, x, y, z - 1, delay);
     }
+    */
   }
 
   public int idDropped(int par1, Random par2Random, int par3) {
@@ -302,14 +312,14 @@ public class BlockGas extends Block {
     return 0;
   }
 
-  @Override
+  /*@Override
   public void onBlockAdded(World w, int x, int y, int z) {
     FysiksFun.scheduleBlockTick(w, this, x, y, z, updateRate);
-  }
-  @Override
+  }*/
+  /*@Override
   public void onNeighborBlockChange(World w, int x, int y, int z, int ignore)  {
     FysiksFun.scheduleBlockTick(w, this, x, y, z, updateRate);      
-  }
+  }*/
   @Override
   public int getRenderBlockPass() { return 1; }
   @Override
@@ -366,7 +376,7 @@ public class BlockGas extends Block {
     int id = w.getBlockId(x,y,z);
     if(id == 0) {
       setBlockContent(w, c, x, y, z, amount);
-      FysiksFun.scheduleBlockTick(w, this, x, y, z, updateRate);
+      // FysiksFun.scheduleBlockTick(w, this, x, y, z, updateRate);
       return 0;
     }
     if(id == blockID) {
@@ -374,7 +384,7 @@ public class BlockGas extends Block {
       int toMove = 15 - currentContent;
       if(toMove > amount) toMove=amount;
       setBlockContent(w, c, x, y, z, currentContent + toMove);
-      FysiksFun.scheduleBlockTick(w, this, x, y, z, updateRate);
+      // FysiksFun.scheduleBlockTick(w, this, x, y, z, updateRate);
       return amount - toMove;
     }   
     return amount;

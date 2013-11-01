@@ -22,7 +22,7 @@ public class Rain {
       if (!FysiksFun.settings.rainInOceans && (biome == BiomeGenBase.ocean || biome == BiomeGenBase.frozenOcean)) {
         // do nothing
       } else if (biome.rainfall > 0.0 && FysiksFun.settings.waterRainRate>0 && FysiksFun.rand.nextInt((int) rainChance) == 0) {
-        for (int y2 = 256; y2 > 1; y2--) {
+        for (int y2 = 255; y2 > 1; y2--) {
           int id = c.getBlockID(dx, y2, dz);
           if (id != 0) {
             // The following plants will drink the rain water

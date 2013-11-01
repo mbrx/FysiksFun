@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.logging.Level;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -16,6 +17,7 @@ import net.minecraft.block.material.Material;
 import net.minecraft.world.ChunkCoordIntPair;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.Chunk;
+import net.minecraft.world.storage.WorldInfo;
 import cpw.mods.fml.common.registry.GameRegistry;
 
 public class Fluids {
@@ -75,10 +77,10 @@ public class Fluids {
     Block.blocksList[Block.lavaStill.blockID] = null;
 
     // Register new blocks
-    flowingLava = new BlockLava(Block.lavaMoving.blockID, Material.lava, Block.lavaStill.blockID, Block.lavaMoving.blockID, "lava");    
-    stillLava = new BlockLava(Block.lavaStill.blockID, Material.lava, Block.lavaStill.blockID, Block.lavaMoving.blockID, "lava");    
-    flowingLava.setLiquidUpdateRate(5);
-    stillLava.setLiquidUpdateRate(5);
+    flowingLava = new BlockLava(Block.lavaMoving.blockID, Material.lava, Block.lavaStill.blockID, Block.lavaMoving.blockID, "lava");
+    stillLava = new BlockLava(Block.lavaStill.blockID, Material.lava, Block.lavaStill.blockID, Block.lavaMoving.blockID, "lava");
+    flowingLava.setLiquidUpdateRate(2);
+    stillLava.setLiquidUpdateRate(2);
     flowingLava.setTickRandomly(false);
     stillLava.setTickRandomly(false);
     flowingLava.canCauseErosion = true;
@@ -153,21 +155,9 @@ public class Fluids {
       wstate = new WorldUpdateState();
       worldUpdateState.put(w, wstate);
     }
-    // 1: ~15ms
-    // 5: ~25ms
-    // 20: ~80ms
-    // 50: ~200ms
-    // 3ms per step? Variation over time due to sweeping over areas with more
-    // water
-    // Dynamically change amount of steps?
-    // int maxSteps=20;
-    // if(wstate.sweepY > 80) maxSteps += 30;
-    // if(wstate.sweepY < 50) maxSteps += 30;
-
     int mi, ma;
     wstate.sweepSteps++;
 
-    // TODO - change the iteration order, from bottom to top!
     switch (wstate.sweepSteps % 5) {
     case 0:
       mi = 0;
@@ -222,7 +212,8 @@ public class Fluids {
         }
 
         for (int y = minY; y <= maxY; y++) {
-          Chunk c = w.getChunkFromChunkCoords(xz.chunkXPos, xz.chunkZPos);
+          Chunk c = ChunkCache.getChunk(w, xz.chunkXPos, xz.chunkZPos, false);
+          // w.getChunkFromChunkCoords(xz.chunkXPos, xz.chunkZPos);
           int x = xz.chunkXPos << 4;
           int z = xz.chunkZPos << 4;
           ChunkTempData tempData0 = null;
@@ -230,7 +221,7 @@ public class Fluids {
             for (int dz = 0; dz < 16; dz++) {
               int id = c.getBlockID(dx, y, dz);
               if (isLiquid[id]) {
-                if (tempData0 == null) tempData0 = ChunkTempData.getChunk(w, x, y, z);
+                if (tempData0 == null) tempData0 = ChunkCache.getTempData(w, x >> 4, z >> 4);
                 BlockFluid b = (BlockFluid) Block.blocksList[id];
                 b.updateTickSafe(w, c, tempData0, x + dx, y, z + dz, FysiksFun.rand, wstate.sweepCounter, delayedBlockMarkSet);
               }
@@ -241,7 +232,7 @@ public class Fluids {
 
     boolean useMultithreading = false;
     boolean doRandomWalks = (FysiksFun.rand.nextInt(20) == 0);
-    
+
     if (useMultithreading) {
       /* Multi threaded implementation of fluid updates */
 
@@ -283,13 +274,24 @@ public class Fluids {
         }
       }
     } else {
+
       /* Single threaded implementation of fluid updates */
+      // for(int chunkX=-100;chunkX<100;chunkX++)
+      // for(int chunkZ=-100;chunkZ<100;chunkZ++)
+
+      // int dim = w.provider.dimensionId;
+      // if(dim != 0) return;
+
       for (Object o : w.activeChunkSet) {
         ChunkCoordIntPair xz = (ChunkCoordIntPair) o;
-        Chunk c = w.getChunkFromChunkCoords(xz.chunkXPos, xz.chunkZPos);
+        // Chunk c = w.getChunkFromChunkCoords(xz.chunkXPos, xz.chunkZPos);
+        Chunk c = ChunkCache.getChunk(w, xz.chunkXPos, xz.chunkZPos, false);
+        if (c == null) System.out.println("Chunk not found: " + xz.chunkXPos + " " + xz.chunkZPos);
+        if (c == null) continue; // Actually... this should't happen?
         int x = xz.chunkXPos << 4;
         int z = xz.chunkZPos << 4;
-        ChunkTempData tempData0 = ChunkTempData.getChunk(w, x, 0, z);
+        // ChunkTempData tempData0 = ChunkTempData.getChunk(w, x, 0, z);
+        ChunkTempData tempData0 = ChunkCache.getTempData(w, x >> 4, z >> 4);
 
         // Don't process some of the chunks, when the current chunk has too much
         // fluids in it (is probably some kind of ocean)
@@ -299,6 +301,7 @@ public class Fluids {
             cnt += tempData0.getFluidHistogram(y2);
           if (cnt > 2000) continue;
         }
+        // System.out.println("Sweep step: "+wstate.sweepSteps+" counter: "+wstate.sweepCounter);
         for (int y = mi; y <= ma; y++) {
           // Don't check layers that are not know to contain water, except for
           // every 4 complete sweeps
@@ -306,29 +309,46 @@ public class Fluids {
           if (wstate.sweepCounter % 6 != 0) {
             boolean checkCarefully = false;
             if (tempData0.getFluidHistogram(y) != 0) checkCarefully = true;
-            // Check layers above/below water, since it may be propagated
-            //if (y - 1 > 0 && tempData0.getFluidHistogram(y - 1) != 0) checkCarefully = true;
+            if (tempData0.getGasHistogram(y) != 0) checkCarefully = true;
+
+            // Check layers above/below water and gas, since it may be
+            // propagated
+            if (y + 3 < 255 && tempData0.getFluidHistogram(y + 3) != 0) checkCarefully = true;
+            if (y + 2 < 255 && tempData0.getFluidHistogram(y + 2) != 0) checkCarefully = true;
             if (y + 1 < 255 && tempData0.getFluidHistogram(y + 1) != 0) checkCarefully = true;
+            if (y - 1 > 0 && tempData0.getGasHistogram(y - 1) != 0) checkCarefully = true;
+            if (y - 2 > 0 && tempData0.getGasHistogram(y - 2) != 0) checkCarefully = true;
+            if (y - 3 > 0 && tempData0.getGasHistogram(y - 3) != 0) checkCarefully = true;
             // TODO - check layers from adjacent chunks?
             if (checkCarefully == false) continue;
           }
 
-          int cnt = 0;
+          int fluidCount = 0;
+          int gasCount = 0;
           for (int dx = 0; dx < 16; dx++)
             for (int dz = 0; dz < 16; dz++) {
               int id = c.getBlockID(dx, y, dz);
+
+              /* For fluids */
               if (isLiquid[id]) {
                 BlockFluid b = (BlockFluid) Block.blocksList[id];
                 b.updateTickSafe(w, c, tempData0, x + dx, y, z + dz, FysiksFun.rand, wstate.sweepCounter, null);
-                if(FysiksFun.rand.nextInt(10*b.liquidUpdateRate) == 0) 
-                  b.updateRandomWalk(w, c, tempData0, x+dx,y,z+dz,FysiksFun.rand);
-                if(FysiksFun.rand.nextInt(10) == 0) b.expensiveTick(w, c, tempData0, x+dx, y, z+dz, FysiksFun.rand);
-                cnt++;
+                if (FysiksFun.rand.nextInt(10 * b.liquidUpdateRate) == 0) b.updateRandomWalk(w, c, tempData0, x + dx, y, z + dz, FysiksFun.rand);
+                if (FysiksFun.rand.nextInt(10) == 0) b.expensiveTick(w, c, tempData0, x + dx, y, z + dz, FysiksFun.rand);
+                fluidCount++;
+              }
+
+              /* For gases */
+              if (Gases.isGas[id]) {
+                BlockGas b = (BlockGas) Block.blocksList[id];
+                b.updateTickSafe(w, x + dx, y, z + dz, FysiksFun.rand);
+                gasCount++;
               }
             }
-          tempData0.setFluidHistogram(y, cnt);
-          // if(cnt != 0)
-          // System.out.println(""+(x>>4)+" "+(y>>4)+" histogram["+y+"]: = "+cnt);
+          // if (fluidCount > 0) System.out.println("Fluid count: " + fluidCount
+          // + " xyz: " + Util.xyzString(x, y, z));
+          tempData0.setFluidHistogram(y, fluidCount);
+          tempData0.setGasHistogram(y, gasCount);
         }
       }
     }
@@ -358,7 +378,7 @@ public class Fluids {
    */
   public static int liquidInteract(World w, int x, int y, int z, int incomingBlockID, int incommingAmount, int targetBlockID, int targetAmount) {
     int lavaAmount = 0, waterAmount = 0;
-    int reactionStepSize = BlockFluid.maximumContent/8;
+    int reactionStepSize = BlockFluid.maximumContent / 8;
     if (Block.blocksList[incomingBlockID].blockMaterial == Material.lava) {
       lavaAmount = incommingAmount;
       waterAmount = targetAmount;
@@ -367,8 +387,8 @@ public class Fluids {
       waterAmount = incommingAmount;
     }
     int nReactions = Math.min(lavaAmount, waterAmount) / reactionStepSize + 1;
-    lavaAmount = Math.max(0,  lavaAmount - nReactions * reactionStepSize);
-    waterAmount = Math.max(0,  waterAmount - nReactions * reactionStepSize); 
+    lavaAmount = Math.max(0, lavaAmount - nReactions * reactionStepSize);
+    waterAmount = Math.max(0, waterAmount - nReactions * reactionStepSize);
     int steamAmount = nReactions;
     boolean generated = false;
 
@@ -391,28 +411,30 @@ public class Fluids {
     }
     // DEBUG
     // steamAmount=0;
-   
-    for(int dist=1;dist<2&&steamAmount>0;dist++) {
-     for(int dir0=4;dir0<6+4&&steamAmount>0;dir0++) {
-       int dir=dir0%6;
-       int x1=x+Util.dirToDx(dir)*dist;
-       int y1=y+Util.dirToDy(dir)*dist;
-       int z1=z+Util.dirToDz(dir)*dist;
-       int id = w.getBlockId(x1, y1, z1);
-       if(id == 0 || id == Gases.steam.blockID) {
-         int amount = Gases.steam.getBlockContent(w, x1, y1, z1) + steamAmount; 
-         if(amount > 15) { steamAmount = amount - 15; amount=15; }
-         else steamAmount=0;
-         Gases.steam.setBlockContent(w, x1, y1, z1, amount);         
-       }
-     }
+
+    for (int dist = 1; dist < 2 && steamAmount > 0; dist++) {
+      for (int dir0 = 4; dir0 < 6 + 4 && steamAmount > 0; dir0++) {
+        int dir = dir0 % 6;
+        int x1 = x + Util.dirToDx(dir) * dist;
+        int y1 = y + Util.dirToDy(dir) * dist;
+        int z1 = z + Util.dirToDz(dir) * dist;
+        int id = w.getBlockId(x1, y1, z1);
+        if (id == 0 || id == Gases.steam.blockID) {
+          int amount = Gases.steam.getBlockContent(w, x1, y1, z1) + steamAmount;
+          if (amount > 15) {
+            steamAmount = amount - 15;
+            amount = 15;
+          } else steamAmount = 0;
+          Gases.steam.setBlockContent(w, x1, y1, z1, amount);
+        }
+      }
     }
-    
+
     if (Block.blocksList[incomingBlockID].blockMaterial == Material.lava) {
-      if (!generated) flowingWater.setBlockContent(w, x, y, z, waterAmount); 
+      if (!generated) flowingWater.setBlockContent(w, x, y, z, waterAmount);
       return lavaAmount;
     } else {
-      if (!generated) flowingLava.setBlockContent(w, x, y, z, lavaAmount); 
+      if (!generated) flowingLava.setBlockContent(w, x, y, z, lavaAmount);
       return waterAmount;
     }
   }

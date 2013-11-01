@@ -26,8 +26,10 @@ public class ChunkTempData {
   private static Semaphore                                mutex          = new Semaphore(1);
 
   /** Contains a list of the amount of liquids on each layer of the chunk */
-  private short[]                                         liquidHistogramData;
-  private boolean                                         liquidHistogramInitialized;
+  private short[]                                         fluidHistogramData;
+  /** Contains a list of the amount of gases on each layer of the chunk */
+  private short[]                                         gasHistogramData;
+  private boolean                                         histogramsInitialized;
 
   private ChunkTempData(World w, int x, int y, int z) {
     tempData = new byte[16 * 256 * 16 * 2];
@@ -38,8 +40,10 @@ public class ChunkTempData {
           tempData[(dx << 1) + (dz << 5) + (dy << 9)] = 0;
           tempData[(dx << 1) + (dz << 5) + (dy << 9) + 1] = 0;
         }
-    liquidHistogramData = new short[256];
-    liquidHistogramInitialized = false;
+    fluidHistogramData = new short[256];
+    gasHistogramData = new short[256];
+    histogramsInitialized = false;
+    
     // initializeHistogram();
     if (chunks.get(coordinate) == null) chunks.put(coordinate, this);
 
@@ -57,14 +61,19 @@ public class ChunkTempData {
     else {
       return;
     }
-    liquidHistogramInitialized = true;
+    histogramsInitialized = true;
 
     for (int y1 = 0; y1 < 256; y1++) {
-      int cnt = 0;
+      int fluidCnt = 0;
+      int gasCnt = 0;
       for (int x1 = 0; x1 < 16; x1++)
-        for (int z1 = 0; z1 < 16; z1++)
-          if (Fluids.isLiquid[chunk.getBlockID(x1, y1, z1)]) cnt++;
-      liquidHistogramData[y1] = (short) cnt;
+        for (int z1 = 0; z1 < 16; z1++) {
+          int id = chunk.getBlockID(x1, y1, z1);
+          if (Fluids.isLiquid[id]) fluidCnt++;
+          else if(Gases.isGas[id]) gasCnt++;
+        }
+      fluidHistogramData[y1] = (short) fluidCnt;
+      gasHistogramData[y1] = (short) gasCnt;
     }
   }
 
@@ -72,32 +81,14 @@ public class ChunkTempData {
     return getChunk(w, x, z);
   }
 
+  /** Expects arguments in WORLD coordinates. */
   public static ChunkTempData getChunk(World w, int x, int z) {
-
     tempCoordinate.set(w, x >> 4, 0, z >> 4);
     ChunkTempData chunk = chunks.get(tempCoordinate);
     if (chunk == null) {
       chunk = new ChunkTempData(w, x >> 4, 0, z >> 4);
     }
     return chunk;
-
-    /*if (chunk == null) {
-      try {
-        mutex.acquire();
-      } catch (InterruptedException e) {
-        e.printStackTrace();
-      }
-      chunk = chunks.get(tempCoordinate); 
-      if (chunk == null) {
-        chunk = new ChunkTempData(w, x >> 4, y >> 4, z >> 4);
-      }
-      mutex.release();
-    }
-    // else
-    // System.out.println("(getChunk) Found old ChunkTempData: "+Util.xyzString(x>>4,
-    // y>>4, z>>4));
-    return chunk;
-    */
   }
 
   public int getTempData(int x, int y, int z) {
@@ -173,30 +164,27 @@ public class ChunkTempData {
   }
 
   public void addFluidHistogram(int y, int delta) {
-    if (!liquidHistogramInitialized) {
+    if (!histogramsInitialized) {
       initializeHistogram();
     }
-
-    liquidHistogramData[y] += delta;
-    if (liquidHistogramData[y] < 0 || liquidHistogramData[y] > 256) {
-      FysiksFun.logger.log(Level.SEVERE, "Our histogram counter at layer " + y + " has value " + liquidHistogramData[y] + ". This should not happen");
+    fluidHistogramData[y] += delta;
+    if (fluidHistogramData[y] < 0 || fluidHistogramData[y] > 256) {
+      FysiksFun.logger.log(Level.SEVERE, "Our histogram counter at layer " + y + " has value " + fluidHistogramData[y] + ". This should not happen");
     }
   }
 
   public int getFluidHistogram(int y) {
-    /*if(!liquidHistogramInitialized) {
-      initializeHistogram();
-      if(!liquidHistogramInitialized) return 0;
-    }
-    if (liquidHistogramData == null) {
-      FysiksFun.logger.log(Level.SEVERE, "Uninitialized liquid histogram data array pointer");
-      return 0;
-    }*/
-    return liquidHistogramData[y];
+    return fluidHistogramData[y];
+  }
+  public int getGasHistogram(int y) {
+    return gasHistogramData[y];
   }
 
   public void setFluidHistogram(int y, int value) {
-    liquidHistogramData[y] = (short) value;
+    fluidHistogramData[y] = (short) value;
+  }
+  public void setGasHistogram(int y, int value) {
+    gasHistogramData[y] = (short) value;
   }
 
 }

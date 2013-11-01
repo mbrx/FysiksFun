@@ -25,21 +25,23 @@ public class ChunkCache {
   
   private static WorldCache lastWorld=null;
   
+  /** Returns the the chunk with the given CHUNK coordinates */
   public static Chunk getChunk(World w, int chunkX, int chunkZ, boolean forceLoad) {
     WorldCache wc;
-    if(lastWorld.w != w) lastWorld=new WorldCache(w);
+    if(lastWorld == null || lastWorld.w != w) lastWorld=new WorldCache(w);
     wc = lastWorld;
     int x=chunkX&cacheMask;
     int z=chunkZ&cacheMask;
     if(wc.chunkCache[x][z] == null) {
       IChunkProvider provider = w.getChunkProvider();
-      if(!provider.chunkExists(x, z)) {
+      if(!provider.chunkExists(chunkX, chunkZ)) {
         if(forceLoad == false) return null;
       }
-      wc.chunkCache[x][z] = provider.provideChunk(x, z);            
+      wc.chunkCache[x][z] = provider.provideChunk(chunkX, chunkZ);            
     }
     return wc.chunkCache[x][z];
   }
+  /** Returns the CML or creates and schedules one, in the chunk with the given CHUNK coordinates */
   public static ChunkMarkUpdater getCML(World w, int chunkX, int chunkZ) {
     WorldCache wc;
     if(lastWorld == null || lastWorld.w != w) lastWorld=new WorldCache(w);
@@ -51,6 +53,7 @@ public class ChunkCache {
     }
     return wc.cmlCache[x][z];
   }
+  /** Removes the CML (if found) in the chunk with the given CHUNK coordinates */
   public static void removeCMLfromCache(World w, int chunkX, int chunkZ) {
     WorldCache wc;
     if(lastWorld.w != w) return;
@@ -59,6 +62,7 @@ public class ChunkCache {
     int z=chunkZ&cacheMask;
     wc.cmlCache[x][z]=null;
   }
+  /** Returns the tempData object corresponding to the chunk with the given CHUNK coordinates */
   public static ChunkTempData getTempData(World w, int chunkX, int chunkZ) {
     WorldCache wc;
     if(lastWorld == null || lastWorld.w != w) lastWorld=new WorldCache(w);
@@ -66,7 +70,7 @@ public class ChunkCache {
     int x=chunkX&cacheMask;
     int z=chunkZ&cacheMask;
     if(wc.tempDataCache[x][z] == null) {
-      wc.tempDataCache[x][z] = ChunkTempData.getChunk(w, chunkX, chunkZ);
+      wc.tempDataCache[x][z] = ChunkTempData.getChunk(w, chunkX<<4, chunkZ<<4);
     }
     return wc.tempDataCache[x][z];
   }

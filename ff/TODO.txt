@@ -1,11 +1,10 @@
-Make a class for caching chunk requests and for caching chunkTempData
-  -> Use a "grid" for caching these with a modulo operator for mapping chunks into this grid.
-     IFF there is a conflict in the grid or the grid has not been initialized THEN we need to get the chunk 
+Water lava interactions may create slabs instead of full blocks.... check emptiness below
 
 To optimize:
 
-Gas updates: ~43-47%
-  -> Majority: setBlockContent -> scheduleBlockMark -> getAndScheduleChunkMarkList ~41%
+
+Gas: 
+  Use same updating system as for liquids (more important since gas will never reach an equilibrium)
 
 Volcanoes: ~5% (not so important, but easily fixed)
    -> getBlockContent: 3.5%

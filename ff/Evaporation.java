@@ -8,7 +8,7 @@ import net.minecraft.world.chunk.IChunkProvider;
 
 public class Evaporation {
   
-  public static int evaporationStepsize = BlockFluid.minimumLiquidLevel;
+  public static int evaporationStepsize = BlockFluid.maximumContent/16;
   
   /**
    * Evaporation removes water blocks from world surface from the chunk with
@@ -53,7 +53,17 @@ public class Evaporation {
               int y2 = y + ddy;
               int id2 = c2.getBlockID(x2 & 15, y2, z2 & 15);
               if (id2 == Fluids.stillWater.blockID || id2 == Fluids.flowingWater.blockID) {
-                Fluids.stillWater.evaporate(w, c2, x2, y2, z2, evaporationStepsize);               
+                
+                Fluids.stillWater.evaporate(w, c2, x2, y2, z2, evaporationStepsize);
+                
+                // Heuristic to speed up: we produce 16 times less steam here, but make steam produce 16 times more water
+                // when reaching the troposphere. This will unfortunately make it possible to "create" rain by boiling water.
+                /*if(FysiksFun.rand.nextInt(16) == 0)
+                  Fluids.stillWater.evaporate(w, c2, x2, y2, z2, evaporationStepsize);
+                else 
+                  Fluids.stillWater.consume(w, c2, x2, y2, z2, evaporationStepsize);
+                */
+                
                 Counters.heatEvaporation++;
                 heat--;
                 tries = 100;
@@ -191,7 +201,7 @@ public class Evaporation {
                   int waterAmount = Fluids.flowingWater.getBlockContent(w, x + dx, y2, z + dz);
                   // Tweak to make large bodies of water not evaporate as quick - should promote larger pools of liquids rather than small pools                  
                   int idBelow = w.getBlockId(x + dx, y2-1, z + dz);
-                  if((waterAmount >= BlockFluid.maximumContent/2 || idBelow == Fluids.stillWater.blockID || idBelow == Fluids.flowingWater.blockID) && FysiksFun.rand.nextInt(3) != 0) continue;
+                  if((waterAmount >= BlockFluid.maximumContent/2 || idBelow == Fluids.stillWater.blockID || idBelow == Fluids.flowingWater.blockID) && FysiksFun.rand.nextInt(5) != 0) continue;
                   Fluids.flowingWater.evaporate(w, chunk, x+dx, y2, z+dz, evaporationStepsize);
                   Counters.directEvaporation++;
                 } finally {
