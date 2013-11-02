@@ -39,7 +39,7 @@ public class Volcanoes {
       // boolean hasVolcano = ((r / 17) % 47113 <
       // FysiksFun.settings.volcanoFrequency);
       // System.out.println("r: "+r);
-      boolean hasVolcano = ((r >> 3) % 472135 < FysiksFun.settings.volcanoFrequency * 100);
+      boolean hasVolcano = ((r >> 3) % 472135 < FysiksFun.settings.volcanoFrequency * 25);
       int radius = 1 + ((r / 11) % (FysiksFun.settings.volcanoRadius));
 
       // radius=0;
