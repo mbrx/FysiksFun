@@ -43,8 +43,7 @@ public class Settings {
   private String categoryEcology = "ecology";
   private String categoryOther = "other";
   private String categoryGases = "gases";
-
-
+  private String categoryVolcanoes = "volcanoes";
   
   public void loadFromConfig(Configuration config) {
     config.addCustomCategoryComment(categoryGeneric, "All high-level settings governing generic aspects of FysiksFun");
@@ -104,13 +103,13 @@ public class Settings {
     blockSteamDefaultID = config.get(categoryGases,"block-id-steam", "2250", "Initial attempt at ID for the steam block (may be reallocated to an empty block)", 
         Property.Type.INTEGER).getInt(2250);       
 
-    visualizeVolcanoes = config.get(categoryOther, "visualize-volcanoes", "false", "If true, places a pillar of glas high over volcanoes for finding them before developed", Property.Type.BOOLEAN)
+    visualizeVolcanoes = config.get(categoryVolcanoes, "visualize-volcanoes", "false", "If true, places a pillar of glas high over volcanoes for finding them before developed", Property.Type.BOOLEAN)
         .getBoolean(false);
-    volcanoFrequency = config.get(categoryEcology, "volcano-freqency", "100", "Frequency of volcanoes in percent of default occurance", Property.Type.INTEGER)
+    volcanoFrequency = config.get(categoryVolcanoes, "volcano-freqency", "100", "Frequency of volcanoes in percent of default occurance", Property.Type.INTEGER)
         .getInt(100);
-    volcanoRadius = config.get(categoryEcology, "volcano-radius", "5", "Maximum radius of the plume feeding a volcano (default 5)", Property.Type.INTEGER)
+    volcanoRadius = config.get(categoryVolcanoes, "volcano-radius", "5", "Maximum radius of the plume feeding a volcano (default 5, safe max 8)", Property.Type.INTEGER)
         .getInt(5);
-    volcanoFeeding = config.get(categoryEcology, "volcano-feeding", "20", "Odds for a plume to feed lava / pressure (default 20)", Property.Type.INTEGER)
+    volcanoFeeding = config.get(categoryVolcanoes, "volcano-feeding", "20", "Odds for a plume to feed lava / pressure (default 20)", Property.Type.INTEGER)
         .getInt(20);
     
   } 

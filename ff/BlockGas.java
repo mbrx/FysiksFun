@@ -166,10 +166,9 @@ public class BlockGas extends Block {
         }        
       }
 
-      /* Continue moving depending only on the altitude (so we have less movements at a higher altitude. 
-       * We can blame lower overall air pressure for why there are slightly less updates at y=64 than y=0
+      /* Continue moving depending only on the altitude (so we have less movements at a higher altitude.  
        */
-      if(74+FysiksFun.rand.nextInt(64) < y) return;      
+      if(74+FysiksFun.rand.nextInt(148-74) < y) return;      
       
       int blockIdAbove = w.getBlockId(x, y + 1, z);
       if(blockIdAbove > 0 && blockIdAbove < 4096 && Fluids.isLiquid[blockIdAbove]) {
@@ -224,7 +223,14 @@ public class BlockGas extends Block {
         int blockContentNN;
         if (blockIdNN == blockID) blockContentNN = meta2content(blockMetaNN);
         else blockContentNN = 0;
-        if ((blockIdNN == blockID || blockIdNN == 0) && newContent > 0 && blockContentNN <= newContent) {
+        
+        if(Fluids.isLiquid[blockIdNN] && r.nextInt(4) == 0) {
+          /* Trigger random walk through a liquid */
+          BlockFluid fluid = Fluids.fluid[blockIdNN];
+          fluid.setBlockContent(w, x, y, z, fluid.getBlockContent(w, x2, y2, z2));
+          setBlockContent(w, x2, y2, z2, newContent);
+          return;
+        } else if ((blockIdNN == blockID || blockIdNN == 0) && newContent > 0 && blockContentNN <= newContent) {
           /* Always move unless it would increase the pressure. This means that lone gases will make a random walk */
           int toMove = (newContent - blockContentNN) / 2;
           if (toMove == 0 && blockContentNN < 15 && FysiksFun.rand.nextInt(2) == 0) toMove = 1;

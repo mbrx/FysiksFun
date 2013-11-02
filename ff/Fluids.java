@@ -392,14 +392,23 @@ public class Fluids {
     int steamAmount = nReactions;
     boolean generated = false;
 
+
+    /* Check if the interaction happens in air/water/gas, if so move the result as far down as possible */
+    int targetY = y;
+    Chunk chunk0 = ChunkCache.getChunk(w, x>>4, z>>4, true);
+    for(;targetY>0;targetY--) {
+      int id = chunk0.getBlockID(x&15, targetY-1,z&15);
+      if(id != 0 && !Fluids.stillWater.isSameLiquid(id) && !Gases.isGas[id]) break;
+    }
+    
     for (int i = 0; i < nReactions; i++) {
-      int r = w.rand.nextInt(40);
+      int r = w.rand.nextInt(60);
       if (r == 0) {
-        w.setBlock(x, y, z, Block.obsidian.blockID, 0, 0x02);
+        w.setBlock(x, targetY, z, Block.obsidian.blockID, 0, 0x02);
         generated = true;
         break;
-      } else if (r <= 4) {
-        w.setBlock(x, y, z, Block.cobblestone.blockID, 0, 0x02);
+      } else if (r <= 6) {
+        w.setBlock(x, targetY, z, Block.cobblestone.blockID, 0, 0x02);
         generated = true;
         break;
       }
