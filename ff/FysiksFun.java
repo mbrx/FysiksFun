@@ -62,253 +62,282 @@ import com.google.common.base.Objects;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 
-@Mod(modid = "FysiksFun", name = "FysiksFun", version = "0.3.90")
+@Mod(modid = "FysiksFun", name = "FysiksFun", version = "0.3.91")
 @NetworkMod(clientSideRequired = true, serverSideRequired = false)
 public class FysiksFun {
-  // Singleton instance of mod class instansiated by Forge
-  @Instance("FysiksFun")
-  public static FysiksFun                    instance;
+	// Singleton instance of mod class instansiated by Forge
+	@Instance("FysiksFun")
+	public static FysiksFun instance;
 
-  // Says where the client and server proxy code is loaded.
-  @SidedProxy(clientSide = "mbrx.ff.client.ClientProxy", serverSide = "mbrx.ff.CommonProxy")
-  public static CommonProxy                  proxy;
-  private static final String                ConfigCategory_Generic = "general";
+	// Says where the client and server proxy code is loaded.
+	@SidedProxy(clientSide = "mbrx.ff.client.ClientProxy", serverSide = "mbrx.ff.CommonProxy")
+	public static CommonProxy proxy;
+	private static final String ConfigCategory_Generic = "general";
 
-  public static EventListener                eventListener;
-  private static Configuration               config;
-  public static Logger                       logger;
-  private static WorldTickHandler            worldTickHandler       = new WorldTickHandler();
-  private static ServerTickHandler           serverTickHandler      = new ServerTickHandler();
+	public static EventListener eventListener;
+	private static Configuration config;
+	public static Logger logger;
+	private static WorldTickHandler worldTickHandler = new WorldTickHandler();
+	private static ServerTickHandler serverTickHandler = new ServerTickHandler();
 
-  public static Object                       blockTickQueueRing[]   = new Object[300];
-  public static ArrayDeque<BlockUpdateState> blockTickQueueFreePool = new ArrayDeque<BlockUpdateState>(10);
+	public static Object blockTickQueueRing[] = new Object[300];
+	public static ArrayDeque<BlockUpdateState> blockTickQueueFreePool = new ArrayDeque<BlockUpdateState>(
+			10);
 
-  public static boolean                      inWorldTick;
+	public static boolean inWorldTick;
 
-  public static Random                       rand;
+	public static Random rand;
 
-  public static Settings                     settings               = new Settings();
-  public static ExecutorService              executor               = Executors.newFixedThreadPool(4);
+	public static Settings settings = new Settings();
+	public static ExecutorService executor = Executors.newFixedThreadPool(4);
 
-  public static class WorldObserver {
-    World w;
-    double posX, posY, posZ;
-  };
+	public static class WorldObserver {
+		World w;
+		double posX, posY, posZ;
+	};
 
-  public static ArrayList<WorldObserver> observers = new ArrayList<WorldObserver>();
+	public static ArrayList<WorldObserver> observers = new ArrayList<WorldObserver>();
 
-  @PreInit
-  public void preInit(FMLPreInitializationEvent event) {
-    logger = event.getModLog();
-    config = new Configuration(event.getSuggestedConfigurationFile());
-  }
+	@PreInit
+	public void preInit(FMLPreInitializationEvent event) {
+		logger = event.getModLog();
+		config = new Configuration(event.getSuggestedConfigurationFile());
+	}
 
-  @Init
-  public void load(FMLInitializationEvent event) {
-    proxy.registerRenderers();
+	@Init
+	public void load(FMLInitializationEvent event) {
+		proxy.registerRenderers();
 
-    config.load();
-    settings.loadFromConfig(config);
-    if (config.hasChanged()) config.save();
+		config.load();
+		settings.loadFromConfig(config);
+		if (config.hasChanged())
+			config.save();
 
-    eventListener = new EventListener();
-    MinecraftForge.EVENT_BUS.register(eventListener);
+		eventListener = new EventListener();
+		MinecraftForge.EVENT_BUS.register(eventListener);
 
-    Fluids.load();
-    Gases.load();
+		/*
+		 * Let these modules load even when not used. Make it easier to not
+		 * break when disabled.
+		 */
+		Fluids.load();
+		Gases.load();
 
-    // TickRegistry.registerTickHandler(worldTickHandler, Side.CLIENT);
-    TickRegistry.registerTickHandler(worldTickHandler, Side.SERVER);
-    TickRegistry.registerTickHandler(serverTickHandler, Side.SERVER);
+		// TickRegistry.registerTickHandler(worldTickHandler, Side.CLIENT);
+		TickRegistry.registerTickHandler(worldTickHandler, Side.SERVER);
+		TickRegistry.registerTickHandler(serverTickHandler, Side.SERVER);
 
-    rand = new Random(4711);
-    for (int i = 0; i < 300; i++) {
-      blockTickQueueRing[i] = (Object) new HashSet<BlockUpdateState>();
-    }
-  }
+		rand = new Random(4711);
+		for (int i = 0; i < 300; i++) {
+			blockTickQueueRing[i] = (Object) new HashSet<BlockUpdateState>();
+		}
+	}
 
-  @PostInit
-  public void postInit(FMLPostInitializationEvent event) {
-    // Add our water repair generator AFTER the other generators
-    // if (settings.repairOceans)
-    // GameRegistry.registerWorldGenerator(new OceanRepairGenerator());
-    Fluids.postInit();
-    Gases.postInit();
-  }
+	@PostInit
+	public void postInit(FMLPostInitializationEvent event) {
+		// Add our water repair generator AFTER the other generators
+		// if (settings.repairOceans)
+		// GameRegistry.registerWorldGenerator(new OceanRepairGenerator());
+		if (settings.doFluids)
+			Fluids.postInit();
+		if (settings.doGases)
+			Gases.postInit();
+		if(settings.doExtraFire)
+		  ExtraFire.postInit();
+	}
 
-  /**
-   * Temporary variable for quickly creating a blockUpdateState without risking
-   * GC'ing
-   */
-  private static BlockUpdateState tempBlockUpdateState = new BlockUpdateState();
+	/**
+	 * Temporary variable for quickly creating a blockUpdateState without
+	 * risking GC'ing
+	 */
+	private static BlockUpdateState tempBlockUpdateState = new BlockUpdateState();
 
-  /**
-   * Utility function for removing a specific block-update from the queue.
-   * Currently not used.
-   */
-  public static void removeBlockTick(World w, Block block, int x, int y, int z, int maxDelay) {
-    BlockUpdateState state = tempBlockUpdateState;
-    state.set(w, block, x, y, z);
+	/**
+	 * Utility function for removing a specific block-update from the queue.
+	 * Currently not used.
+	 */
+	public static void removeBlockTick(World w, Block block, int x, int y,
+			int z, int maxDelay) {
+		BlockUpdateState state = tempBlockUpdateState;
+		state.set(w, block, x, y, z);
 
-    for (int d = 1; d <= maxDelay; d++) {
-      ((Set<BlockUpdateState>) blockTickQueueRing[(Counters.tick + d) % 300]).remove(state);
-    }
-  }
+		for (int d = 1; d <= maxDelay; d++) {
+			((Set<BlockUpdateState>) blockTickQueueRing[(Counters.tick + d) % 300])
+					.remove(state);
+		}
+	}
 
-  /** Schedules a block for updates, without giving an explanation */
-  public static void scheduleBlockTick(World w, Block block, int x, int y, int z, int delay) {
-    scheduleBlockTick(w, block, x, y, z, delay, "");
-  }
+	/** Schedules a block for updates, without giving an explanation */
+	public static void scheduleBlockTick(World w, Block block, int x, int y,
+			int z, int delay) {
+		scheduleBlockTick(w, block, x, y, z, delay, "");
+	}
 
-  /**
-   * Schedules a block for updates, with the given explanation (printed only in
-   * debug mode)
-   */
-  public static void scheduleBlockTick(World w, Block block, int x, int y, int z, int delay, String explanation) {
-    /*
-     * logger.log(Level.INFO, Util.logHeader() + "Scheduling " +
-     * Util.xyzString(x, y, z) + " for " + (Counters.tick + delay) + " (+" +
-     * delay + ")" + " " + explanation);
-     */
+	/**
+	 * Schedules a block for updates, with the given explanation (printed only
+	 * in debug mode)
+	 */
+	public static void scheduleBlockTick(World w, Block block, int x, int y,
+			int z, int delay, String explanation) {
+		if (delay <= 0 || delay >= 300)
+			return;
+		Set<BlockUpdateState> q = (Set<BlockUpdateState>) blockTickQueueRing[(Counters.tick + delay) % 300];
+		int size = q.size();
+		if (size > 50000)
+			return;
+		if (inWorldTick && size >= 40000)
+			return;
+		BlockUpdateState state;
+		if (blockTickQueueFreePool.size() > 0)
+			state = blockTickQueueFreePool.pop();
+		else
+			state = new BlockUpdateState();
+		state.set(w, block, x, y, z);
 
-    if (delay <= 0 || delay >= 300) return;
-    Set<BlockUpdateState> q = (Set<BlockUpdateState>) blockTickQueueRing[(Counters.tick + delay) % 300];
-    int size = q.size();
-    if (size > 50000) return;
-    if (inWorldTick && size >= 40000) return;
-    BlockUpdateState state;
-    if (blockTickQueueFreePool.size() > 0) state = blockTickQueueFreePool.pop();
-    else state = new BlockUpdateState();
-    state.set(w, block, x, y, z);
+		/*
+		 * Check if block has already been scheduled for an earlier update, if
+		 * so ignore this one
+		 */
+		/*
+		 * This may seem like a less efficient way as compared to a priority
+		 * heap - however it should be more efficient where it is needed (for
+		 * liquids with small tick rates)
+		 */
+		for (int d = 1; d <= delay; d++)
+			if (((Set<BlockUpdateState>) blockTickQueueRing[(Counters.tick + d) % 300])
+					.contains(state)) {
+				blockTickQueueFreePool.push(state);
+				return;
+			}
+		q.add(state);
+	}
 
-    /*
-     * Check if block has already been scheduled for an earlier update, if so
-     * ignore this one
-     */
-    /*
-     * This may seem like a less efficient way as compared to a priority heap -
-     * however it should be more efficient where it is needed (for liquids with
-     * small tick rates)
-     */
-    for (int d = 1; d <= delay; d++)
-      if (((Set<BlockUpdateState>) blockTickQueueRing[(Counters.tick + d) % 300]).contains(state)) {
-        blockTickQueueFreePool.push(state);
-        return;
-      }
-    q.add(state);
-  }
+	/**
+	 * Performs the ticks that should be done once per server tick loop,
+	 * including the scheduling of all block updates and mark TO client calls
+	 */
+	public static void tickServer() {
+		/* Update world tick and print statistics */
+		Counters.tick++;
+		if (Counters.tick % 300 == 0) {
+			Counters.printStatistics();
+		}
 
-  /**
-   * Performs the ticks that should be done once per server tick loop, including
-   * the scheduling of all block updates and mark TO client calls
-   */
-  public static void tickServer() {
-    /* Update world tick and print statistics */
-    Counters.tick++;
-    if (Counters.tick % 300 == 0)  {
-      Counters.printStatistics();
-    }
+		try {
+			inWorldTick = true;
+			int foo = blockTickQueueFreePool.size();
+			// First tick all blocks
+			int before = 0, after = -42;
+			// Count the total size of all allocated BlockUpdate instances
+			// before/after to detect leakage
+			int totsize = blockTickQueueFreePool.size();
+			for (int i = 0; i < 300; i++)
+				totsize += ((Set<BlockUpdateState>) blockTickQueueRing[i])
+						.size();
 
-    try {
-      inWorldTick = true;
-      int foo = blockTickQueueFreePool.size();
-      // First tick all blocks
-      int before = 0, after = -42;
-      // Count the total size of all allocated BlockUpdate instances
-      // before/after to detect leakage
-      int totsize = blockTickQueueFreePool.size();
-      for (int i = 0; i < 300; i++)
-        totsize += ((Set<BlockUpdateState>) blockTickQueueRing[i]).size();
+			for (BlockUpdateState s : (Set<BlockUpdateState>) blockTickQueueRing[Counters.tick % 300]) {
+				BlockUpdateState s2 = s;
+				s.block.updateTick(s.w, s.x, s.y, s.z, rand);
+				s.set(null, null, 0, 0, 0);
+				before = blockTickQueueFreePool.size();
+				blockTickQueueFreePool.push(s2);
+				after = blockTickQueueFreePool.size();
+				Counters.liquidQueueCounter++;
+			}
+			((HashSet<BlockUpdateState>) blockTickQueueRing[Counters.tick % 300])
+					.clear();
 
-      for (BlockUpdateState s : (Set<BlockUpdateState>) blockTickQueueRing[Counters.tick % 300]) {
-        BlockUpdateState s2 = s;
-        s.block.updateTick(s.w, s.x, s.y, s.z, rand);
-        s.set(null, null, 0, 0, 0);
-        before = blockTickQueueFreePool.size();
-        blockTickQueueFreePool.push(s2);
-        after = blockTickQueueFreePool.size();
-        Counters.liquidQueueCounter++;
-      }
-      ((HashSet<BlockUpdateState>) blockTickQueueRing[Counters.tick % 300]).clear();
+			int totsize2 = blockTickQueueFreePool.size();
+			for (int i = 0; i < 300; i++)
+				totsize2 += ((Set<BlockUpdateState>) blockTickQueueRing[i])
+						.size();
+		} finally {
+			inWorldTick = false;
+		}
 
-      int totsize2 = blockTickQueueFreePool.size();
-      for (int i = 0; i < 300; i++)
-        totsize2 += ((Set<BlockUpdateState>) blockTickQueueRing[i]).size();
-    } finally {
-      inWorldTick = false;
-    }
+		/* Queue chunks/blocks to be send to the client */
+		ChunkMarkUpdater.doTick();
 
-    /* Queue chunks/blocks to be send to the client */
-    ChunkMarkUpdater.doTick();
+		/*
+		 * Clear the observers so we don't accidentally cache worlds, they will
+		 * be repopulated before next tick anyway
+		 */
+		observers.clear();
 
-    /*
-     * Clear the observers so we don't accidentally cache worlds, they will be
-     * repopulated before next tick anyway
-     */
-    observers.clear();
+	}
 
-  }
+	/**
+	 * Performs the ticks that should happen for each world on the SERVER and
+	 * the CLIENT
+	 */
+	public static void doWorldTick(World w) {
 
-  /**
-   * Performs the ticks that should happen for each world on the SERVER and the
-   * CLIENT
-   */
-  public static void doWorldTick(World w) {
+		if (settings.doAnimalAI)
+			AnimalAIRewriter.rewriteAnimalAIs(w);
+		if (settings.doGases)
+			Gases.doWorldTick(w);
+		if (settings.doVolcanoes)
+			Volcanoes.doWorldTick(w);
 
-    AnimalAIRewriter.rewriteAnimalAIs(w);
-    Gases.doWorldTick(w);
-    Volcanoes.doWorldTick(w);
-    
-    if (!w.isRemote) {
-      List allEntities = w.loadedEntityList;
-      for (Object o : allEntities) {
-        if (o instanceof Player) {
-          Entity e = (Entity) o;
-          WorldObserver observer = new WorldObserver();
-          observer.w = w;
-          observer.posX = e.posX;
-          observer.posY = e.posY;
-          observer.posZ = e.posZ;
-          observers.add(observer);
-        }
-      }
-    }
+		if (!w.isRemote) {
+			List allEntities = w.loadedEntityList;
+			for (Object o : allEntities) {
+				if (o instanceof Player) {
+					Entity e = (Entity) o;
+					WorldObserver observer = new WorldObserver();
+					observer.w = w;
+					observer.posX = e.posX;
+					observer.posY = e.posY;
+					observer.posZ = e.posZ;
+					observers.add(observer);
+				}
+			}
+		}
 
-    int rainTime = w.getWorldInfo().getRainTime();
-    if (rainTime > settings.weatherSpeed - 1) w.getWorldInfo().setRainTime(rainTime + 1 - settings.weatherSpeed);
+		int rainTime = w.getWorldInfo().getRainTime();
+		if (rainTime > settings.weatherSpeed - 1)
+			w.getWorldInfo().setRainTime(rainTime + 1 - settings.weatherSpeed);
 
-    for (Object o : w.activeChunkSet) {
-      ChunkCoordIntPair xz = (ChunkCoordIntPair) o;
-      Chunk c = w.getChunkFromChunkCoords(xz.chunkXPos, xz.chunkZPos);
-      if (!c.isChunkLoaded) {
-        System.out.println("ERROR - ticking a chunk that is not loaded?");
-      }
-      int x = xz.getCenterXPos() & 0xfffffff0;
-      int z = xz.getCenterZPosition() & 0xfffffff0;
+		for (Object o : w.activeChunkSet) {
+			ChunkCoordIntPair xz = (ChunkCoordIntPair) o;
+			Chunk c = w.getChunkFromChunkCoords(xz.chunkXPos, xz.chunkZPos);
+			if (!c.isChunkLoaded) {
+				System.out
+						.println("ERROR - ticking a chunk that is not loaded?");
+			}
+			int x = xz.getCenterXPos() & 0xfffffff0;
+			int z = xz.getCenterZPosition() & 0xfffffff0;
 
-      Rain.doPrecipation(w, x, z);
-      Evaporation.doEvaporation(w, x, z);
-      Trees.doTrees(w, x, z);
-      Plants.doPlants(w, x, z);
-      
-      if (w.provider.dimensionId == -1) NetherFun.doNetherFun(w, x, z);
+			if (settings.doRain)
+				Rain.doPrecipation(w, x, z);
+			if (settings.doEvaporation)
+				Evaporation.doEvaporation(w, x, z);
+			if (settings.doTreeFalling)
+				Trees.doTrees(w, x, z);
+			if (settings.doDynamicPlants)
+				Plants.doPlants(w, x, z);
 
-    }
+			if (w.provider.dimensionId == -1 && settings.doNetherfun)
+				NetherFun.doNetherFun(w, x, z);
 
-    Fluids.doWorldTick(w);
-    // System.out.println("Active chunks: "+w.activeChunkSet.size());
+		}
 
-  }
+		if (settings.doFluids || settings.doGases)
+			Fluids.doWorldTick(w);
+		// System.out.println("Active chunks: "+w.activeChunkSet.size());
 
-  public static synchronized void setBlockWithMetadataAndPriority(World w, int x, int y, int z, int id, int meta, int pri) {
-    IChunkProvider chunkProvider = w.getChunkProvider();
-    if (!chunkProvider.chunkExists(x >> 4, z >> 4)) return;
+	}
 
-    Chunk c = w.getChunkFromChunkCoords(x >> 4, z >> 4);
-    c.setBlockIDWithMetadata(x & 15, y, z & 15, id, meta);
-    ChunkMarkUpdater.scheduleBlockMark(w, x, y, z);
-  }
+	/** Priority MAY be used for prioritization of when the mark messages are sent, but currently is not. Use 0 for now. */
+	public static synchronized void setBlockWithMetadataAndPriority(World w,
+			int x, int y, int z, int id, int meta, int pri) {
+		Chunk c = ChunkCache.getChunk(w, x>>4, z>>4, false);
+		if(c == null) return;		
+		c.setBlockIDWithMetadata(x & 15, y, z & 15, id, meta);
+		ChunkMarkUpdater.scheduleBlockMark(w, x, y, z);
+	}
 
-  public static void tickPlayer(Player player, World w) {}
+	public static void tickPlayer(Player player, World w) {
+	}
 
 }

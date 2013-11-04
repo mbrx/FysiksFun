@@ -121,12 +121,13 @@ public class BlockGas extends Block {
       if(y >= 120 && FysiksFun.rand.nextInt(100) == 0) {
         /* Block condensate into water */ 
         setBlockContent(w, x, y, z, 0);
-        /* 75% chance that we move the water straight down to where it should go. */
+        if(FysiksFun.rand.nextInt(2) == 0) return;
+        /* 75% chance that we move the water straight down to where it should go. */        
         if(FysiksFun.rand.nextInt(4) != 0) {
           for(;y>=1;y--) {
             if(origChunk.getBlockID(x&15,y-1,z&15) != 0) break;
           }
-        }
+        } 
         Fluids.stillWater.setBlockContent(w,  x, y, z, newContent * BlockFluid.maximumContent/16);
         //FysiksFun.scheduleBlockTick(w, Fluids.stillWater, x, y, z, 1);
         return;
@@ -327,7 +328,7 @@ public class BlockGas extends Block {
     FysiksFun.scheduleBlockTick(w, this, x, y, z, updateRate);      
   }*/
   @Override
-  public int getRenderBlockPass() { return 1; }
+  public int getRenderBlockPass() { return 0; }
   @Override
   public boolean getBlocksMovement(IBlockAccess w, int x, int y, int z) { return false; }
 

@@ -1,3 +1,8 @@
+Change probability of generating obsidian in lava-water interctions so that it is more likely where there are neighbours. Create clusters.
+Lava-snow interactions.
+
+Make sure that everything can be enabled/disabled in the settings file. 
+
 Water lava interactions may create slabs instead of full blocks.... check emptiness below
 
 To optimize:

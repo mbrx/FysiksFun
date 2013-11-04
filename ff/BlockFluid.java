@@ -441,6 +441,7 @@ public class BlockFluid extends BlockFlowing {
         /* Check if this is a block we can flow over and if we have enough liquid left. */
         if (id1 != 0 && !Fluids.isLiquid[id1]) {
           if (Gases.isGas[id1]) continue;
+          if (Block.blocksList[id1] == null) continue;
           Material m = Block.blocksList[id1].blockMaterial;
           if (m.blocksMovement()) continue;
           else if (content0 > minimumLiquidLevel || dY == -1) {
@@ -693,8 +694,9 @@ public class BlockFluid extends BlockFlowing {
           Chunk c = ChunkCache.getChunk(world, x1 >> 4, z1 >> 4, false);
           if (c == null) continue;
           int id1 = c.getBlockID(x1 & 15, y1, z1 & 15);
-          Material m1 = id1 == 0 ? null : Block.blocksList[id1].blockMaterial;
-          if (id1 != 0 && m1.blocksMovement()) break;
+          Block b = Block.blocksList[id1];
+          Material m1 = b == null ? null : b.blockMaterial;
+          if (id1 != 0 && (m1 != null && m1.blocksMovement())) break;
           int id1b = c.getBlockID(x1 & 15, y1 - 1, z1 & 15);
 
           int content1b = 0;

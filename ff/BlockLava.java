@@ -16,14 +16,17 @@ public class BlockLava extends BlockFluid {
 
   public void expensiveTick(World world, Chunk chunk0, ChunkTempData tempData0, int x0, int y0, int z0, Random r) {
     /* Trigger fire in every flamable block nearby */
+    int dx = FysiksFun.rand.nextInt(5)-2;
+    int dz = FysiksFun.rand.nextInt(5)-2;
+    
     for (int dy = 0; dy < 3; dy++) {
       for (int dir = 0; dir < 6; dir++) {
         // This is a FORGE direction...
         ForgeDirection direction = ForgeDirection.getOrientation(dir);
         if (y0 + dy + direction.offsetY < 0 || y0 + dy + direction.offsetY > 255) continue;
-        int x1 = x0 + direction.offsetX;
+        int x1 = x0 + direction.offsetX + dx;
         int y1 = y0 + dy + direction.offsetY;
-        int z1 = z0 + direction.offsetZ;
+        int z1 = z0 + direction.offsetZ + dz;
 
         int id = world.getBlockId(x1, y1, z1);
         if (id == 0) continue;

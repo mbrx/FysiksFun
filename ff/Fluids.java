@@ -344,6 +344,9 @@ public class Fluids {
                 b.updateTickSafe(w, x + dx, y, z + dz, FysiksFun.rand);
                 gasCount++;
               }
+              
+              if(id == Block.fire.blockID && FysiksFun.settings.doExtraFire)
+                ExtraFire.handleFireAt(w,+dx,y,z+dz);
             }
           // if (fluidCount > 0) System.out.println("Fluid count: " + fluidCount
           // + " xyz: " + Util.xyzString(x, y, z));
@@ -387,28 +390,46 @@ public class Fluids {
       waterAmount = incommingAmount;
     }
     int nReactions = Math.min(lavaAmount, waterAmount) / reactionStepSize + 1;
+    nReactions = Math.min(2, nReactions);
     lavaAmount = Math.max(0, lavaAmount - nReactions * reactionStepSize);
     waterAmount = Math.max(0, waterAmount - nReactions * reactionStepSize);
     int steamAmount = nReactions;
     boolean generated = false;
 
-
-    /* Check if the interaction happens in air/water/gas, if so move the result as far down as possible */
+    /*
+     * Check if the interaction happens in air/water/gas, if so move the result
+     * as far down as possible
+     */
     int targetY = y;
-    Chunk chunk0 = ChunkCache.getChunk(w, x>>4, z>>4, true);
-    for(;targetY>0;targetY--) {
-      int id = chunk0.getBlockID(x&15, targetY-1,z&15);
-      if(id != 0 && !Fluids.stillWater.isSameLiquid(id) && !Gases.isGas[id]) break;
+    Chunk chunk0 = ChunkCache.getChunk(w, x >> 4, z >> 4, true);
+    for (; targetY > 0; targetY--) {
+      int id = chunk0.getBlockID(x & 15, targetY - 1, z & 15);
+      // if (id != 0 && !Fluids.stillWater.isSameLiquid(id) && !Gases.isGas[id])
+      // break;
+      if (id == 0) continue;
+      if (Fluids.isLiquid[id]) continue;
+      if (Gases.isGas[id]) continue;
+      break;
     }
-    
+
+    boolean hasObsidianNeighbour = false;
+    for (int dx = -1; dx <= 1; dx++)
+      for (int dy = -1; dy <= 1; dy++)
+        for (int dz = -1; dz <= 1; dz++) {
+          if (targetY + dy > 0 && targetY + dy < 255) {
+            Chunk chunk1 = ChunkCache.getChunk(w, x + dx, z + dz, false);
+            if (chunk1 != null && chunk1.getBlockID((x + dx) & 15, targetY + dy, (z + dz) & 15) == Block.obsidian.blockID) hasObsidianNeighbour = true;
+          }
+        }
     for (int i = 0; i < nReactions; i++) {
-      int r = w.rand.nextInt(60);
-      if (r == 0) {
-        w.setBlock(x, targetY, z, Block.obsidian.blockID, 0, 0x02);
-        generated = true;
-        break;
-      } else if (r <= 6) {
-        w.setBlock(x, targetY, z, Block.cobblestone.blockID, 0, 0x02);
+      int r = w.rand.nextInt(100);
+      int newId = 0;
+      if (r == 0 || (r == 1 && hasObsidianNeighbour)) newId = Block.obsidian.blockID;
+      else if (r <= 5) newId = Block.gravel.blockID;
+      else if (r <= 10) newId = Block.cobblestone.blockID;
+
+      if (newId != 0) {
+        FysiksFun.setBlockWithMetadataAndPriority(w, x, targetY, z, newId, 0, 0);
         generated = true;
         break;
       }
