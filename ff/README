@@ -1,0 +1,21 @@
+
+Volcanoes
+---------
+
+Volcanoes grow from a source known as a magma-plume. These magma plumes are randomly distributed 
+in the minecraft world and are generated automatically depending on the position of any newly loaded
+chunks (ie. they are procedurally generated as chunks are loaded/unloaded). By themselves the magma plumes
+are not visible, *but* when active they will explode upwards and emit a large amount of liquid lava. 
+
+All lava that are exposed to the sky  will over time cool and form cobblestone,stone and gravel on the surface.
+Combined with how the lava flows out from magma plumes this means that the cooling lava will slowly form mountains that 
+expanding up and outwards much like a "real" volcano.
+
+If you want to tap into a magma plume in order to get an endless supply of lava, you may want to do so underground 
+where the lava is not exposed to the sky. Try to avoid getting blown up (don't obstruct the main flow from the plume!)
+or drowning in the lava.   
+
+The activity of the volcanoes goes in a semi-regular cyclic pattern. The length and intensities of volcanic activities 
+depend roughly on the large scale area of the world.
+ 
+ 
