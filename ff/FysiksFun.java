@@ -62,7 +62,7 @@ import com.google.common.base.Objects;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 
-@Mod(modid = "FysiksFun", name = "FysiksFun", version = "0.3.91")
+@Mod(modid = "FysiksFun", name = "FysiksFun", version = "0.4.0")
 @NetworkMod(clientSideRequired = true, serverSideRequired = false)
 public class FysiksFun {
 	// Singleton instance of mod class instansiated by Forge
@@ -89,7 +89,7 @@ public class FysiksFun {
 	public static Random rand;
 
 	public static Settings settings = new Settings();
-	public static ExecutorService executor = Executors.newFixedThreadPool(4);
+	public static ExecutorService executor = Executors.newFixedThreadPool(12);
 
 	public static class WorldObserver {
 		World w;

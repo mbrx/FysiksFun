@@ -39,7 +39,7 @@ public class Volcanoes {
       // boolean hasVolcano = ((r / 17) % 47113 <
       // FysiksFun.settings.volcanoFrequency);
       // System.out.println("r: "+r);
-      boolean hasVolcano = ((r >> 3) % 472135 < FysiksFun.settings.volcanoFrequency * 25);
+      boolean hasVolcano = ((r >> 3) % 472135 < FysiksFun.settings.volcanoFrequency * 15);
       int radius = 1 + ((r / 11) % (FysiksFun.settings.volcanoRadius));
 
       /*
@@ -208,10 +208,10 @@ public class Volcanoes {
                           /* Chance to create new ores */
                           if (idE == Block.stone.blockID && radSq < (int)((explodeStrength+2)*(explodeStrength+2))) {
                             int newId = 0;
-                            int v = FysiksFun.rand.nextInt(2000);
-                            if(v == 0 && y2 < 35) newId = Block.oreDiamond.blockID;
+                            int v = FysiksFun.rand.nextInt(2500);
+                            if(v == 0 && y2 < 30) newId = Block.oreDiamond.blockID;
                             else if(v == 1 && y2 < 50) newId = Block.oreEmerald.blockID;
-                            else if(v < 5 && y2 < 75) newId = Block.oreIron.blockID;
+                            else if(v>1 && v < 5 && y2 < 75) newId = Block.oreIron.blockID;
                             if(newId != 0) {
                               FysiksFun.setBlockWithMetadataAndPriority(w, x2, y2, z2, newId, 0, 0);
                               FysiksFun.setBlockWithMetadataAndPriority(w, x2+1, y2, z2, newId, 0, 0);
@@ -227,7 +227,7 @@ public class Volcanoes {
                         if (content < BlockFluid.maximumContent) {
                           Fluids.stillLava.setBlockContent(w, x0 + dx2, y0 + dy2 + offsetY, z0 + dz2, BlockFluid.maximumContent);
                         }
-                        Fluids.stillLava.updateTick(w, x0 + dx2, y0 + offsetY + dy2, z0 + dz2, FysiksFun.rand);
+                        //Fluids.stillLava.updateTick(w, x0 + dx2, y0 + offsetY + dy2, z0 + dz2, FysiksFun.rand);
                       }
                     }
 
@@ -349,7 +349,7 @@ public class Volcanoes {
                     }
                 int contentBefore = Fluids.stillLava.getBlockContent(w, targetX, targetY, targetZ);
                 Fluids.stillLava.setBlockContent(w, targetX, targetY, targetZ, BlockFluid.maximumContent + BlockFluid.pressurePerY * 2);
-                Fluids.stillLava.updateTick(w, targetX, targetY, targetZ, FysiksFun.rand);
+                //Fluids.stillLava.updateTick(w, targetX, targetY, targetZ, FysiksFun.rand);
                 // System.out.println("Adding "+(BlockFluid.maximumContent-lowestPressure)+" lava to "+x1+" "+y1+" "+z1);
                 int contentAfter = Fluids.stillLava.getBlockContent(w, targetX, targetY, targetZ);
                 // System.out.println("Lava before update: " +
@@ -463,7 +463,7 @@ public class Volcanoes {
     /*
      * Cool down lava that is exposed to the open air, creating stone or gravel
      */
-    for (int cooldownAttempt = 0; cooldownAttempt < 4; cooldownAttempt++) {
+    for (int cooldownAttempt = 0; cooldownAttempt < 8; cooldownAttempt++) {
       int x0 = (xz.chunkXPos << 4) + FysiksFun.rand.nextInt(16);
       int z0 = (xz.chunkZPos << 4) + FysiksFun.rand.nextInt(16);
       // If this is a chunk with a volcano, avoid cooling stone in the

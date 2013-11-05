@@ -77,7 +77,7 @@ class ChunkMarkUpdater {
    * Schedule a block to be marked (sent to client) at some non-determined point
    * in the future
    */
-  public static void scheduleBlockMark(World w, int x, int y, int z) {
+  public static synchronized void scheduleBlockMark(World w, int x, int y, int z) {
     /*try {
       mutex.acquire();
     } catch (InterruptedException e) {

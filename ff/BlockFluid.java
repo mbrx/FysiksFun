@@ -263,10 +263,9 @@ public class BlockFluid extends BlockFlowing {
     tempData.setTempData(x, y, z, content);
 
     if (oldId != newId || oldMetaData != newMetaData) {
-      ChunkMarkUpdater.scheduleBlockMark(w, x, y, z);
-      // if (delayedBlockMarkSet == null) ChunkMarkUpdater.scheduleBlockMark(w,
-      // x, y, z);
-      // else delayedBlockMarkSet.add(new CoordinateWXYZ(w, x, y, z));
+      //ChunkMarkUpdater.scheduleBlockMark(w, x, y, z);
+      if (delayedBlockMarkSet == null) ChunkMarkUpdater.scheduleBlockMark(w, x, y, z);
+      else delayedBlockMarkSet.add(new CoordinateWXYZ(w, x, y, z));
     }
   }
 
@@ -1258,10 +1257,10 @@ public class BlockFluid extends BlockFlowing {
     int idBelow = w.getBlockId(x, y - 1, z);
     int contentHere = getBlockContent(w, x, y, z);
 
-    if (idBelow == 0 || idBelow == movingID) {
-      int belowContent = (idBelow == 0 ? 0 : getBlockContent(w, x, y - 1, z));
+    if (idBelow == 0 || idBelow == movingID || Gases.isGas[idBelow]) {
+      int belowContent = (idBelow == movingID) ? getBlockContent(w, x, y - 1, z) : 0;
       if (contentHere < belowContent) myvec.yCoord = 0.0;
-      else myvec.yCoord = -5.0 * (contentHere - belowContent) / (1.d * BlockFluid.maximumContent);
+      else myvec.yCoord = -2.0 * (contentHere - belowContent) / (1.d * BlockFluid.maximumContent);
 
       myvec.xCoord = 0.0;
       myvec.zCoord = 0.0;
@@ -1281,9 +1280,9 @@ public class BlockFluid extends BlockFlowing {
         int content2 = id2 == 0 ? 0 : getBlockContent(w, x + dx, y, z + dz);
         if (Math.abs(contentHere - content2) > 1) {
           int delta = contentHere - content2;
-          if (Math.abs(delta) < BlockFluid.maximumContent / 8) delta = 0;
-          myvec.xCoord += 0.5d * ((double) dx * delta) * contentHere / (1.d * BlockFluid.maximumContent * BlockFluid.maximumContent);
-          myvec.zCoord += 0.5d * ((double) dz * delta) * contentHere / (1.d * BlockFluid.maximumContent * BlockFluid.maximumContent);
+          if (Math.abs(delta) < BlockFluid.maximumContent / 4) delta = 0;
+          myvec.xCoord += 0.3d * ((double) dx * delta) * contentHere / (1.d * BlockFluid.maximumContent * BlockFluid.maximumContent);
+          myvec.zCoord += 0.3d * ((double) dz * delta) * contentHere / (1.d * BlockFluid.maximumContent * BlockFluid.maximumContent);
         }
       }
     }

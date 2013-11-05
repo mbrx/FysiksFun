@@ -58,5 +58,15 @@ v0.3.99
     * Support for pressure levels of fluids. 
     * Steam is generated when water interacts with lava
     * Volcanoes!
-    * First (very early) version of dynamic weather systems    
-   
+    * First (very early) version of dynamic weather systems
+    
+v0.4.0
+    * Volcanoes have varying degrees of activity at different points in time
+    * Volcanoes have some mineral loot inside them, better at lower depths
+    * Volcanoes grow non-straight before reaching the surface
+    * Multithreading of the fluid dynamics code
+    * New texture/rendering method for steam
+        
+v0.4.0.1
+    * Fixed error computing movement in waters that are falling through non-air gases. (It should now not be possible to swim in the steam cloud over a water volcano)
+    
