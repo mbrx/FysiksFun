@@ -69,4 +69,8 @@ v0.4.0
         
 v0.4.0.1
     * Fixed error computing movement in waters that are falling through non-air gases. (It should now not be possible to swim in the steam cloud over a water volcano)
-    
+    * Moved more parts multithreaded
+    * Red-neck fishing, explosives in water are effective in a larger radius 
+    * Changed shape of how volcanoes grow
+    * Removed lighting computations from being performed by WorldManager whenever gas/fluid has moved
+    * Faster, lowlevel, access to world blocks during sweeps

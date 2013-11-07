@@ -29,12 +29,6 @@ public class Fluids {
   public static boolean    isLiquid[]  = new boolean[4096];
   public static BlockFluid fluid[]     = new BlockFluid[4096];
 
-  private static class WorldUpdateState {
-    int sweepSteps;
-    int sweepCounter;
-  };
-
-  private static Hashtable<World, WorldUpdateState> worldUpdateState = new Hashtable<World, WorldUpdateState>();
 
   public static void registerLiquidBlock(BlockFluid block) {
     liquidIDs[nLiquids++] = block.blockID;
@@ -144,269 +138,8 @@ public class Fluids {
 
   }
 
-  /**
-   * Performs the main ticks for all fluids by circulating over all layers in
-   * multiple ticks. Ie, going down from layer 255 to bedrock and then starting
-   * over.
-   */
-  public static void doWorldTick(World w) {
-    WorldUpdateState wstate = worldUpdateState.get(w);
-    if (wstate == null) {
-      wstate = new WorldUpdateState();
-      worldUpdateState.put(w, wstate);
-    }
-    int mi, ma;
-    wstate.sweepSteps++;
 
-    switch (wstate.sweepSteps % 5) {
-    case 0:
-      mi = 0;
-      ma = 48;
-      break;
-    case 1:
-      mi = 49;
-      ma = 58;
-      break;
-    case 2:
-      mi = 59;
-      ma = 65;
-      break;
-    case 3:
-      mi = 66;
-      ma = 100;
-      break;
-    default:
-      mi = 101;
-      ma = 255;
-      wstate.sweepCounter++;
-    }
-
-    class WorkerThread implements Runnable {
-      ChunkCoordIntPair                     xz;
-      World                                 w;
-      int                                   minY, maxY;
-      WorldUpdateState                      wstate;
-      Map<Integer, HashSet<CoordinateWXYZ>> delayedBlockMarkSets;
-
-      public WorkerThread(World w, WorldUpdateState wstate, ChunkCoordIntPair xz, int minY, int maxY, Map<Integer, HashSet<CoordinateWXYZ>> delayedBlockMarkSets) {
-        this.xz = xz;
-        this.w = w;
-        this.minY = minY;
-        this.maxY = maxY;
-        this.wstate = wstate;
-        this.delayedBlockMarkSets = delayedBlockMarkSets;
-      }
-
-      @Override
-      public void run() {
-        Integer tid = (int) Thread.currentThread().getId();
-        HashSet<CoordinateWXYZ> delayedBlockMarkSet = delayedBlockMarkSets.get(tid);
-        if (delayedBlockMarkSet == null) {
-          delayedBlockMarkSet = new HashSet<CoordinateWXYZ>();
-          delayedBlockMarkSets.put(tid, delayedBlockMarkSet);
-        }
-
-        Chunk c = ChunkCache.getChunk(w, xz.chunkXPos, xz.chunkZPos, false);
-        ChunkTempData tempData0 = ChunkCache.getTempData(w, xz.chunkXPos, xz.chunkZPos);
-        int x = xz.chunkXPos << 4;
-        int z = xz.chunkZPos << 4;
-        
-        // Don't process some of the chunks, when the current chunk has too much
-        // fluids in it (is probably some kind of ocean)
-        if (wstate.sweepCounter % 3 != 0) {
-          int cnt = 0;
-          for (int y2 = 1; y2 < 255; y2++)
-            cnt += tempData0.getFluidHistogram(y2);
-          if (cnt > 2000) return;
-        }
-        
-        for (int y = minY; y <= maxY; y++) { 
-
-          if (wstate.sweepCounter % 6 != 0) {
-            boolean checkCarefully = false;
-            if (tempData0.getFluidHistogram(y) != 0) checkCarefully = true;
-            if (tempData0.getGasHistogram(y) != 0) checkCarefully = true;
-
-            // Check layers above/below water and gas, since it may be
-            // propagated
-            if (y + 3 < 255 && tempData0.getFluidHistogram(y + 3) != 0) checkCarefully = true;
-            if (y + 2 < 255 && tempData0.getFluidHistogram(y + 2) != 0) checkCarefully = true;
-            if (y + 1 < 255 && tempData0.getFluidHistogram(y + 1) != 0) checkCarefully = true;
-            if (y - 1 > 0 && tempData0.getGasHistogram(y - 1) != 0) checkCarefully = true;
-            if (y - 2 > 0 && tempData0.getGasHistogram(y - 2) != 0) checkCarefully = true;
-            if (y - 3 > 0 && tempData0.getGasHistogram(y - 3) != 0) checkCarefully = true;
-            // TODO - check layers from adjacent chunks?
-            if (checkCarefully == false) continue;
-          }
-          
-          int fluidCount = 0;
-          int gasCount = 0;
-          for (int dx = 0; dx < 16; dx++)
-            for (int dz = 0; dz < 16; dz++) {
-              int id = c.getBlockID(dx, y, dz);
-              
-              /* For fluids */
-              if (isLiquid[id]) {
-                BlockFluid b = (BlockFluid) Block.blocksList[id];
-                //b.updateTickSafe(w, c, tempData0, x + dx, y, z + dz, FysiksFun.rand, wstate.sweepCounter, delayedBlockMarkSet);                
-                b.updateTickSafe(w, c, tempData0, x + dx, y, z + dz, FysiksFun.rand, wstate.sweepCounter, null);
-                if (FysiksFun.rand.nextInt(10 * b.liquidUpdateRate) == 0) b.updateRandomWalk(w, c, tempData0, x + dx, y, z + dz, FysiksFun.rand);
-                if (FysiksFun.rand.nextInt(10) == 0) b.expensiveTick(w, c, tempData0, x + dx, y, z + dz, FysiksFun.rand);
-                fluidCount++;
-              }
-
-              /* For gases */
-              if (Gases.isGas[id]) {
-                BlockGas b = (BlockGas) Block.blocksList[id];
-                b.updateTickSafe(w, x + dx, y, z + dz, FysiksFun.rand);
-                gasCount++;
-              }
-              
-              /* Extra fire */
-              if(id == Block.fire.blockID && FysiksFun.settings.doExtraFire)
-                ExtraFire.handleFireAt(w,+dx,y,z+dz);
-                                         
-            }
-          tempData0.setFluidHistogram(y, fluidCount);
-          tempData0.setGasHistogram(y, gasCount);
-          
-        }
-      }
-    }
-
-    boolean useMultithreading = true;
-    boolean doRandomWalks = (FysiksFun.rand.nextInt(20) == 0);
-
-    if (useMultithreading) {
-      /* Multi threaded implementation of fluid updates */
-
-      // Make sure all chunks/tempData are loaded...
-      for (Object o : w.activeChunkSet) {
-        ChunkCoordIntPair xz = (ChunkCoordIntPair) o;
-        Chunk c = ChunkCache.getChunk(w,xz.chunkXPos, xz.chunkZPos, true);
-        ChunkTempData tmp = ChunkCache.getTempData(w,xz.chunkXPos, xz.chunkZPos);
-      }
-
-      // ExecutorService executor = Executors.newFixedThreadPool(2);
-      Map<Integer, HashSet<CoordinateWXYZ>> delayedBlockMarkSets = Collections.synchronizedMap(new Hashtable<Integer, HashSet<CoordinateWXYZ>>());
-
-      // Schedule jobs, first the odd coordinates, then the even coordinates
-      List<Future> toWaitFor = new ArrayList<Future>();
-      for (int oddeven = 0; oddeven < 2; oddeven++) {
-        for (Object o : w.activeChunkSet) {
-          ChunkCoordIntPair xz = (ChunkCoordIntPair) o;
-          if ((xz.chunkXPos + xz.chunkZPos) % 2 == oddeven) {
-            Runnable worker = new WorkerThread(w, wstate, xz, mi, ma, delayedBlockMarkSets);
-            Future f = FysiksFun.executor.submit(worker);
-            toWaitFor.add(f);
-          }
-        }
-        for (Future f : toWaitFor) {
-          try {
-            if (f != null) f.get();
-          } catch (Exception e) {
-            e.printStackTrace();
-          }
-        }
-      }
-      
-      /* Go through all updated blocks and mark them for updates */
-      for (HashSet<CoordinateWXYZ> delayedBlockMarkSet : delayedBlockMarkSets.values()) {
-        for (CoordinateWXYZ coord : delayedBlockMarkSet) {
-          //ChunkMarkUpdater.scheduleBlockMark(coord.getWorld(), coord.getX(), coord.getY(), coord.getZ());
-        }
-      }
-    } else {
-
-      /* Single threaded implementation of fluid updates */
-      // for(int chunkX=-100;chunkX<100;chunkX++)
-      // for(int chunkZ=-100;chunkZ<100;chunkZ++)
-
-      // int dim = w.provider.dimensionId;
-      // if(dim != 0) return;
-
-      for (Object o : w.activeChunkSet) {
-        ChunkCoordIntPair xz = (ChunkCoordIntPair) o;
-        // Chunk c = w.getChunkFromChunkCoords(xz.chunkXPos, xz.chunkZPos);
-        Chunk c = ChunkCache.getChunk(w, xz.chunkXPos, xz.chunkZPos, false);
-        if (c == null) System.out.println("Chunk not found: " + xz.chunkXPos + " " + xz.chunkZPos);
-        if (c == null) continue; // Actually... this should't happen?
-        int x = xz.chunkXPos << 4;
-        int z = xz.chunkZPos << 4;
-        // ChunkTempData tempData0 = ChunkTempData.getChunk(w, x, 0, z);
-        ChunkTempData tempData0 = ChunkCache.getTempData(w, x >> 4, z >> 4);
-
-        // Don't process some of the chunks, when the current chunk has too much
-        // fluids in it (is probably some kind of ocean)
-        if (wstate.sweepCounter % 3 != 0) {
-          int cnt = 0;
-          for (int y2 = 1; y2 < 255; y2++)
-            cnt += tempData0.getFluidHistogram(y2);
-          if (cnt > 2000) continue;
-        }
-        // System.out.println("Sweep step: "+wstate.sweepSteps+" counter: "+wstate.sweepCounter);
-        for (int y = mi; y <= ma; y++) {
-          // Don't check layers that are not know to contain water, except for
-          // every 4 complete sweeps
-          // (since water might have been added externally)
-          if (wstate.sweepCounter % 6 != 0) {
-            boolean checkCarefully = false;
-            if (tempData0.getFluidHistogram(y) != 0) checkCarefully = true;
-            if (tempData0.getGasHistogram(y) != 0) checkCarefully = true;
-
-            // Check layers above/below water and gas, since it may be
-            // propagated
-            if (y + 3 < 255 && tempData0.getFluidHistogram(y + 3) != 0) checkCarefully = true;
-            if (y + 2 < 255 && tempData0.getFluidHistogram(y + 2) != 0) checkCarefully = true;
-            if (y + 1 < 255 && tempData0.getFluidHistogram(y + 1) != 0) checkCarefully = true;
-            if (y - 1 > 0 && tempData0.getGasHistogram(y - 1) != 0) checkCarefully = true;
-            if (y - 2 > 0 && tempData0.getGasHistogram(y - 2) != 0) checkCarefully = true;
-            if (y - 3 > 0 && tempData0.getGasHistogram(y - 3) != 0) checkCarefully = true;
-            // TODO - check layers from adjacent chunks?
-            if (checkCarefully == false) continue;
-          }
-
-          int fluidCount = 0;
-          int gasCount = 0;
-          for (int dx = 0; dx < 16; dx++)
-            for (int dz = 0; dz < 16; dz++) {
-              int id = c.getBlockID(dx, y, dz);
-
-              /* For fluids */
-              if (isLiquid[id]) {
-                BlockFluid b = (BlockFluid) Block.blocksList[id];
-                b.updateTickSafe(w, c, tempData0, x + dx, y, z + dz, FysiksFun.rand, wstate.sweepCounter, null);
-                if (FysiksFun.rand.nextInt(10 * b.liquidUpdateRate) == 0) b.updateRandomWalk(w, c, tempData0, x + dx, y, z + dz, FysiksFun.rand);
-                if (FysiksFun.rand.nextInt(10) == 0) b.expensiveTick(w, c, tempData0, x + dx, y, z + dz, FysiksFun.rand);
-                fluidCount++;
-              }
-
-              /* For gases */
-              if (Gases.isGas[id]) {
-                BlockGas b = (BlockGas) Block.blocksList[id];
-                b.updateTickSafe(w, x + dx, y, z + dz, FysiksFun.rand);
-                gasCount++;
-              }
-              
-              if(id == Block.fire.blockID && FysiksFun.settings.doExtraFire)
-                ExtraFire.handleFireAt(w,+dx,y,z+dz);
-            }
-          // if (fluidCount > 0) System.out.println("Fluid count: " + fluidCount
-          // + " xyz: " + Util.xyzString(x, y, z));
-          tempData0.setFluidHistogram(y, fluidCount);
-          tempData0.setGasHistogram(y, gasCount);
-        }
-      }
-    }
-
-  }
-
-  /**
-   * Schedules a block to be "marked". On a server this will either send the
-   * block to clients. private static BlockUpdateState tmpLookupState = new
-   * BlockUpdateState();
-   * 
-   * /** Returns true if the two liquids given by blockID's can mix and cause an
+  /** Returns true if the two liquids given by blockID's can mix and cause an
    * interaction
    */
   public static boolean liquidCanInteract(int block1, int block2) {
@@ -450,7 +183,8 @@ public class Fluids {
       // if (id != 0 && !Fluids.stillWater.isSameLiquid(id) && !Gases.isGas[id])
       // break;
       if (id == 0) continue;
-      if (Fluids.isLiquid[id]) continue;
+      //if (Fluids.isLiquid[id]) continue;
+      if(Fluids.stillWater.isSameLiquid(id)) continue;
       if (Gases.isGas[id]) continue;
       break;
     }
@@ -460,16 +194,16 @@ public class Fluids {
       for (int dy = -1; dy <= 1; dy++)
         for (int dz = -1; dz <= 1; dz++) {
           if (targetY + dy > 0 && targetY + dy < 255) {
-            Chunk chunk1 = ChunkCache.getChunk(w, x + dx, z + dz, false);
+            Chunk chunk1 = ChunkCache.getChunk(w, (x + dx)>>4, (z + dz)>>4, false);
             if (chunk1 != null && chunk1.getBlockID((x + dx) & 15, targetY + dy, (z + dz) & 15) == Block.obsidian.blockID) hasObsidianNeighbour = true;
           }
         }
     for (int i = 0; i < nReactions; i++) {
-      int r = w.rand.nextInt(100);
+      int r = w.rand.nextInt(200);
       int newId = 0;
-      if (r == 0 || (r == 1 && hasObsidianNeighbour)) newId = Block.obsidian.blockID;
-      else if (r <= 5) newId = Block.gravel.blockID;
-      else if (r <= 10) newId = Block.cobblestone.blockID;
+      if (r == 0 || (r <= 3 && hasObsidianNeighbour)) newId = Block.obsidian.blockID;
+      else if (r <= 10) newId = Block.gravel.blockID;
+      else if (r <= 20) newId = Block.cobblestone.blockID;
 
       if (newId != 0) {
         FysiksFun.setBlockWithMetadataAndPriority(w, x, targetY, z, newId, 0, 0);
@@ -488,7 +222,10 @@ public class Fluids {
     
     // DEBUG
     // steamAmount=0;
-
+    
+     // Optimisation
+    steamAmount=Math.max(1, steamAmount/2);
+    
     for (int dist = 1; dist < 2 && steamAmount > 0; dist++) {
       for (int dir0 = 4; dir0 < 6 + 4 && steamAmount > 0; dir0++) {
         int dir = dir0 % 6;
@@ -506,7 +243,6 @@ public class Fluids {
         }
       }
     }
-
     if (Block.blocksList[incomingBlockID].blockMaterial == Material.lava) {
       if (!generated) flowingWater.setBlockContent(w, x, y, z, waterAmount);
       return lavaAmount;

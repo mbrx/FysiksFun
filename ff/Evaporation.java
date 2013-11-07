@@ -152,7 +152,7 @@ public class Evaporation {
     // TODO - let the biome affect this?
 
     Chunk c = w.getChunkFromChunkCoords(x >> 4, z >> 4);
-    for (int tries = 0; tries < 20; tries++) {
+    for (int tries = 0; tries < 10; tries++) {
       int dx = FysiksFun.rand.nextInt(16);
       int dz = FysiksFun.rand.nextInt(16);
       int y1 = 24 + FysiksFun.rand.nextInt(17) + FysiksFun.rand.nextInt(17);
@@ -165,7 +165,10 @@ public class Evaporation {
           int dx2 = Util.dirToDx(dir);
           int dy2 = Util.dirToDy(dir);
           int dz2 = Util.dirToDz(dir);
-          int id2 = w.getBlockId(x1 + dx2, y1 + dy2, z1 + dz2);
+          Chunk chunk1 = ChunkCache.getChunk(w, (x1+dx2)>>4, (z1+dz2)>>4, false);
+          if(chunk1 == null) continue;
+          //int id2 = w.getBlockId(x1 + dx2, y1 + dy2, z1 + dz2);
+          int id2 = chunk1.getBlockID((x1+dx2)&15, y1+dy2, (z1+dz2)&15);
           if (id2 == Block.dirt.blockID || id2 == Block.gravel.blockID || id2 == Block.cobblestone.blockID) {
             Fluids.flowingWater.setBlockContent(w, x1, y1, z1, evaporationStepsize);
             Counters.humidification++;

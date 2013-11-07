@@ -1,3 +1,5 @@
+Create list of "scary" blocks, let AI's run away from them 
+
 Change probability of generating obsidian in lava-water interctions so that it is more likely where there are neighbours. Create clusters.
 Lava-snow interactions.
 

@@ -2,6 +2,7 @@ package mbrx.ff;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
@@ -10,6 +11,7 @@ import java.util.concurrent.Semaphore;
 import com.google.common.base.Objects;
 
 import net.minecraft.world.World;
+import net.minecraft.world.chunk.Chunk;
 import mbrx.ff.FysiksFun.WorldObserver;
 
 /**
@@ -20,12 +22,26 @@ class ChunkMarkUpdater {
   static int                                                scheduledMarkUpdates   = 0;
   static int                                                ticksLeft              = 0;
 
+  private static class MarkOriginalValue {
+    int originalId, originalMeta;
+    
+    public MarkOriginalValue(int id, int meta) {
+      this.originalId = id;
+      this.originalMeta = meta;
+    }
+    public void set(int id, int meta) {
+      this.originalId = id;
+      this.originalMeta = meta;
+    }
+  }
+  
   public CoordinateWXZ                                      coordinate;
   private static Semaphore                                  mutex                  = new Semaphore(1);
 
-  private HashSet<CoordinateWXYZ>                           markList;
+  private HashMap<CoordinateWXYZ,MarkOriginalValue>                  markList;
   private static CoordinateWXZ                              tmpCoordinateWXZ       = new CoordinateWXZ(null, -1, -1);
   private static CoordinateWXYZ                             tmpCoordinateWXYZ      = new CoordinateWXYZ(null, -1, -1, -1);
+  private static MarkOriginalValue                                   tmpMarkTask            = new MarkOriginalValue(-1, -1);
   private static ArrayList<ChunkMarkUpdater>                tmpChunkBlockMarkList  = new ArrayList<ChunkMarkUpdater>();
 
   private static ArrayDeque<CoordinateWXYZ>                 coordinateWXYZFreePool = new ArrayDeque<CoordinateWXYZ>();
@@ -78,31 +94,53 @@ class ChunkMarkUpdater {
    * in the future
    */
   public static synchronized void scheduleBlockMark(World w, int x, int y, int z) {
-    /*try {
+    scheduleBlockMark(w,x,y,z,-1,-1);
+  }
+  public static synchronized void scheduleBlockMark(World w, int x, int y, int z, int originalId, int originalMeta) {
+    try {
       mutex.acquire();
     } catch (InterruptedException e) {
       e.printStackTrace();
       return;
-    }*/
+    }
 
     try {
 
+      Chunk c = ChunkCache.getChunk(w, x>>4, z>>4, true);
+      int newId = c.getBlockID(x&15, y, z&15);
+      int newMeta = c.getBlockMetadata(x&15, y, z&15);
+      
       scheduledMarkUpdates++;
       ChunkMarkUpdater cml = ChunkCache.getCML(w, x >> 4, z >> 4);
       tmpCoordinateWXYZ.set(w, x, y, z);
-      if (cml.markList.contains(tmpCoordinateWXYZ)) return;
-      CoordinateWXYZ coord = coordinateWXYZFreePool.poll();
-      if (coord == null) {
-        coord = new CoordinateWXYZ(w, x, y, z);
-      } else coord.set(w, x, y, z);
-      cml.markList.add(coord);
+      
+      MarkOriginalValue mov = cml.markList.get(tmpCoordinateWXYZ);
+      if(mov == null) {        
+        /* Block had not been scheduled before, schedule it and note the original value for it */
+        mov = new MarkOriginalValue(originalId, originalMeta);
+        CoordinateWXYZ coord = coordinateWXYZFreePool.poll();
+        if (coord == null) {
+          coord = new CoordinateWXYZ(w, x, y, z);
+        } else coord.set(w, x, y, z);
+        cml.markList.put(coord, mov);
+        Counters.chunkMarkScheduled++;
+      } else {
+        if(mov.originalId == newId && mov.originalMeta == newMeta) {
+          /* The block has been restored to it's original shape before it has been updated. Don't bother to make an update. */
+          cml.markList.remove(tmpCoordinateWXYZ);
+          // fuck it, let just Java take care of the GC'ing for now
+          Counters.chunkMarkUndo++;
+        } else {
+          /* It already existed there, we have not changed it back in anyway. Nothing left to do */
+        }
+      }
     } finally {
-      // mutex.release();
+      mutex.release();
     }
   }
 
   /** Assumes that we are called in a non-threaded environment */
-  public static void scheduleBlockMarkSingleThread(World w, int x, int y, int z) {
+/*  public static void scheduleBlockMarkSingleThread(World w, int x, int y, int z) {
     ChunkMarkUpdater cml = getAndScheduleChunkMarkList(w, x >> 4, z >> 4);
     tmpCoordinateWXYZ.set(w, x, y, z);
     if (cml.markList.contains(tmpCoordinateWXYZ)) return;
@@ -111,11 +149,11 @@ class ChunkMarkUpdater {
       coord = new CoordinateWXYZ(w, x, y, z);
     } else coord.set(w, x, y, z);
     cml.markList.add(coord);
-  }
+  }*/
 
   public ChunkMarkUpdater(World w, int chunkX, int chunkZ) {
     coordinate = new CoordinateWXZ(w, chunkX, chunkZ);
-    markList = new HashSet<CoordinateWXYZ>();
+    markList = new HashMap<CoordinateWXYZ,MarkOriginalValue>();
   }
 
   public static void printStatistics() {
@@ -159,11 +197,11 @@ class ChunkMarkUpdater {
           int dx = (x >> 4) - cml.coordinate.getX();
           int dz = (z >> 4) - cml.coordinate.getZ();
           if (dx * dx + dz * dz <= markRadiusSq_coarce) {
-            for (CoordinateWXYZ coord : cml.markList) {
+            for (CoordinateWXYZ coord : cml.markList.keySet()) {
               double dx2 = o.posX - coord.getX();
               double dy2 = o.posY - coord.getY();
               double dz2 = o.posZ - coord.getZ();
-              if (dy2 > 0) dy2 /= 4; // Makes clouds be updated more often
+              if (dy2 > 0) dy2 /= 2; // Makes clouds be updated more often
               if (dx2 * dx2 + dy2 * dy2 + dz2 * dz2 < markRadiusSq_fine) {
                 doSend = true;
                 break;
@@ -215,13 +253,13 @@ class ChunkMarkUpdater {
     int collateral = 0;
 
     Counters.markQueueCounter += collateral;
-    for (CoordinateWXYZ coord : markList) {
+    for (CoordinateWXYZ coord : markList.keySet()) {
       coord.getWorld().markBlockForUpdate(coord.getX(), coord.getY(), coord.getZ());
-      coord.set(null, 0, 0, 0); // MB 130810
+      coord.set(null, 0, 0, 0);
       collateral++;
       Counters.markQueueCounter++;
     }
-    coordinateWXYZFreePool.addAll(markList);
+    coordinateWXYZFreePool.addAll(markList.keySet());
     markList.clear();
 
     if (collateral < 64) return collateral / 8 + 1;

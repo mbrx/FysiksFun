@@ -48,7 +48,7 @@ public class Gases {
     // Was FysiksFun:steam
     steam.setIconName("fysiksfun:steam2");
     steam.setLighterThanAir(true);
-    steam.setDamageToEntity(1, 20);
+    steam.setDamageToEntity(1, 10);
     
     GameRegistry.registerBlock(steam, "steam");
     LanguageRegistry.addName(steam, "steam");
