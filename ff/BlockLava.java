@@ -19,7 +19,7 @@ public class BlockLava extends BlockFluid {
     int dx = FysiksFun.rand.nextInt(5)-2;
     int dz = FysiksFun.rand.nextInt(5)-2;
     
-    for (int dy = 0; dy < 3; dy++) {
+    for (int dy = -1; dy < 3; dy++) {
       for (int dir = 0; dir < 6; dir++) {
         // This is a FORGE direction...
         ForgeDirection direction = ForgeDirection.getOrientation(dir);
@@ -32,6 +32,15 @@ public class BlockLava extends BlockFluid {
         if (id == 0) continue;
         if(id == Block.grass.blockID) {
           world.setBlock(x1, y1, z1, Block.dirt.blockID, 0, 0x02);
+          continue;
+        }
+        if(id == Block.ice.blockID) {          
+          Fluids.stillWater.setBlockContent(world,x1,y1,z1, Fluids.stillWater.maximumContent);
+          continue;
+        } 
+        if(id == Block.blockSnow.blockID) {
+          int meta = world.getBlockMetadata(x1, y1, z1);
+          Fluids.stillWater.setBlockContent(world,x1,y1,z1, Fluids.stillWater.maximumContent/16 * meta);
           continue;
         }
         

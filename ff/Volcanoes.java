@@ -37,7 +37,8 @@ public class Volcanoes {
     // boolean hasVolcano = ((r / 17) % 47113 <
     // FysiksFun.settings.volcanoFrequency);
     // System.out.println("r: "+r);
-    boolean hasVolcano = ((r >> 3) % 472135 < FysiksFun.settings.volcanoFrequency * 15);
+    // Using prime numbers for shaping the randomness
+    boolean hasVolcano = (((r >> 3) % 1028569) < FysiksFun.settings.volcanoFrequency * 17);
     int radius = 1 + ((r / 11) % (FysiksFun.settings.volcanoRadius));
 
     /*
@@ -92,7 +93,12 @@ public class Volcanoes {
              * Walk straight up from the start of the plume. If air is encountered, make it lava and stop. If a block is
              * encountered, make an explosion
              */
-            Chunk chunk0 = ChunkCache.getChunk(w, x0 >> 4, z0 >> 4, true);
+            Chunk chunk0 = ChunkCache.getChunk(w, x0 >> 4, z0 >> 4, false);
+            // If lava plume extends outside loaded area, stop feeding volcanoe and wait until it is loaded
+            if(chunk0 == null) return; 
+            ChunkCoordIntPair testXZ = new ChunkCoordIntPair(x0>>4, z0>>4);
+            if(!w.activeChunkSet.contains(testXZ)) return;             
+            
             ChunkTempData tempData0 = ChunkCache.getTempData(w, x0 >> 4, z0 >> 4);
             int seed = smear(smear(startX * 17) + startZ * 311);
             for (int y0 = volcanoFillY, cnt = 0; y0 < maximumVolcanoHeight && cnt < 300; y0++, cnt++) {

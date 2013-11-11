@@ -51,8 +51,8 @@ public class Fluids {
     Block.blocksList[Block.waterStill.blockID] = null;
 
     // Register new blocks
-    flowingWater = new BlockFluid(Block.waterMoving.blockID, Material.water, Block.waterStill.blockID, Block.waterMoving.blockID, "water");
-    stillWater = new BlockFluid(Block.waterStill.blockID, Material.water, Block.waterStill.blockID, Block.waterMoving.blockID, "water");
+    flowingWater = new BlockWater(Block.waterMoving.blockID, Material.water, Block.waterStill.blockID, Block.waterMoving.blockID, "water");
+    stillWater = new BlockWater(Block.waterStill.blockID, Material.water, Block.waterStill.blockID, Block.waterMoving.blockID, "water");
     flowingWater.setLiquidUpdateRate(1); // was: 10);
     flowingWater.setTickRandomly(false);
     stillWater.setLiquidUpdateRate(1); // was: 10);

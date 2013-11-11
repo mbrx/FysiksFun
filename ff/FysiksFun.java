@@ -62,7 +62,7 @@ import com.google.common.base.Objects;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 
-@Mod(modid = "FysiksFun", name = "FysiksFun", version = "0.4.0")
+@Mod(modid = "FysiksFun", name = "FysiksFun", version = "0.4.1")
 @NetworkMod(clientSideRequired = true, serverSideRequired = false)
 public class FysiksFun {
   // Singleton instance of mod class instansiated by Forge
@@ -250,7 +250,8 @@ public class FysiksFun {
 
     if (settings.doAnimalAI) AnimalAIRewriter.rewriteAnimalAIs(w);
     if (settings.doGases) Gases.doWorldTick(w);
-
+    if (settings.doTreeFalling) Trees.doTick(w);
+    
     if (!w.isRemote) {
       List allEntities = w.loadedEntityList;
       for (Object o : allEntities) {

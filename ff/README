@@ -19,3 +19,40 @@ The activity of the volcanoes goes in a semi-regular cyclic pattern. The length 
 depend roughly on the large scale area of the world.
  
  
+ 
+ 
+ Configuration files and modules
+ -------------------------------
+ 
+ The mod consists of a number of separate "modules" that are each much smaller than a mod and dependencies 
+ making it hard to move them into separate forge mods. By enabling/disabling the different modules in the configuration file
+ you can customize what aspects of FF that you want to play with. All modules are actived/disabled through the corresponding option
+ in the section "modules" in the FysiksFun configuration file (minecraft/config/FysiksFun.cfg).
+ 
+ Note that due to the dependencies not all combinations of modules are possible. The modules are as follows:
+ 
+* tree-falling: A module that makes trees fall semi-realistic whenever a part of the trunk is removed or the lowermost block is air. The fallen tree will 
+ not automatically turn into wood items to be picked up, but still need to be chopped up using an axe or other device.
+ [b] Requirements: [/b] none.
+* volcanoes: This enables the creation of dynamically occurring volcanoes that are an infinite source of lava as well as some ores 
+ (iron, diamond, emerald) in a very uncomfortable place. The volcanoes evolve dynamically as time progress and will output more and more lava. 
+ The lava slowly harden once on the surface of the world and form slowly growing mountains or even new islands in the oceans. 
+ [b] Requirements: [/b] This module requires the module [u] fluids [/u] to be active.    
+* dynamic-plants: This module activates a dynamic growth pattern for most plants (grass, flowers, trees) that will make them consume nearby water. 
+ If they manage to consume water they will slowly spread to nearby areas.  If they cannot find nearby water they will slowly die.   
+ [b] Requirements: [/b] This module requires the module [u] fluids [/u] to be active.
+* new-animal-ai: Makes the vanilla animals (sheep, pigs, cows. Not horses) use a modified AI that keeps track of hunger and searches for food on a regular basis.
+ If they manage to find food they will eat it, and may even produce even offspring. If they starve they will die. 
+ [b] Requirements: [/b] none, but it is recommended to also use the dynamic-plants module since the plants otherwise will be depleted. 
+* rain: This modules adds small amounts of water to the world whenever minecraft uses the "rain" animation. It is not the same as water falling from steam that reaches the top of the world. 
+ This feature may be removed once the cycle of evaporating oceans -> steam clouds -> water has been tested better. 
+  [b] Requirements: [/b] This module requires the module [u] fluids [/u] to be active.
+* gases: A module that enables the use gases (currently only steam) that can exist in 16 different levels of pressure and that will move in the world according to the local wind (currently always +X, will be changed). The gases are traversable by the player and mobs but may cause damage.
+ Once steam have risen to Y-level 128 then it will turn back into water and fall down to the world as rain. 
+  [b] Requirements: [/b] none (I think?).
+* nether-fun: Causes a few small effects in the nether such as turning burning nether slowly into lava.  
+[b] Requirements: [/b] This module requires the module [u] fluids [/u] to be active.
+* extra-fires: Increases the spread of fires somewhat. Needs more work.
+  [b] Requirements: [/b] none.
+  
+   

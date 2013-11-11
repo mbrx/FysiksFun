@@ -168,6 +168,15 @@ public class Trees {
     }
   }
 
+  public static void doTick(World w) {
+    /* Go through all falling trees and tick them */
+    for (Trees t : fallingTrees) {
+      t.tickFallingTree();
+    }
+    fallingTrees.removeAll(landedTrees);
+    landedTrees.clear();    
+  }
+  
   public static void doTrees(World w, int cx, int cz) {
 
     // Cache this chunk
@@ -182,13 +191,6 @@ public class Trees {
      * if((FysiksFun.tickCounter % 100) == 0) {
      * System.out.println("Falling trees: " + fallingTrees.size()); }
      */
-
-    /* Go through all falling trees and tick them */
-    for (Trees t : fallingTrees) {
-      t.tickFallingTree();
-    }
-    fallingTrees.removeAll(landedTrees);
-    landedTrees.clear();
 
     for (int tries = 0; tries < 10; tries++) {
       int dx = (FysiksFun.rand.nextInt(16)+tries) % 16;
@@ -372,7 +374,7 @@ public class Trees {
   }
 
   private void tickFallingTree() {
-    if (++tickCounter % 300 != 0) return;
+    if (++tickCounter % 3 != 0) return;
 
     /* First, remove all of the blocks from the world, using the old angle */
     double oldAngle = fallingAngle * (Math.PI / 120.);

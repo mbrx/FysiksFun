@@ -215,7 +215,7 @@ public class BlockFluid extends BlockFlowing {
    */
 
   public void setBlockContent(World w, Chunk c, ChunkTempData tempData, int x, int y, int z, int content, String explanation,
-      Set<CoordinateWXYZ> delayedBlockMarkSet) {
+      Set<ChunkMarkUpdateTask> delayedBlockMarkSet) {
 
     ExtendedBlockStorage blockStorage[] = c.getBlockStorageArray();
     ExtendedBlockStorage ebs = blockStorage[y >> 4];
@@ -268,7 +268,7 @@ public class BlockFluid extends BlockFlowing {
     if (oldId != newId || oldMetaData != newMetaData) {
       // ChunkMarkUpdater.scheduleBlockMark(w, x, y, z);
       if (delayedBlockMarkSet == null) ChunkMarkUpdater.scheduleBlockMark(w, x, y, z, oldId, oldActualMetadata);
-      else delayedBlockMarkSet.add(new CoordinateWXYZ(w, x, y, z));
+      else delayedBlockMarkSet.add(new ChunkMarkUpdateTask(w, x, y, z, oldId, oldActualMetadata));
     }
   }
 
@@ -286,7 +286,7 @@ public class BlockFluid extends BlockFlowing {
 
   /** Called only when we KNOW that the original chunk is loaded */
   public void updateTickSafe(World world, Chunk chunk0, ChunkTempData tempData0, int x0, int y0, int z0, Random r, int sweep,
-      Set<CoordinateWXYZ> delayedBlockMarkSet) {
+      Set<ChunkMarkUpdateTask> delayedBlockMarkSet) {
     Counters.fluidUpdates++;
     // if (sweep % liquidUpdateRate != 0) return;
     boolean moveNormally = (r.nextInt(liquidUpdateRate) == 0);
@@ -448,7 +448,8 @@ public class BlockFluid extends BlockFlowing {
           else if (content0 > minimumLiquidLevel || dY == -1) {
             /* Flow over this block, dropping the contents */
             int metaData1 = chunk1.getBlockMetadata(x1 & 15, y1, z1 & 15);
-            Block.blocksList[id1].dropBlockAsItem(world, x1, y1, z1, metaData1, 0);
+            if(id1 != Block.snow.blockID && id1 != Block.tallGrass.blockID)
+              Block.blocksList[id1].dropBlockAsItem(world, x1, y1, z1, metaData1, 0);
             chunk1.setBlockIDWithMetadata(x1 & 15, y1, z1 & 15, 0, 0);
             id1 = 0;
             content1 = 0;
