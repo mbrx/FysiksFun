@@ -200,7 +200,7 @@ class ChunkMarkUpdater {
               double dx2 = o.posX - coord.getX();
               double dy2 = o.posY - coord.getY();
               double dz2 = o.posZ - coord.getZ();
-              if (dy2 > 0) dy2 /= 2; // Makes clouds be updated more often
+              if (dy2 > 0) dy2 /= 2; // Makes clouds be updated more often than oceans below the player
               if (dx2 * dx2 + dy2 * dy2 + dz2 * dz2 < markRadiusSq_fine) {
                 doSend = true;
                 break;

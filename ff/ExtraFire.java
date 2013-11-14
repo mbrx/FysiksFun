@@ -17,12 +17,12 @@ public class ExtraFire {
     //if(w != null) return;
     
     // Block.fire.updateTick(w, x0, y0, z0, FysiksFun.rand);
-
+    if(FysiksFun.rand.nextInt(4) != 0) return;
     int fireCount=0;
 
-    for (int dx = -2; dx <= 2; dx++)
-      for (int dy = -2; dy <= 2; dy++)
-        for (int dz = -2; dz <= 2; dz++) {
+    for (int dx = -3; dx <= 3; dx++)
+      for (int dy = -3; dy <= 3; dy++)
+        for (int dz = -3; dz <= 3; dz++) {
 
           int x2 = x0 + dx, y2 = y0 + dy, z2 = z0 + dz;
           if (y2 > 0 && y2 < 255) {
@@ -38,7 +38,7 @@ public class ExtraFire {
           }
         }    
     
-    if (fireCount >= 4 && FysiksFun.rand.nextInt(fireCount*4) == 0)  {
+    if (fireCount >= 4 && FysiksFun.rand.nextInt(1+100/fireCount) == 0)  {
       // System.out.println("Spreading fire!");
       for (int attempt = 0; attempt < 3; attempt++) {
         int dx = 0;
@@ -60,7 +60,8 @@ public class ExtraFire {
           dz = dz2;
 
           int idBelow = c.getBlockID(x2&15, y2-1, z2&15);
-          if(idBelow != 0 && id != Block.fire.blockID && FysiksFun.rand.nextInt(11) == 0) 
+          //if(idBelow != 0 && id != Block.fire.blockID && FysiksFun.rand.nextInt(11) == 0) 
+          if(idBelow == Block.grass.blockID && id != Block.fire.blockID && FysiksFun.rand.nextInt(11) == 0)            
             FysiksFun.setBlockWithMetadataAndPriority(w,x2, y2, z2, Block.fire.blockID, 0, 0);
           
           for (dir = 0; dir < 6; dir++) {

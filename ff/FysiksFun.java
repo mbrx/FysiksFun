@@ -266,7 +266,8 @@ public class FysiksFun {
         }
       }
     }
-
+    //System.out.println("Players found: "+observers.size());
+    
     int rainTime = w.getWorldInfo().getRainTime();
     if (rainTime > settings.weatherSpeed - 1) w.getWorldInfo().setRainTime(rainTime + 1 - settings.weatherSpeed);
 
