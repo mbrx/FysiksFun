@@ -157,9 +157,12 @@ class ChunkMarkUpdater {
   }
 
   public static void printStatistics() {
+    /*
     System.out.println("Mark queue: " + ChunkMarkUpdater.markChunkQueue.size() + " chunks, Hashtable:" + markChunkHashtable.size() + " free pool:"
         + markChunkFreePool.size());
     System.out.println("Calls to scheduleBlockMark: " + scheduledMarkUpdates / 300 + " per tick (avg)");
+    */
+    
     scheduledMarkUpdates = 0;
   }
 
