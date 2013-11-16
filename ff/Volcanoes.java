@@ -435,7 +435,7 @@ public class Volcanoes {
           int z0 = startZ + dz;
           // Debugging - visualizes where the volcanoes are
           if (FysiksFun.settings.visualizeVolcanoes) {
-            for (int y0 = 110; y0 < 255; y0++) {
+            for (int y0 = 100+FysiksFun.settings.worldYOffset; y0 < 255; y0++) {
               chunk0.setBlockIDWithMetadata(x0 & 15, y0, z0 & 15, Block.glass.blockID, 0);
             }
           }

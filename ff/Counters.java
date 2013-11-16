@@ -43,16 +43,16 @@ public class Counters {
     }
     // System.out.println("Liquid Tick Queue: " + (liquidQueueCounter) + " per tick (" + totsize + " used "+
     // FysiksFun.blockTickQueueFreePool.size() + " free pool) smallLiquidExtraTicks: "+smallLiquidExtraTicks);
-    System.out.println("Fluid updates: " + fluidUpdates + " content calls: "+fluidSetContent);
+  //  System.out.println("Fluid updates: " + fluidUpdates + " content calls: "+fluidSetContent);
     fluidUpdates = 0;
     fluidSetContent=0;
     
-    System.out.println("Mark counter: " + (markQueueCounter / 300) + " per tick");
+   // System.out.println("Mark counter: " + (markQueueCounter / 300) + " per tick");
 
-    System.out.println("Gas ticks: " + gasTicks);
+   // System.out.println("Gas ticks: " + gasTicks);
     gasTicks = 0;
 
-    System.out.println("Chunk mark undo: " + (chunkMarkUndo / 300) + " / scheduled: " +(chunkMarkScheduled/300) + "  per tick");
+    // System.out.println("Chunk mark undo: " + (chunkMarkUndo / 300) + " / scheduled: " +(chunkMarkScheduled/300) + "  per tick");
     chunkMarkUndo = 0;
     chunkMarkScheduled=0;
 
