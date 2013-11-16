@@ -20,6 +20,17 @@ depend roughly on the large scale area of the world.
  
  
  
+ [list]
+[*] some chunks are "volcano" chunks, depending on their position in the world.
+[*] volcano chunks can be active/inactive in a pattern which last roughly 1-4 MC days. Nearby volcanoes tend to be active at the same time but there is a randomness to that. 
+[*] when active a volcano will try to grow it's lava plume until it reaches fresh air. 
+[*] It if cannot do so it will create an explosion on it's way "up".  It is these explosions that impregnates the nearby walls with new ores depending on the world depth. 
+[*] Once on the surface the lava will slowly turn back into stones with a chance depending on if they have a clear line of sight to the sky. 
+[*] After a long enough time (about 10 MC days or so) this flow of lava + harding to stone will have formed a small mountain. It will keep growing forever, but cannot grow higher than Y=200. 
+[/list]
+ 
+ 
+ 
  
  Configuration files and modules
  -------------------------------

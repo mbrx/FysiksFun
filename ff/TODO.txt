@@ -1,3 +1,5 @@
+Option to have trees NOT consume water, while plants still do and trees can still fall.
+
 Water/Lava interaction with Snow. Chance to turn snow+water into ice. Lava+snow = steam. 
 
 Use ChunkUpdateTasks also for the blockGas updates

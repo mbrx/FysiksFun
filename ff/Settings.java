@@ -51,6 +51,7 @@ public class Settings {
   public boolean doVolcanoes;
   public boolean doDynamicPlants;
   public boolean doTreeFalling;
+  public boolean doTreeConsumptions;
   public boolean doAnimalAI;
   public boolean doRain;
   public boolean doEvaporation;
@@ -149,5 +150,8 @@ public class Settings {
     doGases = config.get(categoryModules, "enable-gases", "true", "Enables dynamic gases.").getBoolean(true);
     doNetherfun = config.get(categoryModules, "enable-netherfun", "true", "Enables Fun in the nether").getBoolean(true);
     doExtraFire = config.get(categoryModules, "extra-fires", "true", "Increases the danger and spread of large fires").getBoolean(true);
-  } 
+    doTreeConsumptions = config.get(categoryModules, "enable-dynamic-trees", "true", "Makes trees consume water or die").getBoolean(true);
+
+  }
+  
 }
