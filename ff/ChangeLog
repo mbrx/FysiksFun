@@ -78,4 +78,5 @@ v0.4.1
     * Fixed bug with tree ticking depending on number of nearby trees
     * Improved the 'extra-fire' option to spread forest fires easier
     * Made water extinguish fires
+    * Added TerraFrimaCraft compatability 
     
