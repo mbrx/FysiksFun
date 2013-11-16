@@ -32,7 +32,8 @@ public class Counters {
   public static int heatEvaporation       = 0;
   public static int chunkMarkUndo         = 0;
   public static int chunkMarkScheduled    = 0;
-
+  public static int fluidSetContent       = 0;
+  
   public static void printStatistics() {
 
     int totsize = 0;
@@ -42,8 +43,10 @@ public class Counters {
     }
     // System.out.println("Liquid Tick Queue: " + (liquidQueueCounter) + " per tick (" + totsize + " used "+
     // FysiksFun.blockTickQueueFreePool.size() + " free pool) smallLiquidExtraTicks: "+smallLiquidExtraTicks);
-    System.out.println("Fluid updates: " + fluidUpdates);
+    System.out.println("Fluid updates: " + fluidUpdates + " content calls: "+fluidSetContent);
     fluidUpdates = 0;
+    fluidSetContent=0;
+    
     System.out.println("Mark counter: " + (markQueueCounter / 300) + " per tick");
 
     System.out.println("Gas ticks: " + gasTicks);

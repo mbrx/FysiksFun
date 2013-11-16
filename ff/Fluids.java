@@ -61,7 +61,7 @@ public class Fluids {
     stillWater.canCauseErosion = true;
     flowingWater.canSeepThrough = true;
     stillWater.canSeepThrough = true;
-
+    
     GameRegistry.registerBlock(flowingWater, "waterFlowing");
     GameRegistry.registerBlock(stillWater, "waterStill");
 
@@ -98,6 +98,22 @@ public class Fluids {
 
   }
 
+  /** Verifies that the liquid blocks are still correct, otherwise writes them back again. */
+  public static void checkBlockOverwritten() {
+    if(Block.blocksList[stillWater.blockID] != stillWater) {
+      Block.blocksList[stillWater.blockID] = null;
+      GameRegistry.registerBlock(stillWater, "waterStill");
+      Block.blocksList[stillWater.blockID] = stillWater;
+      FysiksFun.logger.log(Level.INFO,"Re-installing water since another mod have overwritten it. If you don't want this, bug me about it and i'll make an option");
+    }
+    if(Block.blocksList[stillLava.blockID] != stillLava) {
+      Block.blocksList[stillLava.blockID] = null;
+      GameRegistry.registerBlock(stillLava, "lavaStill");
+      Block.blocksList[stillLava.blockID] = stillLava;
+      FysiksFun.logger.log(Level.INFO,"Re-installing lava since another mod have overwritten it. If you don't want this, bug me about it and i'll make an option");
+    }
+  }
+  
   private static void patchModLiquid(String stillName, String flowingName, int updateRate, boolean causesErosion, boolean leaksThrough) {
 
     Block oldBlockFlowing = null;

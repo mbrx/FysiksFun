@@ -97,7 +97,7 @@ public class FysiksFun {
 
   public static ArrayList<WorldObserver> observers                = new ArrayList<WorldObserver>();
 
-  public static Semaphore               globalWorldChangingMutex = new Semaphore(1);
+  public static Semaphore                globalWorldChangingMutex = new Semaphore(1);
 
   @PreInit
   public void preInit(FMLPreInitializationEvent event) {
@@ -117,7 +117,8 @@ public class FysiksFun {
     MinecraftForge.EVENT_BUS.register(eventListener);
 
     /*
-     * Let these modules load even when not used. Make it easier to not break when disabled.
+     * Let these modules load even when not used. Make it easier to not break
+     * when disabled.
      */
     Fluids.load();
     Gases.load();
@@ -143,12 +144,14 @@ public class FysiksFun {
   }
 
   /**
-   * Temporary variable for quickly creating a blockUpdateState without risking GC'ing
+   * Temporary variable for quickly creating a blockUpdateState without risking
+   * GC'ing
    */
   private static BlockUpdateState tempBlockUpdateState = new BlockUpdateState();
 
   /**
-   * Utility function for removing a specific block-update from the queue. Currently not used.
+   * Utility function for removing a specific block-update from the queue.
+   * Currently not used.
    */
   public static void removeBlockTick(World w, Block block, int x, int y, int z, int maxDelay) {
     BlockUpdateState state = tempBlockUpdateState;
@@ -165,7 +168,8 @@ public class FysiksFun {
   }
 
   /**
-   * Schedules a block for updates, with the given explanation (printed only in debug mode)
+   * Schedules a block for updates, with the given explanation (printed only in
+   * debug mode)
    */
   public static void scheduleBlockTick(World w, Block block, int x, int y, int z, int delay, String explanation) {
     if (delay <= 0 || delay >= 300) return;
@@ -179,11 +183,13 @@ public class FysiksFun {
     state.set(w, block, x, y, z);
 
     /*
-     * Check if block has already been scheduled for an earlier update, if so ignore this one
+     * Check if block has already been scheduled for an earlier update, if so
+     * ignore this one
      */
     /*
-     * This may seem like a less efficient way as compared to a priority heap - however it should be more efficient
-     * where it is needed (for liquids with small tick rates)
+     * This may seem like a less efficient way as compared to a priority heap -
+     * however it should be more efficient where it is needed (for liquids with
+     * small tick rates)
      */
     for (int d = 1; d <= delay; d++)
       if (((Set<BlockUpdateState>) blockTickQueueRing[(Counters.tick + d) % 300]).contains(state)) {
@@ -194,14 +200,23 @@ public class FysiksFun {
   }
 
   /**
-   * Performs the ticks that should be done once per server tick loop, including the scheduling of all block updates and
-   * mark TO client calls
+   * Performs the ticks that should be done once per server tick loop, including
+   * the scheduling of all block updates and mark TO client calls
    */
   public static void tickServer() {
     /* Update world tick and print statistics */
     Counters.tick++;
     if (Counters.tick % 300 == 0) {
       Counters.printStatistics();
+    }
+    Fluids.checkBlockOverwritten();
+
+    if (Counters.tick == 500) {
+      System.out.println("[FF] Dumping list of all blocks");
+      for (Block b : Block.blocksList) {
+        if(b != null)
+          System.out.println("Block "+b.blockID+" name: '"+b.getUnlocalizedName()+"'");        
+      }
     }
 
     try {
@@ -237,21 +252,23 @@ public class FysiksFun {
     ChunkMarkUpdater.doTick();
 
     /*
-     * Clear the observers so we don't accidentally cache worlds, they will be repopulated before next tick anyway
+     * Clear the observers so we don't accidentally cache worlds, they will be
+     * repopulated before next tick anyway
      */
     observers.clear();
 
   }
 
   /**
-   * Performs the ticks that should happen for each world on the SERVER and the CLIENT
+   * Performs the ticks that should happen for each world on the SERVER and the
+   * CLIENT
    */
   public static void doWorldTick(World w) {
 
     if (settings.doAnimalAI) AnimalAIRewriter.rewriteAnimalAIs(w);
     if (settings.doGases) Gases.doWorldTick(w);
     if (settings.doTreeFalling) Trees.doTick(w);
-    
+
     if (!w.isRemote) {
       List allEntities = w.loadedEntityList;
       for (Object o : allEntities) {
@@ -266,8 +283,8 @@ public class FysiksFun {
         }
       }
     }
-    //System.out.println("Players found: "+observers.size());
-    
+    // System.out.println("Players found: "+observers.size());
+
     int rainTime = w.getWorldInfo().getRainTime();
     if (rainTime > settings.weatherSpeed - 1) w.getWorldInfo().setRainTime(rainTime + 1 - settings.weatherSpeed);
 
@@ -277,7 +294,10 @@ public class FysiksFun {
 
   }
 
-  /** Priority MAY be used for prioritization of when the mark messages are sent, but currently is not. Use 0 for now. */
+  /**
+   * Priority MAY be used for prioritization of when the mark messages are sent,
+   * but currently is not. Use 0 for now.
+   */
   public static synchronized void setBlockWithMetadataAndPriority(World w, int x, int y, int z, int id, int meta, int pri) {
     Chunk c = ChunkCache.getChunk(w, x >> 4, z >> 4, false);
     if (c == null) return;

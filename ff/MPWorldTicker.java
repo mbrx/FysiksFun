@@ -85,7 +85,7 @@ public class MPWorldTicker {
       ChunkTempData tempData0 = ChunkCache.getTempData(w, xz.chunkXPos, xz.chunkZPos);
       int x = xz.chunkXPos << 4;
       int z = xz.chunkZPos << 4;
-
+            
       // Don't process some of the chunks, when the current chunk has too much
       // fluids in it (is probably some kind of ocean)
       if (wstate.sweepCounter % 3 != 0)  {
@@ -94,7 +94,7 @@ public class MPWorldTicker {
           cnt += tempData0.getFluidHistogram(y2);
         if (cnt > 2000) return;
       }
-
+      
       ExtendedBlockStorage blockStorage[] = c.getBlockStorageArray();
       for (int y = minY; y < maxY; y++) {
 

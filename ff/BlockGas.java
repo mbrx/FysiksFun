@@ -98,7 +98,7 @@ public class BlockGas extends Block {
       }
     } else {
       if (origId != blockID || origMeta != 16 - quantity) {
-        if (ebs != null) {
+        if (ebs != null && !FysiksFun.settings.slowBlockUpdates) {
           ebs.setExtBlockID(x & 15, y & 15, z & 15, blockID);
           ebs.setExtBlockMetadata(x & 15, y & 15, z & 15, 16 - quantity);
         } else c.setBlockIDWithMetadata(x & 15, y, z & 15, blockID, 16 - quantity);
@@ -128,6 +128,8 @@ public class BlockGas extends Block {
     if (y <= 0) return;
     Counters.gasTicks++;
 
+    int worldYOffset=FysiksFun.settings.gasBehaviourYOffset;
+    
     try {
       preventSetBlockGasFlowover = true;
       BlockFluid.preventSetBlockLiquidFlowover = true;
@@ -142,7 +144,7 @@ public class BlockGas extends Block {
         return;
       }
 
-      if (y >= 120 && FysiksFun.rand.nextInt(100) == 0) {
+      if (y >= 120+worldYOffset && FysiksFun.rand.nextInt(100) == 0) {
         /* Block condensate into water */
         setBlockContent(w, x, y, z, 0);
         if (FysiksFun.rand.nextInt(2) == 0) return;
@@ -194,7 +196,7 @@ public class BlockGas extends Block {
       /*
        * Continue moving depending only on the altitude (so we have less movements at a higher altitude.
        */
-      if (74 + FysiksFun.rand.nextInt(148 - 74) < y) return;
+      if (74 + FysiksFun.rand.nextInt(148 - 74) + worldYOffset < y) return;
 
       int blockIdAbove = w.getBlockId(x, y + 1, z);
       if (blockIdAbove > 0 && blockIdAbove < 4096 && Fluids.isLiquid[blockIdAbove]) {
@@ -233,7 +235,7 @@ public class BlockGas extends Block {
         int dx = x2 - x;
         int dy = y2 - y;
         int dz = z2 - z;
-        if (y2 > y && y2 >= 128) continue; // Top of the world...
+        if (y2 > y && y2 >= 128+worldYOffset) continue; // Top of the world...
 
         if (x2 == x && y2 == y && z2 == z) {
           System.out.println("[WARN] Unexpected X2 Y2 Z2 value in BlockGas");

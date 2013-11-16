@@ -33,9 +33,12 @@ public class Settings {
   public int     plantGrowth;
   public boolean treesFall;
   
+  public int     gasBehaviourYOffset;
+  
   public boolean easterEgg;
 
   public int blockSteamDefaultID;
+  public Boolean slowBlockUpdates;
   
   private String categoryModules = "modules";
   private String categoryGeneric = "generic";
@@ -70,7 +73,10 @@ public class Settings {
     maxUpdatesPerTick = config.get(categoryGeneric, "max-client-updates-per-tick", "50",
         "Maximum workload of chunks/blocks updates transmitted to client each tick. Default 50, higher cause more lag but give faster reaction to world updates",
         Property.Type.INTEGER).getInt(50);
-
+    slowBlockUpdates = config.get(categoryGeneric, "slow-block-updates", "false",
+        "Forces fluids to use original (slower) block update mechanism. Needed for TFC.",
+        Property.Type.BOOLEAN).getBoolean(false);
+    
     waterEvaporationRate = config.get(categoryFluids, "water-evaporation", "10.0",
         "Maximum rate for water evaporation, default 10, higher is more evaporation", Property.Type.DOUBLE).getDouble(10.0);    
     waterRainRate = config.get(categoryFluids, "water-rain", "10.0", "Maximum intensity of rain, default 10, higher is more rain",
@@ -116,7 +122,11 @@ public class Settings {
     
     blockSteamDefaultID = config.get(categoryGases,"block-id-steam", "2250", "Initial attempt at ID for the steam block (may be reallocated to an empty block)", 
         Property.Type.INTEGER).getInt(2250);       
+    gasBehaviourYOffset = config.get(categoryGases,"y-offset", "0", "Offset for computation of gas behaviours. Default assume sea-level at y=64. Use +80 for TFC", 
+        Property.Type.INTEGER).getInt(0);       
 
+    
+    
     visualizeVolcanoes = config.get(categoryVolcanoes, "visualize-volcanoes", "false", "If true, places a pillar of glas high over volcanoes for finding them before developed", Property.Type.BOOLEAN)
         .getBoolean(false);
     volcanoFrequency = config.get(categoryVolcanoes, "volcano-freqency", "100", "Frequency of volcanoes in percent of default occurance", Property.Type.INTEGER)
