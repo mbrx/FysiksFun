@@ -88,7 +88,7 @@ public class FysiksFun {
   public static Random                       rand;
 
   public static Settings                     settings               = new Settings();
-  public static ExecutorService              executor               = Executors.newFixedThreadPool(12);
+  public static ExecutorService              executor               = Executors.newFixedThreadPool(12); // 12
 
   public static class WorldObserver {
     World w;

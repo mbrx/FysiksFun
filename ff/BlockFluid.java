@@ -244,8 +244,6 @@ public class BlockFluid extends BlockFlowing {
     }
 
     Counters.fluidSetContent++;
-    //ebs=null;
-    // ebs=null;
     if (newId != oldId || newMetaData != oldMetaData) {
       if (ebs != null && !FysiksFun.settings.slowBlockUpdates) {
         ebs.setExtBlockID(x & 15, y & 15, z & 15, newId);
@@ -435,10 +433,11 @@ public class BlockFluid extends BlockFlowing {
           continue;
         } else if (y1 >= 256) continue;
 
-        Chunk chunk1;
-        if ((x1 >> 4) == chunkX0 && (z1 >> 4) == chunkZ0) chunk1 = chunk0;
+        Chunk chunk1 = ChunkCache.getChunk(world, x1>>4, z1>>4, false);
+        if(chunk1 == null) continue;
+        /*if ((x1 >> 4) == chunkX0 && (z1 >> 4) == chunkZ0) chunk1 = chunk0;
         else if (chunkProvider.chunkExists(x1 >> 4, z1 >> 4)) chunk1 = chunkProvider.provideChunk(x1 >> 4, z1 >> 4);
-        else continue;
+        else continue;*/
 
         int id1 = chunk1.getBlockID(x1 & 15, y1, z1 & 15);
         int content1 = 0;
@@ -561,10 +560,9 @@ public class BlockFluid extends BlockFlowing {
         // We have moved sideways to some extent, see if should remove any
         // surrounding dirt wall as erosion
         int erodeChance = FysiksFun.settings.erosionRate;
-        if (dY == 0 && dZ != 0 && dX != 0) erodeChance *= 2; // Higher chance to
-                                                             // erode so we get
-                                                             // rid or diagonal
-                                                             // movements
+        /* Higher chance toerode so we get rid or diagonal movements */
+        //if (dY == 0 && dZ != 0 && dX != 0) erodeChance *= 2; 
+        
         // DEBUG
         if (content0 != prevContent0 && dY == 0 && r.nextInt(1000) < erodeChance && false) {
           int idSideA = world.getBlockId(x0 + dZ, y0, z0 + dX);

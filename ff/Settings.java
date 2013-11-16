@@ -33,7 +33,7 @@ public class Settings {
   public int     plantGrowth;
   public boolean treesFall;
   
-  public int     gasBehaviourYOffset;
+  public int     worldYOffset;
   
   public boolean easterEgg;
 
@@ -74,7 +74,7 @@ public class Settings {
         "Maximum workload of chunks/blocks updates transmitted to client each tick. Default 50, higher cause more lag but give faster reaction to world updates",
         Property.Type.INTEGER).getInt(50);
     slowBlockUpdates = config.get(categoryGeneric, "slow-block-updates", "false",
-        "Forces fluids to use original (slower) block update mechanism. Needed for TFC.",
+        "Forces fluids to use original (slower) block update mechanism.",
         Property.Type.BOOLEAN).getBoolean(false);
     
     waterEvaporationRate = config.get(categoryFluids, "water-evaporation", "10.0",
@@ -122,7 +122,7 @@ public class Settings {
     
     blockSteamDefaultID = config.get(categoryGases,"block-id-steam", "2250", "Initial attempt at ID for the steam block (may be reallocated to an empty block)", 
         Property.Type.INTEGER).getInt(2250);       
-    gasBehaviourYOffset = config.get(categoryGases,"y-offset", "0", "Offset for computation of gas behaviours. Default assume sea-level at y=64. Use +80 for TFC", 
+    worldYOffset = config.get(categoryGases,"y-offset", "0", "Offset of sealevel for computation of gas/volcano behaviours. Default assume sea-level at y=64. Use +80 for TFC", 
         Property.Type.INTEGER).getInt(0);       
 
     

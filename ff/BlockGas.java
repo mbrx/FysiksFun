@@ -128,7 +128,7 @@ public class BlockGas extends Block {
     if (y <= 0) return;
     Counters.gasTicks++;
 
-    int worldYOffset=FysiksFun.settings.gasBehaviourYOffset;
+    int worldYOffset=FysiksFun.settings.worldYOffset;
     
     try {
       preventSetBlockGasFlowover = true;

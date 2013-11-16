@@ -75,12 +75,14 @@ public class Volcanoes {
     }
   }
 
-  public final static int maximumVolcanoHeight = 192;
+  public final static int maximumVolcanoHeight = 200;
 
   private static void feedVolcano(World w, int volcanoFillY, int startX, int startZ, int radius, double activity) {
     if (activity <= 0.0) return;
     // if(w != null) return;
 
+    int worldYOffset = FysiksFun.settings.worldYOffset;
+    
     for (int tries = 0; tries < 3; tries++) {
       for (int dx = -radius; dx <= radius; dx++) {
         for (int dz = -radius; dz <= radius; dz++) {
@@ -120,19 +122,19 @@ public class Volcanoes {
                 break;
               case 4:
                 x0++;
-                if (y0 < 64) y0--;
+                if (y0 < 64+worldYOffset) y0--;
                 break;
               case 5:
                 x0--;
-                if (y0 < 64) y0--;
+                if (y0 < 64+worldYOffset) y0--;
                 break;
               case 6:
                 z0++;
-                if (y0 < 64) y0--;
+                if (y0 < 64+worldYOffset) y0--;
                 break;
               case 7:
                 z0--;
-                if (y0 < 64) y0--;
+                if (y0 < 64+worldYOffset) y0--;
                 break;                             
               case 8:
                 x0++;
@@ -147,7 +149,7 @@ public class Volcanoes {
                 z0--;
                 break;
               case 12:
-                if (y0 < 64) y0 = Math.max(volcanoFillY + 3, y0 - 2);
+                if (y0 < 64+worldYOffset) y0 = Math.max(volcanoFillY + 3, y0 - 2);
               default:
               }
               chunk0 = ChunkCache.getChunk(w, x0 >> 4, z0 >> 4, true);

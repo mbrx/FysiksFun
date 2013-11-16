@@ -85,11 +85,11 @@ public class MPWorldTicker {
       ChunkTempData tempData0 = ChunkCache.getTempData(w, xz.chunkXPos, xz.chunkZPos);
       int x = xz.chunkXPos << 4;
       int z = xz.chunkZPos << 4;
-            
+           
       // Don't process some of the chunks, when the current chunk has too much
       // fluids in it (is probably some kind of ocean)
       if (wstate.sweepCounter % 3 != 0)  {
-        int cnt = 0;
+        int cnt = 0;        
         for (int y2 = 1; y2 < 255; y2++)
           cnt += tempData0.getFluidHistogram(y2);
         if (cnt > 2000) return;
@@ -228,10 +228,13 @@ public class MPWorldTicker {
 
     // Schedule jobs, first the odd coordinates, then the even coordinates
     List<Future> toWaitFor = new ArrayList<Future>();
-    for (int oddeven = 0; oddeven < 2; oddeven++) {
+    
+    for (int oddeven = 0; oddeven < 1; oddeven++) {
+     // System.out.println("Odd/even: "+oddeven);
       for (Object o : w.activeChunkSet) {
         ChunkCoordIntPair xz = (ChunkCoordIntPair) o;
-        if ((xz.chunkXPos + xz.chunkZPos) % 2 == oddeven) {
+        //if ((xz.chunkXPos + xz.chunkZPos) % 2 == oddeven) {
+        if(oddeven == 0) {
           Runnable worker = new BlockSweepWorkerThread(w, wstate, xz, mi, ma, delayedBlockMarkSets);
           Future f = FysiksFun.executor.submit(worker);
           toWaitFor.add(f);
