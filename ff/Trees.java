@@ -291,7 +291,7 @@ public class Trees {
 
     if (blockBelowId != Block.dirt.blockID && blockBelowId != Block.grass.blockID && FysiksFun.rand.nextInt(10) == 0) killTree = true;
 
-    // Update the state of the tree iff are doing dynamic plants
+    // Update the state of the tree iff we are doing dynamic plants
     if(!FysiksFun.settings.doTreeConsumptions) return;
     
     /* See if there is nearby water for the tree to drink */

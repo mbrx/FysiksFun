@@ -1,10 +1,10 @@
-Option to have trees NOT consume water, while plants still do and trees can still fall.
-
-Water/Lava interaction with Snow. Chance to turn snow+water into ice. Lava+snow = steam. 
-
-Use ChunkUpdateTasks also for the blockGas updates
-Use chunkCache in BlockFluid::update
+Make pyroplasmic clouds?
+Re-enable erosion?
 Make piston based pumps work again
+
+Debug when running with only tree felling. 
+
+
 
 Buildcraft integration
 
@@ -19,12 +19,6 @@ Water lava interactions may create slabs instead of full blocks.... check emptin
 
 To optimize:
 
-
-Gas: 
-  Use same updating system as for liquids (more important since gas will never reach an equilibrium)
-
-Volcanoes: ~5% (not so important, but easily fixed)
-   -> getBlockContent: 3.5%
    
  Manually call chunk updateSkyLight?  
    

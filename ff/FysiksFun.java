@@ -88,7 +88,7 @@ public class FysiksFun {
   public static Random                       rand;
 
   public static Settings                     settings               = new Settings();
-  public static ExecutorService              executor               = Executors.newFixedThreadPool(12); 
+  public static ExecutorService              executor               = Executors.newFixedThreadPool(12);
 
   public static class WorldObserver {
     World w;
@@ -117,8 +117,7 @@ public class FysiksFun {
     MinecraftForge.EVENT_BUS.register(eventListener);
 
     /*
-     * Let these modules load even when not used. Make it easier to not break
-     * when disabled.
+     * Let these modules load even when not used. Make it easier to not break when disabled.
      */
     Fluids.load();
     Gases.load();
@@ -144,14 +143,12 @@ public class FysiksFun {
   }
 
   /**
-   * Temporary variable for quickly creating a blockUpdateState without risking
-   * GC'ing
+   * Temporary variable for quickly creating a blockUpdateState without risking GC'ing
    */
   private static BlockUpdateState tempBlockUpdateState = new BlockUpdateState();
 
   /**
-   * Utility function for removing a specific block-update from the queue.
-   * Currently not used.
+   * Utility function for removing a specific block-update from the queue. Currently not used.
    */
   public static void removeBlockTick(World w, Block block, int x, int y, int z, int maxDelay) {
     BlockUpdateState state = tempBlockUpdateState;
@@ -168,8 +165,7 @@ public class FysiksFun {
   }
 
   /**
-   * Schedules a block for updates, with the given explanation (printed only in
-   * debug mode)
+   * Schedules a block for updates, with the given explanation (printed only in debug mode)
    */
   public static void scheduleBlockTick(World w, Block block, int x, int y, int z, int delay, String explanation) {
     if (delay <= 0 || delay >= 300) return;
@@ -183,13 +179,11 @@ public class FysiksFun {
     state.set(w, block, x, y, z);
 
     /*
-     * Check if block has already been scheduled for an earlier update, if so
-     * ignore this one
+     * Check if block has already been scheduled for an earlier update, if so ignore this one
      */
     /*
-     * This may seem like a less efficient way as compared to a priority heap -
-     * however it should be more efficient where it is needed (for liquids with
-     * small tick rates)
+     * This may seem like a less efficient way as compared to a priority heap - however it should be more efficient
+     * where it is needed (for liquids with small tick rates)
      */
     for (int d = 1; d <= delay; d++)
       if (((Set<BlockUpdateState>) blockTickQueueRing[(Counters.tick + d) % 300]).contains(state)) {
@@ -200,8 +194,8 @@ public class FysiksFun {
   }
 
   /**
-   * Performs the ticks that should be done once per server tick loop, including
-   * the scheduling of all block updates and mark TO client calls
+   * Performs the ticks that should be done once per server tick loop, including the scheduling of all block updates and
+   * mark TO client calls
    */
   public static void tickServer() {
     /* Update world tick and print statistics */
@@ -214,8 +208,7 @@ public class FysiksFun {
     if (Counters.tick == 500) {
       System.out.println("[FF] Dumping list of all blocks");
       for (Block b : Block.blocksList) {
-        if(b != null)
-          System.out.println("Block "+b.blockID+" name: '"+b.getUnlocalizedName()+"'");        
+        if (b != null) System.out.println("Block " + b.blockID + " name: '" + b.getUnlocalizedName() + "'");
       }
     }
 
@@ -232,12 +225,14 @@ public class FysiksFun {
 
       for (BlockUpdateState s : (Set<BlockUpdateState>) blockTickQueueRing[Counters.tick % 300]) {
         BlockUpdateState s2 = s;
-        s.block.updateTick(s.w, s.x, s.y, s.z, rand);
-        s.set(null, null, 0, 0, 0);
-        before = blockTickQueueFreePool.size();
-        blockTickQueueFreePool.push(s2);
-        after = blockTickQueueFreePool.size();
-        Counters.liquidQueueCounter++;
+        if (s != null) {
+          s.block.updateTick(s.w, s.x, s.y, s.z, rand);
+          s.set(null, null, 0, 0, 0);
+          before = blockTickQueueFreePool.size();
+          blockTickQueueFreePool.push(s2);
+          after = blockTickQueueFreePool.size();
+          Counters.liquidQueueCounter++;
+        }
       }
       ((HashSet<BlockUpdateState>) blockTickQueueRing[Counters.tick % 300]).clear();
 
@@ -252,16 +247,14 @@ public class FysiksFun {
     ChunkMarkUpdater.doTick();
 
     /*
-     * Clear the observers so we don't accidentally cache worlds, they will be
-     * repopulated before next tick anyway
+     * Clear the observers so we don't accidentally cache worlds, they will be repopulated before next tick anyway
      */
     observers.clear();
 
   }
 
   /**
-   * Performs the ticks that should happen for each world on the SERVER and the
-   * CLIENT
+   * Performs the ticks that should happen for each world on the SERVER and the CLIENT
    */
   public static void doWorldTick(World w) {
 
@@ -295,8 +288,7 @@ public class FysiksFun {
   }
 
   /**
-   * Priority MAY be used for prioritization of when the mark messages are sent,
-   * but currently is not. Use 0 for now.
+   * Priority MAY be used for prioritization of when the mark messages are sent, but currently is not. Use 0 for now.
    */
   public static synchronized void setBlockWithMetadataAndPriority(World w, int x, int y, int z, int id, int meta, int pri) {
     Chunk c = ChunkCache.getChunk(w, x >> 4, z >> 4, false);

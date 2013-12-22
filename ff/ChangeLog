@@ -80,3 +80,7 @@ v0.4.1
     * Made water extinguish fires
     * Added TerraFrimaCraft compatability 
     
+v0.4.2
+    * Added check for a possible null pointer error 
+    * 
+    

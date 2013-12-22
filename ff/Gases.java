@@ -41,7 +41,7 @@ public class Gases {
     }
         
     
-    steam = new BlockGas(FysiksFun.settings.blockSteamDefaultID, Material.air);
+    steam = new BlockSteam(FysiksFun.settings.blockSteamDefaultID, Material.air);
     steam.setUnlocalizedName("steam");
     steam.setCreativeTab(CreativeTabs.tabBlock);
     steam.setHardness(0.0F);
