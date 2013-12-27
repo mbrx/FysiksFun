@@ -16,12 +16,11 @@ public class Rain {
       int dx = (FysiksFun.rand.nextInt(117) + 7 * Counters.tick) % 16;
       int dz = (FysiksFun.rand.nextInt(187) + 11 * Counters.tick) % 16;
       BiomeGenBase biome = w.getBiomeGenForCoords(x + dx, z + dz);
-      int rainChance = (int) (250.0 / (0.001 + FysiksFun.settings.waterRainRate * biome.rainfall * (FysiksFun.settings.alwaysRaining ? 1.0 : w.rainingStrength)));
-      if(rainChance<1) rainChance=1;
+      int rainChance = (int) (250.0 * FysiksFun.settings.waterRainRate * biome.rainfall * (FysiksFun.settings.alwaysRaining ? 1.0 : w.rainingStrength));
       
       if (!FysiksFun.settings.rainInOceans && (biome == BiomeGenBase.ocean || biome == BiomeGenBase.frozenOcean)) {
         // do nothing
-      } else if (biome.rainfall > 0.0 && FysiksFun.settings.waterRainRate>0 && FysiksFun.rand.nextInt((int) rainChance) == 0) {
+      } else if (biome.rainfall > 0.0 && FysiksFun.settings.waterRainRate>0 && FysiksFun.rand.nextInt(300000) < rainChance) {
         for (int y2 = 255; y2 > 1; y2--) {
           int id = c.getBlockID(dx, y2, dz);
           if (id != 0) {
@@ -47,7 +46,7 @@ public class Rain {
               BlockFluid.preventSetBlockLiquidFlowover = true;
               Fluids.flowingWater.setBlockContent(w, x + dx, y2 + 1, z + dz, rainAmount);
               Counters.rainCounter+= rainAmount;
-              FysiksFun.scheduleBlockTick(w, Fluids.stillWater, x + dx, y2 + 1, z + dz, 10);
+              //FysiksFun.scheduleBlockTick(w, Fluids.stillWater, x + dx, y2 + 1, z + dz, 10);
             } finally {
               BlockFluid.preventSetBlockLiquidFlowover = false;
             }

@@ -1,0 +1,44 @@
+package mbrx.ff;
+
+import java.util.HashSet;
+import java.util.Map;
+
+import net.minecraft.world.ChunkCoordIntPair;
+import net.minecraft.world.World;
+import net.minecraft.world.chunk.Chunk;
+
+class ChunkUpdateWorkerThread implements Runnable {
+  World                                      world;
+  Chunk                                      chunk;
+  Map<Integer, HashSet<ChunkMarkUpdateTask>> delayedBlockMarkSets;
+  ChunkCoordIntPair                          xz;
+
+  public ChunkUpdateWorkerThread(World w, Chunk c, ChunkCoordIntPair xz, Map<Integer, HashSet<ChunkMarkUpdateTask>> delayedBlockMarkSets) {
+    this.world = w;
+    this.chunk = c;
+    this.xz = xz;
+    this.delayedBlockMarkSets = delayedBlockMarkSets;
+  }
+
+  @Override
+  public void run() {
+    try {
+
+      int x = xz.chunkXPos << 4;
+      int z = xz.chunkZPos << 4;
+      Settings settings = FysiksFun.settings;
+
+      if (settings.doVolcanoes) Volcanoes.doChunkTick(world, xz);
+      if (settings.doRain) Rain.doPrecipation(world, x, z);
+      if (settings.doEvaporation) Evaporation.doEvaporation(world, x, z);
+      if (settings.doTreeFalling) Trees.doTrees(world, x, z);
+      if (settings.doDynamicPlants) Plants.doPlants(world, x, z);
+      ExtraBlockBehaviours.doChunkTick(world, xz);
+      if (world.provider.dimensionId == -1 && settings.doNetherfun) NetherFun.doNetherFun(world, x, z);
+
+    } catch (Exception e) {
+      System.out.println("ChunkUpdateWorkerThread got an exception" + e);
+      e.printStackTrace();
+    }
+  }
+}

@@ -88,7 +88,8 @@ public class Volcanoes {
         for (int dz = -radius; dz <= radius; dz++) {
           if (dx * dx + dz * dz <= radius * radius) {
             if (FysiksFun.rand.nextInt((int) (FysiksFun.settings.volcanoFeeding / (activity + 0.1))) != 0) continue;
-
+            int maxY = 1+FysiksFun.rand.nextInt(maximumVolcanoHeight);
+            
             int x0 = startX + dx;
             int z0 = startZ + dz;
             /*
@@ -103,7 +104,7 @@ public class Volcanoes {
             
             ChunkTempData tempData0 = ChunkCache.getTempData(w, x0 >> 4, z0 >> 4);
             int seed = smear(smear(startX * 17) + startZ * 311);
-            for (int y0 = volcanoFillY, cnt = 0; y0 < maximumVolcanoHeight && cnt < 300; y0++, cnt++) {
+            for (int y0 = volcanoFillY, cnt = 0; y0 < maxY && cnt < 300; y0++, cnt++) {
 
               int r0 = smear(seed + (cnt / 5) * 4711);
               if ((r0 % 17) < 9) cnt++;
@@ -159,11 +160,20 @@ public class Volcanoes {
               if (id0 == 0 || Gases.isGas[id0] || id0 == Block.fire.blockID) {
                 /* Air above the plume, fill it with lava */
                 Fluids.stillLava.setBlockContent(w, chunk0, tempData0, x0, y0, z0, BlockFluid.maximumContent, "[Lava feed]", null);
+                                     
+                if(activity>0.6 && Counters.tick%1000 < activity*300.0) {
+                int idAbove = chunk0.getBlockID(x0 & 15, y0+1, z0 & 15);
+                if (idAbove == 0 || Gases.isGas[idAbove]) {
+                  /* Add some pyroclastic gases */
+                  Gases.pyroclastic.setBlockContent(w, chunk0, x0, y0+1, z0, 15);
+                }
+                }
+                
                 /*
                  * Random chance to make a mini-column of lava
                  */
                 if (FysiksFun.rand.nextInt((int) (1000 / (0.1 + activity))) == 0) {
-                  int height = FysiksFun.rand.nextInt((int) (1 + 1 * activity));
+                  int height = FysiksFun.rand.nextInt((int) (1 + 0.5 * activity));
                   for (int dy = 1; dy < height; dy++) {
                     int id1 = chunk0.getBlockID(x0 & 15, y0 + dy, z0 & 15);
                     if (id1 == 0 || Fluids.stillLava.isSameLiquid(id1) || Gases.isGas[id1]) {
@@ -224,9 +234,9 @@ public class Volcanoes {
                           if (idE == Block.stone.blockID && radSq < (int) ((explodeStrength + 2) * (explodeStrength + 2))) {
                             int newId = 0;
                             int v = FysiksFun.rand.nextInt(3500);
-                            if (v == 0 && y2 < 30) newId = Block.oreDiamond.blockID;
-                            else if (v == 1 && y2 < 50) newId = Block.oreEmerald.blockID;
-                            else if (v > 1 && v < 5 && y2 < 75) newId = Block.oreIron.blockID;
+                            if (v == 0 && y2 < 35) newId = Block.oreDiamond.blockID;
+                            else if (v == 1 && y2 < 55) newId = Block.oreEmerald.blockID;
+                            else if (v > 1 && v < 6 && y2 < 200) newId = Block.oreIron.blockID;
                             if (newId != 0) {
                               FysiksFun.setBlockWithMetadataAndPriority(w, x2, y2, z2, newId, 0, 0);
                               FysiksFun.setBlockWithMetadataAndPriority(w, x2 + 1, y2, z2, newId, 0, 0);
@@ -483,14 +493,16 @@ public class Volcanoes {
     /*
      * Cool down lava that is exposed to the open air, creating stone or gravel
      */
-    if(FysiksFun.rand.nextInt(10) != 0) return;
+    if(FysiksFun.rand.nextInt(4) != 0) return;
     for (int cooldownAttempt = 0; cooldownAttempt < 8; cooldownAttempt++) {
       int rx = (FysiksFun.rand.nextInt(16) + (Counters.tick) / 3) % 16;
       int rz = (FysiksFun.rand.nextInt(16) + (Counters.tick) / (3 * 16)) % 16;
       int x0 = (xz.chunkXPos << 4) + rx;
       int z0 = (xz.chunkZPos << 4) + rz;
-
-      for (int y0 = 255; y0 >= 1; y0--) {
+      // A tweak factor to reshape the growth of the volcanoes, max altitude=128
+      int lowestY = 1 + FysiksFun.rand.nextInt(64) + FysiksFun.rand.nextInt(64);
+      
+      for (int y0 = 255; y0 >= lowestY; y0--) {
         int id = chunk0.getBlockID(x0 & 15, y0, z0 & 15);
         if (id == 0) continue;
         if (Gases.isGas[id]) continue;
@@ -503,6 +515,7 @@ public class Volcanoes {
              * Go downwards as long as there is air, gas or water or lava below
              */
             int nNeighbours = 0;
+            int adjacentLava=0;
             for (; y0 > 0; y0--) {
               nNeighbours=0;
               for (int dir = 0; dir < 6; dir++) {
@@ -513,8 +526,9 @@ public class Volcanoes {
                 if (c == null) continue;
                 id = c.getBlockID((x0 + dx) & 15, y0+dy, (z0 + dz) & 15);
                 if (id != 0 && !Fluids.isLiquid[id] && !Gases.isGas[id]) nNeighbours++;
+                if(Fluids.stillLava.isSameLiquid(id)) adjacentLava++;
               }
-              if (nNeighbours >= 2) break; // Allow solidifying close to other structures
+              if (nNeighbours >= 2 && adjacentLava < 3) break; // Allow solidifying close to other structures
 
               id = chunk0.getBlockID(x0 & 15, y0 - 1, z0 & 15);
               // if (id != 0 && !Fluids.stillWater.isSameLiquid(id) &&
@@ -538,7 +552,7 @@ public class Volcanoes {
               }
             if (neighbours <= 4 && cooldownAttempt != 0) break;
 */
-            if(cooldownAttempt != 0 && nNeighbours < 2) break;
+            if(cooldownAttempt != 0 && nNeighbours < 2 && adjacentLava < 3) break;
             
             BlockFluid.preventSetBlockLiquidFlowover = true;
             int r2 = (FysiksFun.rand.nextInt(101) + Counters.tick * 4711) % 10;

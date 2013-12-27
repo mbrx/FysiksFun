@@ -96,8 +96,8 @@ class ChunkMarkUpdater {
   }
 
   public static synchronized void scheduleBlockMark(World w, int x, int y, int z, int originalId, int originalMeta) {
-    scheduleBlockMarkSafe(w, x, y, z, originalId, originalMeta);
-    /*
+    //scheduleBlockMarkSafe(w, x, y, z, originalId, originalMeta);
+    
     try {
       mutex.acquire();
       scheduleBlockMarkSafe(w, x, y, z, originalId, originalMeta);
@@ -106,7 +106,7 @@ class ChunkMarkUpdater {
       return;
     } finally {
       mutex.release();
-    }*/
+    }
   }
 
   public static void scheduleBlockMarkSafe(World w, int x, int y, int z, int originalId, int originalMeta) {
@@ -181,7 +181,8 @@ class ChunkMarkUpdater {
       /*
        * First mark a number of chunks are observed at close range (< 1 chunk away) by some observer
        */
-      Iterator<ChunkMarkUpdater> iterator = markChunkQueue.iterator();
+      // Ugly hack... cloning the list to avoid concurrent modification errors
+      Iterator<ChunkMarkUpdater> iterator = markChunkQueue.clone().iterator();
       ChunkMarkUpdater cml;
       final int markRadiusSq_coarce = 1 * 1; // Measured in chunk coordinates
       final double markRadiusSq_fine = 12.0d * 12.0d; // Measured in block
@@ -254,12 +255,26 @@ class ChunkMarkUpdater {
     int collateral = 0;
 
     Counters.markQueueCounter += collateral;
-    for (CoordinateWXYZ coord : markList.keySet()) {
+
+    // This swapping back/forth of markList is to try to catch a concurrent modification error...
+    /*try {
+      mutex.acquire();
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    }*/
+    HashMap<CoordinateWXYZ, MarkOriginalValue>        origMarkList;
+    origMarkList=markList;
+    markList=null;
+    for (CoordinateWXYZ coord : origMarkList.keySet()) {
       coord.getWorld().markBlockForUpdate(coord.getX(), coord.getY(), coord.getZ());
       coord.set(null, 0, 0, 0);
       collateral++;
       Counters.markQueueCounter++;
     }
+    markList=origMarkList;
+    // Until here
+    //mutex.release();
+    
     coordinateWXYZFreePool.addAll(markList.keySet());
     markList.clear();
 

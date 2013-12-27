@@ -62,7 +62,7 @@ import com.google.common.base.Objects;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 
-@Mod(modid = "FysiksFun", name = "FysiksFun", version = "0.4.1")
+@Mod(modid = "FysiksFun", name = "FysiksFun", version = "0.4.2")
 @NetworkMod(clientSideRequired = true, serverSideRequired = false)
 public class FysiksFun {
   // Singleton instance of mod class instansiated by Forge
@@ -205,12 +205,12 @@ public class FysiksFun {
     }
     Fluids.checkBlockOverwritten();
 
-    if (Counters.tick == 500) {
+    /*if (Counters.tick == 500) {
       System.out.println("[FF] Dumping list of all blocks");
       for (Block b : Block.blocksList) {
         if (b != null) System.out.println("Block " + b.blockID + " name: '" + b.getUnlocalizedName() + "'");
       }
-    }
+    }*/
 
     try {
       inWorldTick = true;
@@ -281,6 +281,7 @@ public class FysiksFun {
     int rainTime = w.getWorldInfo().getRainTime();
     if (rainTime > settings.weatherSpeed - 1) w.getWorldInfo().setRainTime(rainTime + 1 - settings.weatherSpeed);
 
+    Wind.doTick(w);
     MPWorldTicker.doBlockSweeps(w);
     MPWorldTicker.doUpdateChunks(w);
     // System.out.println("Active chunks: "+w.activeChunkSet.size());

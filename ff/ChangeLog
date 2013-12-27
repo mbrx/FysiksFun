@@ -81,6 +81,15 @@ v0.4.1
     * Added TerraFrimaCraft compatability 
     
 v0.4.2
-    * Added check for a possible null pointer error 
-    * 
+    * Added a few error checks 
+    * Implemented first experimental version of pyroclastic clouds
+    * Made textures of gases different depending on density. Also animated. 
+    * Fixed bug that created too much steam in water-lava interactions
+    * Made wind randomly change direction (slowly), changed movement behaviour of gases
+    * Made trees spread by planting saplings (no dynamic tree growth yet)
+    * Modified growth behaviour of volcanoes. Should look better after a few hours.
+    
+ v0.4.3
+    * Re-enabled erosion (?)
+ 
     

@@ -4,6 +4,8 @@ import net.minecraftforge.common.Configuration;
 import net.minecraftforge.common.Property;
 
 public class Settings {
+  public int clayToDirtChance;
+
   public int     maxUpdatesPerTick;
   
   public double  waterEvaporationRate;
@@ -115,6 +117,9 @@ public class Settings {
         Property.Type.INTEGER).getInt(10);
     weatherSpeed = config.get(categoryEcology, "weather-speed", "10", "Multiplier (> 1) for how often weather changes", Property.Type.INTEGER)
         .getInt(10);
+    clayToDirtChance = config.get(categoryEcology, "clay-creation", "0", "Multiplier (normal rate 10) for how quickly under water dirt can be converted to clay. Use zero to disable.", Property.Type.INTEGER)
+        .getInt(0); 
+    
     
     undergroundWater = config.get(categoryEcology, "underground-water", "true", "If true, generates humidity and evaporation at different depths underground", 
         Property.Type.BOOLEAN).getBoolean(true);

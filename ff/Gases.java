@@ -24,7 +24,8 @@ import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.IChunkProvider;
 
 public class Gases {
-  public static BlockGas steam;
+  public static BlockSteam steam;
+  public static BlockPyroclastic pyroclastic;
   
   public static int      nGases;
   public static int      gasIDs[] = new int[256];
@@ -46,7 +47,8 @@ public class Gases {
     steam.setCreativeTab(CreativeTabs.tabBlock);
     steam.setHardness(0.0F);
     // Was FysiksFun:steam
-    steam.setIconName("fysiksfun:steam2");
+    //steam.setIconName("fysiksfun:steam2");
+    steam.setIconName("fysiksfun:steam");
     steam.setLighterThanAir(true);
     steam.setDamageToEntity(1, 10);
     
@@ -54,8 +56,23 @@ public class Gases {
     LanguageRegistry.addName(steam, "steam");
     registerGasBlock(steam);
     
-    ItemStack steamStack = new ItemStack(steam);
-    GameRegistry.addShapelessRecipe(steamStack,  new ItemStack(Block.dirt));
+    //ItemStack steamStack = new ItemStack(steam);
+    //GameRegistry.addShapelessRecipe(steamStack,  new ItemStack(Block.dirt));
+    
+    
+    pyroclastic = new BlockPyroclastic(FysiksFun.settings.blockSteamDefaultID+1, Material.air);
+    pyroclastic.setUnlocalizedName("pyroclast");
+    pyroclastic.setCreativeTab(CreativeTabs.tabBlock);
+    pyroclastic.setHardness(0.0F);
+    pyroclastic.setIconName("fysiksfun:pyroclast");
+    pyroclastic.setLighterThanAir(true);
+    pyroclastic.setDamageToEntity(1, 2);
+    
+    GameRegistry.registerBlock(pyroclastic, "pyroclastic");
+    LanguageRegistry.addName(pyroclastic, "pyroclastic");
+    registerGasBlock(pyroclastic);
+    
+   
     
   }
   public static void registerGasBlock(BlockGas block) {

@@ -9,8 +9,10 @@ import net.minecraft.block.material.Material;
 import net.minecraft.client.renderer.texture.IconRegister;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLiving;
+import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.DamageSource;
+import net.minecraft.util.Icon;
 import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.util.Vec3;
 import net.minecraft.world.IBlockAccess;
@@ -24,6 +26,9 @@ public class BlockGas extends Block {
   public int             updateRate;
   private static boolean preventSetBlockGasFlowover = false;
   private boolean        lighterThanAir;
+
+  //@SideOnly(Side.CLIENT)
+  private Icon           icons[]                    = new Icon[16];
 
   /**
    * The relative weight of this gas compared to air. +1 means lighter than air, -1 heavier.
@@ -48,8 +53,25 @@ public class BlockGas extends Block {
   }
 
   public void registerIcons(IconRegister iconRegister) {
-    blockIcon = iconRegister.registerIcon(iconName);
+    // blockIcon = iconRegister.registerIcon(iconName);
+    for (int i = 0; i <= 15; i++) {
+      icons[i] = iconRegister.registerIcon(iconName + i);
+    }
+    blockIcon = icons[0];
   }
+
+  @SideOnly(Side.CLIENT)
+  @Override
+  public Icon getIcon(int side, int metaData) {
+    if (metaData == 15) return icons[FysiksFun.rand.nextInt(3)];
+    else return icons[15 - metaData]; // this.blockIcon;
+  }
+
+  // @SideOnly(Side.CLIENT)
+  /*
+   * @Override public Icon getBlockIconFromSideAndMetadata(Block block, int side, int meta) { return icons[meta];
+   * //this.blockIcon; }
+   */
 
   public void setUpdateRate(int rate) {
     updateRate = rate;
@@ -88,7 +110,7 @@ public class BlockGas extends Block {
       origMeta = 0;
     }
 
-    if (quantity == 0) {      
+    if (quantity == 0) {
       if (origId != 0 || origMeta != 0) {
         if (ebs != null) {
           ebs.setExtBlockID(x & 15, y & 15, z & 15, 0);
@@ -123,13 +145,12 @@ public class BlockGas extends Block {
   /** Called only when we KNOW that the original chunk is loaded */
   public void updateTickSafe(World w, int x, int y, int z, Random r) {
     int chunkX = x >> 4, chunkZ = z >> 4;
-    IChunkProvider chunkProvider = w.getChunkProvider();
-    Chunk origChunk = chunkProvider.provideChunk(chunkX, chunkZ);
+    Chunk origChunk = ChunkCache.getChunk(w, chunkX, chunkZ, false);
     if (y <= 0) return;
     Counters.gasTicks++;
 
-    int worldYOffset=FysiksFun.settings.worldYOffset;
-    
+    int worldYOffset = FysiksFun.settings.worldYOffset;
+
     try {
       preventSetBlockGasFlowover = true;
       BlockFluid.preventSetBlockLiquidFlowover = true;
@@ -144,55 +165,60 @@ public class BlockGas extends Block {
         return;
       }
 
-      if (y >= 120+worldYOffset && FysiksFun.rand.nextInt(100) == 0) {
+      if (y >= 120 + worldYOffset && FysiksFun.rand.nextInt(250) == 0) {
         /* Block condensate into water */
         setBlockContent(w, x, y, z, 0);
-        if (FysiksFun.rand.nextInt(2) == 0) return;
-        /* High chance that we move the water straight down to where it should go to remove amount of liquid that is falling in the sky. */
-        if (FysiksFun.rand.nextInt(8) != 0) {
-          for (; y >= 1; y--) {
-            if (origChunk.getBlockID(x & 15, y - 1, z & 15) != 0) break;
-          }
-        }
-        Fluids.stillWater.setBlockContent(w, x, y, z, newContent * BlockFluid.maximumContent / 16);
-        // FysiksFun.scheduleBlockTick(w, Fluids.stillWater, x, y, z, 1);
+        // if (true || FysiksFun.rand.nextInt(4) != 0) return; // Removes 75% of the water!
+        condenseFromAltitude(w, x, y, z, origChunk, newContent);
         return;
       }
 
       /* First, move gas in direction of wind with a given probability */
       float windX = Wind.getWindX(w, x, y, z);
       float windZ = Wind.getWindZ(w, x, y, z);
-      if (windX > 0.f && r.nextFloat() < windX) {
-        int id1 = w.getBlockId(x + 1, y, z);
-        if (id1 == 0) {
-          setBlockContent(w, x, y, z, 0);
-          setBlockContent(w, x + 1, y + computeUpdraft(w, y, x, z, x + 1, z), z, newContent);
-          newContent = 0;
+      for (int tries = 0; tries < 3; tries++) {
+        if (windX > 0.f && r.nextFloat() < windX) {
+          int id1 = w.getBlockId(x + 1, y, z);
+          if (id1 == 0) {
+            setBlockContent(w, x, y, z, 0);            
+            y = y+computeUpdraft(w, y, x, z, x + 1, z);
+            x = x+1;
+            setBlockContent(w, x, y, z, newContent);            
+          }
+        } else if (windX < 0.f && r.nextFloat() < -windX) {
+          int id1 = w.getBlockId(x - 1, y, z);
+          if (id1 == 0) {
+            setBlockContent(w, x, y, z, 0);
+            y = y + computeUpdraft(w, y, x, z, x - 1, z);
+            x=x-1;
+            setBlockContent(w, x, y, z, newContent);
+          }
         }
-      } else if (windX < 0.f && r.nextFloat() < -windX) {
-        int id1 = w.getBlockId(x - 1, y, z);
-        if (id1 == 0) {
-          setBlockContent(w, x, y, z, 0);
-          setBlockContent(w, x - 1, y + computeUpdraft(w, y, x, z, x - 1, z), z, newContent);
-          newContent = 0;
+        if (windZ > 0.f && r.nextFloat() < windZ) {
+          int id1 = w.getBlockId(x, y, z + 1);
+          if (id1 == 0) {
+            setBlockContent(w, x, y, z, 0);
+            y = y + computeUpdraft(w, y, x, z, x, z + 1);
+            z=z+1;
+            setBlockContent(w, x, y, z, newContent);
+          }
+        } else if (windZ < 0.f && r.nextFloat() < -windZ) {
+          int id1 = w.getBlockId(x, y, z - 1);
+          if (id1 == 0) {
+            setBlockContent(w, x, y, z, 0);
+            y=y + computeUpdraft(w, y, x, z, x, z - 1);
+            z=z-1;
+            setBlockContent(w, x, y, z, newContent);
+          }
         }
-      }
-      if (windZ > 0.f && r.nextFloat() < windZ) {
-        int id1 = w.getBlockId(x, y, z + 1);
-        if (id1 == 0) {
-          setBlockContent(w, x, y, z, 0);
-          setBlockContent(w, x, y + computeUpdraft(w, y, x, z, x, z + 1), z + 1, newContent);
-          newContent = 0;
-        }
-      } else if (windZ < 0.f && r.nextFloat() < -windZ) {
-        int id1 = w.getBlockId(x, y, z - 1);
-        if (id1 == 0) {
-          setBlockContent(w, x, y, z, 0);
-          setBlockContent(w, x, y + computeUpdraft(w, y, x, z, x, z - 1), z - 1, newContent);
-          newContent = 0;
-        }
+        chunkX = x >> 4;
+        chunkZ = z >> 4;
+        origChunk = ChunkCache.getChunk(w, chunkX, chunkZ, false);
+        if(origChunk==null) return;
       }
 
+      /* TODO - use the chunk cache etc. from here on? */
+      
       /*
        * Continue moving depending only on the altitude (so we have less movements at a higher altitude.
        */
@@ -235,15 +261,15 @@ public class BlockGas extends Block {
         int dx = x2 - x;
         int dy = y2 - y;
         int dz = z2 - z;
-        if (y2 > y && y2 >= 128+worldYOffset) continue; // Top of the world...
+        if (y2 > y && y2 >= 128 + worldYOffset) continue; // Top of the world...
 
         if (x2 == x && y2 == y && z2 == z) {
           System.out.println("[WARN] Unexpected X2 Y2 Z2 value in BlockGas");
         }
         Chunk chunk2 = origChunk;
         if (x2 >> 4 != chunkX || z2 >> 4 != chunkZ) {
-          if (!chunkProvider.chunkExists(x2 >> 4, z2 >> 4)) continue;
-          else chunk2 = chunkProvider.provideChunk(x2 >> 4, z2 >> 4);
+          chunk2 = ChunkCache.getChunk(w, x2>>4, z2>>4, false);
+          if(chunk2 == null) continue;
         }
 
         int blockIdNN = chunk2.getBlockID(x2 & 15, y2, z2 & 15);
@@ -286,6 +312,10 @@ public class BlockGas extends Block {
       preventSetBlockGasFlowover = false;
       BlockFluid.preventSetBlockLiquidFlowover = false;
     }
+  }
+
+  protected void condenseFromAltitude(World w, int x, int y, int z, Chunk origChunk, int newContent) {
+    return;
   }
 
   /** Checks if there should be movement in Y (up/down draft) when moving from x0,z0 to x1,z1 */
@@ -420,10 +450,12 @@ public class BlockGas extends Block {
   }
 
   public void interactWithEntity(Entity e) {
-    if (damageToEntity > 0 && e instanceof EntityLiving) {
-      EntityLiving living = (EntityLiving) e;
+    if (damageToEntity > 0 && e instanceof EntityLivingBase) {
+      EntityLivingBase living = (EntityLivingBase) e;
       if (FysiksFun.rand.nextInt(chanceToDamageEntity) == 0) living.attackEntityFrom(DamageSource.inWall, damageToEntity);
 
     }
   }
+
+  public void expensiveTick(World w, Chunk c, ChunkTempData tempData0, int i, int y, int j, Random rand) {}
 }

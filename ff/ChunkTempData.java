@@ -90,12 +90,13 @@ public class ChunkTempData {
     }
     return chunk;
   }
-
+  /** Gets the given value to this cell. XZ in world coordinates (ie. > 16 is allowed) */
   public int getTempData(int x, int y, int z) {
     int baseAddr = ((x & 15) << 1) + ((z & 15) << 5) + ((y & 255) << 9);
     return ((int) tempData[baseAddr] & 0xFF) + (((int) tempData[baseAddr + 1] & 0xFF) << 8);
   }
 
+  /** Assigns the given value to this cell. XZ in world coordinates (ie. > 16 is allowed) */
   public void setTempData(int x, int y, int z, int data) {
     int baseAddr = ((x & 15) << 1) + ((z & 15) << 5) + ((y & 255) << 9);
     tempData[baseAddr] = (byte) (data & 255);

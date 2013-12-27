@@ -79,11 +79,13 @@ public class Fluids {
     stillLava.setTickRandomly(false);
     flowingLava.canCauseErosion = true;
     stillLava.canCauseErosion = true;
+    flowingLava.erodeMultiplier = 10;
+    stillLava.erodeMultiplier = 10;
     flowingLava.canSeepThrough = false;
     stillLava.canSeepThrough = false;
     GameRegistry.registerBlock(flowingLava, "lavaFlowing");
-    GameRegistry.registerBlock(stillLava, "lavaStill");
-
+    GameRegistry.registerBlock(stillLava, "lavaStill");    
+    
     registerLiquidBlock(stillWater);
     registerLiquidBlock(flowingWater);
     registerLiquidBlock(stillLava);
@@ -182,12 +184,13 @@ public class Fluids {
       waterAmount = incommingAmount;
     }
     int nReactions = Math.min(lavaAmount, waterAmount) / reactionStepSize + 1;
-    nReactions = Math.min(2, nReactions);
+    nReactions = Math.min(1, nReactions);
+    //System.out.println("lavaAmount: "+lavaAmount+" waterAmount: "+waterAmount);
+
     lavaAmount = Math.max(0, lavaAmount - nReactions * reactionStepSize);
     waterAmount = Math.max(0, waterAmount - nReactions * reactionStepSize);
     int steamAmount = nReactions;
     boolean generated = false;
-
     /*
      * Check if the interaction happens in air/water/gas, if so move the result
      * as far down as possible
@@ -240,8 +243,8 @@ public class Fluids {
     // steamAmount=0;
     
      // Optimisation
-    steamAmount=Math.max(1, steamAmount/2);
-    
+    //steamAmount=Math.max(1, steamAmount/2);
+    //System.out.println("nReactions: "+nReactions+" steamAmount:"+steamAmount);
     for (int dist = 1; dist < 2 && steamAmount > 0; dist++) {
       for (int dir0 = 4; dir0 < 6 + 4 && steamAmount > 0; dir0++) {
         int dir = dir0 % 6;
@@ -250,12 +253,16 @@ public class Fluids {
         int z1 = z + Util.dirToDz(dir) * dist;
         int id = w.getBlockId(x1, y1, z1);
         if (id == 0 || id == Gases.steam.blockID) {
-          int amount = Gases.steam.getBlockContent(w, x1, y1, z1) + steamAmount;
-          if (amount > 15) {
-            steamAmount = amount - 15;
-            amount = 15;
-          } else steamAmount = 0;
+          int origAmount = id == 0 ? 0 : Gases.steam.getBlockContent(w, x1, y1, z1);
+          int amount = origAmount + steamAmount;
+          //System.out.println("Orig amount: "+origAmount);
+          if (amount > 16) {
+            steamAmount = amount - 16;
+            amount = 16;
+          } else steamAmount = 0;          
           Gases.steam.setBlockContent(w, x1, y1, z1, amount);
+          //System.out.println("Setting amount @"+Util.xyzString(x1, y1, z1)+":"+amount+" leftOver: "+steamAmount);
+          if(steamAmount <= 0) { dist=32; break; }
         }
       }
     }

@@ -1,5 +1,7 @@
-Make pyroplasmic clouds?
-Re-enable erosion?
+Let pyroclastic clouds + water -> hydrochloric acid (when the right mod is installed)
+
+Let erosion dump the removed block somewhere else.... walking towards lower pressures. (Lots of special cases to deal with!)
+Water/rain should help stop wild-fires
 Make piston based pumps work again
 
 Debug when running with only tree felling. 

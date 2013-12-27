@@ -14,13 +14,14 @@ public class Evaporation {
    * Evaporation removes water blocks from world surface from the chunk with
    * chunk center XZ
    */
-  public static void doEvaporation(World w, int x, int z) {
+  public static void doEvaporation(World w, int x, int z) {    
     doDirectEvaporation(w, x, z);
+    
     if (FysiksFun.settings.undergroundWater) {
       doWorldHeatbasedEvaporation(w, x, z);
-      doHumidification(w, x, z);
+      //doHumidification(w, x, z);
     }
-    doIndirectEvaporation(w, x, z);
+    //doIndirectEvaporation(w, x, z);    
     doDirectHeatEvaporation(w, x, z);
   }
 
@@ -52,8 +53,7 @@ public class Evaporation {
             for (int ddy = 3; ddy >= -1; ddy--) {
               int y2 = y + ddy;
               int id2 = c2.getBlockID(x2 & 15, y2, z2 & 15);
-              if (id2 == Fluids.stillWater.blockID || id2 == Fluids.flowingWater.blockID) {
-                
+              if (id2 == Fluids.stillWater.blockID || id2 == Fluids.flowingWater.blockID) {                
                 Fluids.stillWater.evaporate(w, c2, x2, y2, z2, evaporationStepsize);
                 
                 // Heuristic to speed up: we produce 16 times less steam here, but make steam produce 16 times more water
@@ -146,13 +146,16 @@ public class Evaporation {
    * dirt, gravel or cobblestone cell
    */
   private static void doHumidification(World w, int x, int z) {
+    // Net effect of this is that water is created!
+    
     // DEBUG
     // if (FysiksFun.rand.nextInt(31) != 0) return;
 
     // TODO - let the biome affect this?
 
     Chunk c = w.getChunkFromChunkCoords(x >> 4, z >> 4);
-    for (int tries = 0; tries < 10; tries++) {
+
+    for (int tries = 0; tries < 3; tries++) {
       int dx = FysiksFun.rand.nextInt(16);
       int dz = FysiksFun.rand.nextInt(16);
       int y1 = 24 + FysiksFun.rand.nextInt(17) + FysiksFun.rand.nextInt(17);
