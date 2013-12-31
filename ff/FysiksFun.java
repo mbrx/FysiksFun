@@ -49,11 +49,14 @@ import cpw.mods.fml.common.ModMetadata;
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.passive.EntitySquid;
+import net.minecraft.util.DamageSource;
 import net.minecraft.world.ChunkCoordIntPair;
 import net.minecraft.world.World;
 import net.minecraft.world.biome.BiomeGenBase;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.IChunkProvider;
+import net.minecraft.world.chunk.storage.ExtendedBlockStorage;
 import net.minecraftforge.common.Configuration;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.Property;
@@ -88,7 +91,7 @@ public class FysiksFun {
   public static Random                       rand;
 
   public static Settings                     settings               = new Settings();
-  public static ExecutorService              executor               = Executors.newFixedThreadPool(12);
+  public static ExecutorService              executor               = Executors.newFixedThreadPool(20);
 
   public static class WorldObserver {
     World w;
@@ -140,6 +143,7 @@ public class FysiksFun {
     if (settings.doFluids) Fluids.postInit();
     if (settings.doGases) Gases.postInit();
     if (settings.doExtraFire) ExtraFire.postInit();
+    BlockPhysicsSweepWorkerThread.postInit();
   }
 
   /**
@@ -200,7 +204,7 @@ public class FysiksFun {
   public static void tickServer() {
     /* Update world tick and print statistics */
     Counters.tick++;
-    if (Counters.tick % 300 == 0) {
+    if (Counters.tick % 50 == 0) {
       Counters.printStatistics();
     }
     Fluids.checkBlockOverwritten();
@@ -261,9 +265,11 @@ public class FysiksFun {
     if (settings.doAnimalAI) AnimalAIRewriter.rewriteAnimalAIs(w);
     if (settings.doGases) Gases.doWorldTick(w);
     if (settings.doTreeFalling) Trees.doTick(w);
-
-    if (!w.isRemote) {
+    ExtraEntityBehaviours.doTick(w);
+    
+    if (!w.isRemote) {      
       List allEntities = w.loadedEntityList;
+      
       for (Object o : allEntities) {
         if (o instanceof Player) {
           Entity e = (Entity) o;
@@ -274,8 +280,18 @@ public class FysiksFun {
           observer.posZ = e.posZ;
           observers.add(observer);
         }
+        /* Kill all squids! */
+        /*if (o instanceof EntitySquid) {
+          EntitySquid e = (EntitySquid) o;
+          if(e.posY < 60) {
+            System.out.println("Killing a squid: "+e);
+            w.removeEntity(e);
+          }
+        }*/
       }
+      
     }
+       
     // System.out.println("Players found: "+observers.size());
 
     int rainTime = w.getWorldInfo().getRainTime();
@@ -292,6 +308,7 @@ public class FysiksFun {
    * Priority MAY be used for prioritization of when the mark messages are sent, but currently is not. Use 0 for now.
    */
   public static synchronized void setBlockWithMetadataAndPriority(World w, int x, int y, int z, int id, int meta, int pri) {
+
     Chunk c = ChunkCache.getChunk(w, x >> 4, z >> 4, false);
     if (c == null) return;
     c.setBlockIDWithMetadata(x & 15, y, z & 15, id, meta);
@@ -299,5 +316,23 @@ public class FysiksFun {
   }
 
   public static void tickPlayer(Player player, World w) {}
+
+  /** A thread safe mechanism for (a) assigning the ID and meta to a block, and (b) to schedule a block mark update. */
+  public static void setBlockIDandMetadata(World w, Chunk c, int x, int y, int z, int id, int meta, int oldId, int oldMeta,
+      HashSet<ChunkMarkUpdateTask> delayedBlockMarkSet) {
+
+    ExtendedBlockStorage blockStorage[] = c.getBlockStorageArray();
+    ExtendedBlockStorage ebs = blockStorage[y >> 4];
+    if(ebs == null) 
+      c.setBlockIDWithMetadata(x & 15, y, z & 15, id, meta);
+    else {
+      ebs.setExtBlockID(x & 15, y & 15, z & 15, id);
+      ebs.setExtBlockMetadata(x & 15, y & 15, z & 15, meta);
+    }
+
+    if (delayedBlockMarkSet == null) ChunkMarkUpdater.scheduleBlockMark(w, x, y, z, oldId, oldMeta);
+    else delayedBlockMarkSet.add(new ChunkMarkUpdateTask(w, x, y, z, oldId, oldMeta));
+
+  }
 
 }

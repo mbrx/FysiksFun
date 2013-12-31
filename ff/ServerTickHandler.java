@@ -11,6 +11,7 @@ public class ServerTickHandler implements IScheduledTickHandler {
   
   @Override
   public void tickStart(EnumSet<TickType> type, Object... tickData) {
+    //System.out.println("TickType: "+type+" object: "+tickData);
     FysiksFun.tickServer();
   }
   
@@ -20,7 +21,7 @@ public class ServerTickHandler implements IScheduledTickHandler {
   
   @Override
   public EnumSet<TickType> ticks() {
-    return EnumSet.of(TickType.WORLD);
+    return EnumSet.of(TickType.SERVER); //TickType.WORLD);    
   }
   
   @Override

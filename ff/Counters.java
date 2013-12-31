@@ -34,6 +34,9 @@ public class Counters {
   public static int chunkMarkScheduled    = 0;
   public static int fluidSetContent       = 0;
   
+  public static int fallenBlocks = 0;
+  public static int brokenBlocks = 0;
+  
   public static void printStatistics() {
 
     int totsize = 0;
@@ -41,6 +44,15 @@ public class Counters {
       HashSet set = (HashSet) FysiksFun.blockTickQueueRing[i];
       totsize += set.size();
     }
+    System.out.println("Generic: "+genericCounter);
+    genericCounter=0;
+    
+    System.out.println("Fallen blocks: "+fallenBlocks);
+    System.out.println("Broken blocks: "+brokenBlocks);
+    fallenBlocks=0;
+    brokenBlocks=0;
+    
+    
     // System.out.println("Liquid Tick Queue: " + (liquidQueueCounter) + " per tick (" + totsize + " used "+
     // FysiksFun.blockTickQueueFreePool.size() + " free pool) smallLiquidExtraTicks: "+smallLiquidExtraTicks);
   //  System.out.println("Fluid updates: " + fluidUpdates + " content calls: "+fluidSetContent);

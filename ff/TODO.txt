@@ -1,3 +1,6 @@
+
+Implement .isBlockReplacable for all liquids and gases
+
 Let pyroclastic clouds + water -> hydrochloric acid (when the right mod is installed)
 
 Let erosion dump the removed block somewhere else.... walking towards lower pressures. (Lots of special cases to deal with!)

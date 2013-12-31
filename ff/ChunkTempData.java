@@ -12,10 +12,9 @@ import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.IChunkProvider;
 
 /**
- * Class responsible for storing extra temporary data for chunks that contain
- * any FF blocks. This data will become reset on server restart, so it should
- * only be used for temporary data such as propagation of pressures or
- * computations of paths
+ * Class responsible for storing extra temporary data for chunks that contain any FF blocks. This data will become reset
+ * on server restart, so it should only be used for temporary data such as propagation of pressures or computations of
+ * paths
  */
 public class ChunkTempData {
 
@@ -25,6 +24,8 @@ public class ChunkTempData {
   private static CoordinateWXYZ                           tempCoordinate = new CoordinateWXYZ(null, 0, 0, 0);
   private static Semaphore                                mutex          = new Semaphore(1);
 
+  public int physicsLastTick;
+  
   /** Contains a list of the amount of liquids on each layer of the chunk */
   private short[]                                         fluidHistogramData;
   /** Contains a list of the amount of gases on each layer of the chunk */
@@ -32,17 +33,20 @@ public class ChunkTempData {
   private boolean                                         histogramsInitialized;
 
   private ChunkTempData(World w, int x, int y, int z) {
-    tempData = new byte[16 * 256 * 16 * 2];
+    Counters.genericCounter++;
+    
+    tempData = new byte[16 * 16 * 256 * 4];
     coordinate = new CoordinateWXYZ(w, x, y, z);
     for (int dy = 0; dy < 256; dy++)
       for (int dz = 0; dz < 16; dz++)
-        for (int dx = 0; dx < 16; dx++) {
-          tempData[(dx << 1) + (dz << 5) + (dy << 9)] = 0;
-          tempData[(dx << 1) + (dz << 5) + (dy << 9) + 1] = 0;
-        }
+        for (int dx = 0; dx < 16; dx++)
+          for (int i = 0; i < 4; i++) {
+            tempData[(dx << 2) + (dz << 6) + (dy << 10) + i] = 0;
+          }
     fluidHistogramData = new short[256];
     gasHistogramData = new short[256];
     histogramsInitialized = false;
+    physicsLastTick=0;
     
     // initializeHistogram();
     if (chunks.get(coordinate) == null) chunks.put(coordinate, this);
@@ -70,7 +74,7 @@ public class ChunkTempData {
         for (int z1 = 0; z1 < 16; z1++) {
           int id = chunk.getBlockID(x1, y1, z1);
           if (Fluids.isLiquid[id]) fluidCnt++;
-          else if(Gases.isGas[id]) gasCnt++;
+          else if (Gases.isGas[id]) gasCnt++;
         }
       fluidHistogramData[y1] = (short) fluidCnt;
       gasHistogramData[y1] = (short) gasCnt;
@@ -90,17 +94,21 @@ public class ChunkTempData {
     }
     return chunk;
   }
+
   /** Gets the given value to this cell. XZ in world coordinates (ie. > 16 is allowed) */
   public int getTempData(int x, int y, int z) {
-    int baseAddr = ((x & 15) << 1) + ((z & 15) << 5) + ((y & 255) << 9);
-    return ((int) tempData[baseAddr] & 0xFF) + (((int) tempData[baseAddr + 1] & 0xFF) << 8);
+    int baseAddr = ((x & 15) << 2) + ((z & 15) << 6) + ((y & 255) << 10);
+    return ((int) tempData[baseAddr] & 0xFF) + (((int) tempData[baseAddr + 1] & 0xFF) << 8) + (((int) tempData[baseAddr + 2] & 0xFF) << 16)
+        + (((int) tempData[baseAddr + 3] & 0xFF) << 24);
   }
 
   /** Assigns the given value to this cell. XZ in world coordinates (ie. > 16 is allowed) */
   public void setTempData(int x, int y, int z, int data) {
-    int baseAddr = ((x & 15) << 1) + ((z & 15) << 5) + ((y & 255) << 9);
+    int baseAddr = ((x & 15) << 2) + ((z & 15) << 6) + ((y & 255) << 10);
     tempData[baseAddr] = (byte) (data & 255);
     tempData[baseAddr + 1] = (byte) (data >> 8);
+    tempData[baseAddr + 2] = (byte) (data >> 16);
+    tempData[baseAddr + 3] = (byte) (data >> 24);
   }
 
   // for efficiency: we are skipping the synchronized keyword here
@@ -111,26 +119,16 @@ public class ChunkTempData {
       chunk = new ChunkTempData(w, x >> 4, y >> 8, z >> 4);
       return 0;
     } else {
-      int baseAddr = ((x & 15) << 1) + ((z & 15) << 5) + ((y & 255) << 9);
-      return ((int) chunk.tempData[baseAddr] & 0xFF) + (((int) chunk.tempData[baseAddr + 1] & 0xFF) << 8);
+      int baseAddr = ((x & 15) << 2) + ((z & 15) << 6) + ((y & 255) << 10);
+      return ((int) chunk.tempData[baseAddr] & 0xFF) + (((int) chunk.tempData[baseAddr + 1] & 0xFF) << 8) + (((int) chunk.tempData[baseAddr + 2] & 0xFF) << 16)
+          + (((int) chunk.tempData[baseAddr + 3] & 0xFF) << 24);
     }
     /*
-    if (chunk == null) {
-      try {
-        mutex.acquire();
-      } catch (InterruptedException e) {
-        e.printStackTrace();
-      }
-      chunk = chunks.get(tempCoordinate);
-      if (chunk == null) {
-        chunk = new ChunkTempData(w, x >> 4, y >> 4, z >> 4);
-      }
-      mutex.release();
-      return 0;
-    } else {
-      int baseAddr = ((x & 15) << 1) + ((z & 15) << 5) + ((y & 15) << 9);
-      return ((int) chunk.tempData[baseAddr] & 0xFF) + (((int) chunk.tempData[baseAddr + 1] & 0xFF) << 8);
-    }*/
+     * if (chunk == null) { try { mutex.acquire(); } catch (InterruptedException e) { e.printStackTrace(); } chunk =
+     * chunks.get(tempCoordinate); if (chunk == null) { chunk = new ChunkTempData(w, x >> 4, y >> 4, z >> 4); }
+     * mutex.release(); return 0; } else { int baseAddr = ((x & 15) << 1) + ((z & 15) << 5) + ((y & 15) << 9); return
+     * ((int) chunk.tempData[baseAddr] & 0xFF) + (((int) chunk.tempData[baseAddr + 1] & 0xFF) << 8); }
+     */
 
   }
 
@@ -142,26 +140,18 @@ public class ChunkTempData {
     if (chunk == null) {
       chunk = new ChunkTempData(w, x >> 4, y >> 8, z >> 4);
     }
-    int baseAddr = ((x & 15) << 1) + ((z & 15) << 5) + ((y & 255) << 9);
+    int baseAddr = ((x & 15) << 2) + ((z & 15) << 6) + ((y & 255) << 10);
     chunk.tempData[baseAddr] = (byte) (data & 255);
     chunk.tempData[baseAddr + 1] = (byte) (data >> 8);
-    /*    
-    if (chunk == null) {
-      try {
-        mutex.acquire();
-      } catch (InterruptedException e) {
-        e.printStackTrace();
-      }
-      chunk = chunks.get(tempCoordinate);
-      if (chunk == null) {
-        chunk = new ChunkTempData(w, x >> 4, y >> 4, z >> 4);
-      }
-      mutex.release();
-    }
-    int baseAddr = ((x & 15) << 1) + ((z & 15) << 5) + ((y & 15) << 9);
-    chunk.tempData[baseAddr] = (byte) (data & 255);
-    chunk.tempData[baseAddr + 1] = (byte) (data >> 8);
-    */
+    chunk.tempData[baseAddr + 2] = (byte) (data >> 16);
+    chunk.tempData[baseAddr + 3] = (byte) (data >> 24);
+    
+    /*
+     * if (chunk == null) { try { mutex.acquire(); } catch (InterruptedException e) { e.printStackTrace(); } chunk =
+     * chunks.get(tempCoordinate); if (chunk == null) { chunk = new ChunkTempData(w, x >> 4, y >> 4, z >> 4); }
+     * mutex.release(); } int baseAddr = ((x & 15) << 1) + ((z & 15) << 5) + ((y & 15) << 9); chunk.tempData[baseAddr] =
+     * (byte) (data & 255); chunk.tempData[baseAddr + 1] = (byte) (data >> 8);
+     */
   }
 
   public void addFluidHistogram(int y, int delta) {
@@ -177,6 +167,7 @@ public class ChunkTempData {
   public int getFluidHistogram(int y) {
     return fluidHistogramData[y];
   }
+
   public int getGasHistogram(int y) {
     return gasHistogramData[y];
   }
@@ -184,6 +175,7 @@ public class ChunkTempData {
   public void setFluidHistogram(int y, int value) {
     fluidHistogramData[y] = (short) value;
   }
+
   public void setGasHistogram(int y, int value) {
     gasHistogramData[y] = (short) value;
   }
