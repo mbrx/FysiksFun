@@ -17,6 +17,8 @@ import net.minecraft.client.renderer.texture.IconRegister;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLiving;
 import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.entity.passive.EntitySquid;
+import net.minecraft.entity.passive.EntityWaterMob;
 import net.minecraft.util.DamageSource;
 import net.minecraft.util.Icon;
 import net.minecraft.util.Vec3;
@@ -191,11 +193,7 @@ public class BlockFluid extends BlockFlowing {
     IChunkProvider chunkProvider = w.getChunkProvider();
     Chunk c = chunkProvider.provideChunk(x >> 4, z >> 4);
     ChunkTempData tempData = ChunkTempData.getChunk(w, x, y, z);
-    int temp = tempData.getTempData(x, y, z);
-    /*
-     * if(temp == 0) return (8 - oldMetaData) * (maximumContent / 8); else
-     */// DEBUG
-    return temp;
+    return tempData.getTempData(x, y, z);
   }
 
   public int getBlockContent(World w, Chunk c, int x, int y, int z) {
@@ -203,7 +201,7 @@ public class BlockFluid extends BlockFlowing {
   }
 
   public int getBlockContent(Chunk chunk, ChunkTempData tempData, int x, int y, int z) {
-    int temp = tempData.getTempData(x, y, z);
+    int temp = tempData.getTempData16(x, y, z);
     if (temp == 0) {
       // Reconstruct content from lores data
       int meta = chunk.getBlockMetadata(x & 15, y, z & 15);
@@ -247,11 +245,6 @@ public class BlockFluid extends BlockFlowing {
     if (oldMetaData > 7) oldMetaData = 7;
     if (newMetaData > 7) newMetaData = 7;
 
-    if (logExcessively) {
-      String message = "Setting " + Util.xyzString(x, y, z) + " to " + content;
-      FysiksFun.logger.log(Level.INFO, Util.logHeader() + message + " " + explanation);
-    }
-
     Counters.fluidSetContent++;
     if (newId != oldId || newMetaData != oldMetaData) {
       if (ebs != null && !FysiksFun.settings.slowBlockUpdates) {
@@ -274,10 +267,9 @@ public class BlockFluid extends BlockFlowing {
      * relightBlock not creating a tileentity (duh!) not calling onAdded not setting the isModified flag on the chunk
      */
 
-    tempData.setTempData(x, y, z, content);
+    tempData.setTempData16(x, y, z, content);
 
     if (oldId != newId || oldMetaData != newMetaData) {
-      // ChunkMarkUpdater.scheduleBlockMark(w, x, y, z);
       if (delayedBlockMarkSet == null) ChunkMarkUpdater.scheduleBlockMark(w, x, y, z, oldId, oldActualMetadata);
       else delayedBlockMarkSet.add(new ChunkMarkUpdateTask(w, x, y, z, oldId, oldActualMetadata));
     }
@@ -302,16 +294,10 @@ public class BlockFluid extends BlockFlowing {
     // if (sweep % liquidUpdateRate != 0) return;
     boolean moveNormally = (r.nextInt(liquidUpdateRate) == 0);
 
-    // if(x0 == -568 && z0 == 424) logExcessively = true;
-    // else logExcessively = false;
-
-    int oldIndent = Util.loggingIndentation;
-
-    int chunkX0 = x0 >> 4, chunkZ0 = z0 >> 4;
-    IChunkProvider chunkProvider = world.getChunkProvider();
+    int chunkX0 = x0 >> 4, chunkZ0 = z0 >> 4; 
 
     int id0 = chunk0.getBlockID(x0 & 15, y0, z0 & 15);
-    if (!isSameLiquid(id0)) return;
+    //if (!isSameLiquid(id0)) return; Impossible to not be true, since we the 'safe' function
 
     try {
       preventSetBlockLiquidFlowover = true;
@@ -328,12 +314,10 @@ public class BlockFluid extends BlockFlowing {
 
       int content0 = getBlockContent(chunk0, tempData0, x0, y0, z0);
       int oldContent0 = content0;
-      if (logExcessively) FysiksFun.logger.log(Level.INFO, Util.logHeader() + "Updating " + Util.xyzString(x0, y0, z0) + " content0: " + content0);
-      Util.loggingIndentation++;
 
       final int directions[][] = { { -1, -1 }, { 0, -1 }, { 1, -1 }, { -1, 0 }, { 1, 0 }, { -1, +1 }, { 0, +1 }, { 1, +1 } };
 
-      /* Special test for free falling water */
+      /* Special test for free falling water "small" amounts of water */
       if (content0 <= maximumContent / 8) {
         int dy;
         for (dy = 1; dy < 4; dy++) {
@@ -376,19 +360,9 @@ public class BlockFluid extends BlockFlowing {
           Chunk chunk1 = ChunkCache.getChunk(world, x1 >> 4, z1 >> 4, false);
           if (chunk1 == null) continue;
 
-          // if ((x1 >> 4) == chunkX0 && (z1 >> 4) == chunkZ0) chunk1 = chunk0;
-          // else if (chunkProvider.chunkExists(x1 >> 4, z1 >> 4)) chunk1 =
-          // chunkProvider.provideChunk(x1 >> 4, z1 >> 4);
-          // else continue;
-
           int id1 = chunk1.getBlockID(x1 & 15, y1, z1 & 15);
           if (!Fluids.isLiquid[id1]) continue;
           ChunkTempData tempData1 = ChunkCache.getTempData(world, x1 >> 4, z1 >> 4);
-
-          // Get new tempData
-          // if ((x1 >> 4) == (x0 >> 4) && (z1 >> 4) == (z0 >> 4)) tempData1 =
-          // tempData0;
-          // else tempData1 = ChunkTempData.getChunk(world, x1, y1, z1);
 
           int content1 = getBlockContent(chunk1, tempData1, x1, y1, z1);
           if (content1 < maximumContent) continue;
@@ -660,9 +634,6 @@ public class BlockFluid extends BlockFlowing {
       }
     } finally {
       preventSetBlockLiquidFlowover = false;
-      Util.loggingIndentation = oldIndent;
-      if (logExcessively) FysiksFun.logger.log(Level.INFO, Util.logHeader() + "Finished " + Util.xyzString(x0, y0, z0));
-
     }
   }
 
@@ -1002,8 +973,18 @@ public class BlockFluid extends BlockFlowing {
   public void velocityToAddToEntity(World w, int x, int y, int z, Entity entity, Vec3 velocity) {
     Vec3 vec = this.getFFFlowVector(w, x, y, z);
     Vec3 vec2;
+    if(entity instanceof EntityWaterMob) {
+      velocity.xCoord = 0;
+      velocity.yCoord = 0;
+      velocity.zCoord = 0;
+      return;
+    }
+    
     // Let the direction of flow also be affected by streams of water one step
     // below us
+    if (!isSameLiquid(w.getBlockId(x, y, z))) {
+      FysiksFun.logger.log(Level.SEVERE,"BlockFluid::velocityToAdd called for a block that is not a fluid"); 
+    }
     if (isSameLiquid(w.getBlockId(x, y - 1, z))) {
       vec2 = this.getFFFlowVector(w, x, y - 1, z);
       vec.xCoord += vec2.xCoord;

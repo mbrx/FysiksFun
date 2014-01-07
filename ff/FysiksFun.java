@@ -143,7 +143,8 @@ public class FysiksFun {
     if (settings.doFluids) Fluids.postInit();
     if (settings.doGases) Gases.postInit();
     if (settings.doExtraFire) ExtraFire.postInit();
-    BlockPhysicsSweepWorkerThread.postInit();
+    WorkerPhysicsSweep.postInit();
+    ExtraBlockBehaviours.postInit();
   }
 
   /**
@@ -265,7 +266,6 @@ public class FysiksFun {
     if (settings.doAnimalAI) AnimalAIRewriter.rewriteAnimalAIs(w);
     if (settings.doGases) Gases.doWorldTick(w);
     if (settings.doTreeFalling) Trees.doTick(w);
-    ExtraEntityBehaviours.doTick(w);
     
     if (!w.isRemote) {      
       List allEntities = w.loadedEntityList;
@@ -300,6 +300,10 @@ public class FysiksFun {
     Wind.doTick(w);
     MPWorldTicker.doBlockSweeps(w);
     MPWorldTicker.doUpdateChunks(w);
+    
+    // Do this last to remove any entites that are now inside any blocks
+    ExtraEntityBehaviours.doTick(w);
+
     // System.out.println("Active chunks: "+w.activeChunkSet.size());
 
   }

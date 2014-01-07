@@ -63,6 +63,8 @@ public class Settings {
   public boolean doNetherfun;
 
   public boolean doExtraFire;
+
+  public boolean doPhysics;
   
   public void loadFromConfig(Configuration config) {
     config.addCustomCategoryComment(categoryGeneric, "All high-level settings governing generic aspects of FysiksFun");
@@ -73,9 +75,9 @@ public class Settings {
     config.addCustomCategoryComment(categoryVolcanoes, "Settings related to dynamically generated volcanoes");
     
 
-    maxUpdatesPerTick = config.get(categoryGeneric, "max-client-updates-per-tick", "50",
-        "Maximum workload of chunks/blocks updates transmitted to client each tick. Default 50, higher cause more lag but give faster reaction to world updates",
-        Property.Type.INTEGER).getInt(50);
+    maxUpdatesPerTick = config.get(categoryGeneric, "max-client-updates-per-tick", "150",
+        "Maximum workload of chunks/blocks updates transmitted to client each tick. Default 150, higher cause more lag but give faster reaction to world updates",
+        Property.Type.INTEGER).getInt(150);
     slowBlockUpdates = config.get(categoryGeneric, "slow-block-updates", "false",
         "Forces fluids to use original (slower) block update mechanism.",
         Property.Type.BOOLEAN).getBoolean(false);
@@ -156,6 +158,7 @@ public class Settings {
     doNetherfun = config.get(categoryModules, "enable-netherfun", "true", "Enables Fun in the nether").getBoolean(true);
     doExtraFire = config.get(categoryModules, "extra-fires", "true", "Increases the danger and spread of large fires").getBoolean(true);
     doTreeConsumptions = config.get(categoryModules, "enable-dynamic-trees", "true", "Makes trees consume water or die").getBoolean(true);
+    doPhysics = config.get(categoryModules, "enable-physics", "false", "Enables physics of all solid blocks. Experimental.").getBoolean(false);
 
   }
   

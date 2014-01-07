@@ -1,15 +1,28 @@
 package mbrx.ff;
 
+import cpw.mods.fml.common.registry.GameRegistry;
 import net.minecraft.block.Block;
+import net.minecraft.block.BlockLeaves;
 import net.minecraft.world.ChunkCoordIntPair;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.Chunk;
 
 /**
- * Implements a few extra behaviours for various blocks, such as grass under water becomming dirt, and dirt under a
+ * Implements a few extra behaviours for various blocks, such as grass under water becoming dirt, and dirt under a
  * pillar of water becoming clay.
  */
 public class ExtraBlockBehaviours {
+
+  public static void postInit() {
+    for (int leavesId = 0; leavesId < 4096; leavesId++) {
+      if (!(Block.blocksList[leavesId] instanceof BlockLeaves)) continue;
+      BlockLeaves leaves = (BlockLeaves) Block.blocksList[leavesId];
+      Block.blocksList[leavesId]=null;
+      BlockFFLeaves ffleaves = new BlockFFLeaves(leavesId,leaves);
+      Block.blocksList[leavesId]=ffleaves;
+      GameRegistry.registerBlock(ffleaves, "modified-leaves");
+    }
+  }
 
   public static void doChunkTick(World world, ChunkCoordIntPair xz) {
     int x0 = xz.chunkXPos << 4;
@@ -25,12 +38,12 @@ public class ExtraBlockBehaviours {
       if (id == Block.grass.blockID && Fluids.stillWater.isSameLiquid(idAbove)) {
         FysiksFun.setBlockWithMetadataAndPriority(world, x0 + dx, y, z0 + dz, Block.dirt.blockID, 0, 0);
       } else if (FysiksFun.rand.nextInt(5000) < FysiksFun.settings.clayToDirtChance && id == Block.dirt.blockID && Fluids.stillWater.isSameLiquid(idAbove)) {
-        
+
         makeClay:
         {
           for (int dy = 2; dy < 5; dy++)
             if (!Fluids.stillWater.isSameLiquid(c.getBlockID(dx, y + dy, dz))) break makeClay;
-          FysiksFun.setBlockWithMetadataAndPriority(world, x0+dx, y, z0+dz, Block.blockClay.blockID, 0,0);
+          FysiksFun.setBlockWithMetadataAndPriority(world, x0 + dx, y, z0 + dz, Block.blockClay.blockID, 0, 0);
         }
 
       }

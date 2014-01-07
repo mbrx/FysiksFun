@@ -11,14 +11,18 @@ import net.minecraft.world.World;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.storage.ExtendedBlockStorage;
 
-class BlockLiquidSweepWorkerThread implements Runnable {
+class WorkerLiquidSweep implements Runnable {
+
+  /** Chunks within this distance from an observer is updated every sweep. Others chunks only on every X'th sweep. */
+  private static final int                   chunkDistFullUpdates = 64;
+
   ChunkCoordIntPair                          xz;
   World                                      w;
   int                                        minY, maxY;
   WorldUpdateState                           wstate;
   Map<Integer, HashSet<ChunkMarkUpdateTask>> delayedBlockMarkSets;
 
-  public BlockLiquidSweepWorkerThread(World w, WorldUpdateState wstate, ChunkCoordIntPair xz, int minY, int maxY,
+  public WorkerLiquidSweep(World w, WorldUpdateState wstate, ChunkCoordIntPair xz, int minY, int maxY,
       Map<Integer, HashSet<ChunkMarkUpdateTask>> delayedBlockMarkSets) {
     this.xz = xz;
     this.w = w;
@@ -44,6 +48,16 @@ class BlockLiquidSweepWorkerThread implements Runnable {
       ChunkTempData tempData0 = ChunkCache.getTempData(w, xz.chunkXPos, xz.chunkZPos);
       int x = xz.chunkXPos << 4;
       int z = xz.chunkZPos << 4;
+
+      if ((wstate.sweepCounter % 4) != 0) {
+        int minDist = chunkDistFullUpdates * chunkDistFullUpdates;
+        for (FysiksFun.WorldObserver wo : FysiksFun.observers) {
+          int dist = (int) ((wo.posX - x) * (wo.posX - x) + (wo.posZ - z) * (wo.posZ - z));
+          if (dist < minDist) minDist = dist;
+        }
+        // On these frames dont run the update for chunks far away from player
+        if (minDist >= chunkDistFullUpdates * chunkDistFullUpdates) return;
+      }
 
       // Don't process some of the chunks, when the current chunk has too much
       // fluids in it (is probably some kind of ocean)

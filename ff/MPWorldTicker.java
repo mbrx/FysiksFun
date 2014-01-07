@@ -18,7 +18,9 @@ import net.minecraft.world.chunk.Chunk;
 public class MPWorldTicker {
 
   static class WorldUpdateState {
+    /** Counts the number of steps that subdivides what parts of the world is investigated */
     int sweepStepCounter;
+    /** Counts the total number of sweeps done on the world */
     int sweepCounter;
   };
 
@@ -81,7 +83,7 @@ public class MPWorldTicker {
     int mi, ma;
     wstate.sweepStepCounter++;
 
-    int nStepsPerSweep = 8;
+    int nStepsPerSweep = 6;
     int sweep = wstate.sweepStepCounter % nStepsPerSweep;
     int yPerStep = 256 / nStepsPerSweep;
     mi = sweep * yPerStep;
@@ -105,14 +107,15 @@ public class MPWorldTicker {
       for (Object o : w.activeChunkSet) {
         ChunkCoordIntPair xz = (ChunkCoordIntPair) o;
         if (((xz.chunkXPos + xz.chunkZPos) & 1) == oddeven) {
-          Runnable liquidWorker = new BlockLiquidSweepWorkerThread(w, wstate, xz, mi, ma, delayedBlockMarkSets);
+          Runnable liquidWorker = new WorkerLiquidSweep(w, wstate, xz, mi, ma, delayedBlockMarkSets);
           Future f = FysiksFun.executor.submit(liquidWorker);
           toWaitFor.add(f);
-          
-          Runnable physicsWorker = new BlockPhysicsSweepWorkerThread(w, wstate, xz, delayedBlockMarkSets);
-          f = FysiksFun.executor.submit(physicsWorker);
-          toWaitFor.add(f);
-          
+
+          if (FysiksFun.settings.doPhysics) {
+            Runnable physicsWorker = new WorkerPhysicsSweep(w, wstate, xz, delayedBlockMarkSets);
+            f = FysiksFun.executor.submit(physicsWorker);
+            toWaitFor.add(f);
+          }
         }
       }
       for (Future f : toWaitFor) {

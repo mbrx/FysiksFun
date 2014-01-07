@@ -24,7 +24,10 @@ public class ChunkTempData {
   private static CoordinateWXYZ                           tempCoordinate = new CoordinateWXYZ(null, 0, 0, 0);
   private static Semaphore                                mutex          = new Semaphore(1);
 
+  /** Tick when the chunk was last updated by physics. */
   public int physicsLastTick;
+  /** Countdown for when chunk may start beeing affected by physics. Used to avoid incorrect result when chunks are first loaded or when they have been out of range. */
+  public int physicsCountdownToAction;
   
   /** Contains a list of the amount of liquids on each layer of the chunk */
   private short[]                                         fluidHistogramData;
@@ -46,7 +49,9 @@ public class ChunkTempData {
     fluidHistogramData = new short[256];
     gasHistogramData = new short[256];
     histogramsInitialized = false;
-    physicsLastTick=0;
+    
+    physicsLastTick=-999;
+    physicsCountdownToAction=-999;
     
     // initializeHistogram();
     if (chunks.get(coordinate) == null) chunks.put(coordinate, this);
@@ -95,12 +100,19 @@ public class ChunkTempData {
     return chunk;
   }
 
-  /** Gets the given value to this cell. XZ in world coordinates (ie. > 16 is allowed) */
+  /** Gets all the 32 bits of value in this cell. XZ in world coordinates (ie. > 16 is allowed).  */
   public int getTempData(int x, int y, int z) {
     int baseAddr = ((x & 15) << 2) + ((z & 15) << 6) + ((y & 255) << 10);
     return ((int) tempData[baseAddr] & 0xFF) + (((int) tempData[baseAddr + 1] & 0xFF) << 8) + (((int) tempData[baseAddr + 2] & 0xFF) << 16)
         + (((int) tempData[baseAddr + 3] & 0xFF) << 24);
   }
+  /** Gets lowermost 16 bits of value in this cell. XZ in world coordinates (ie. > 16 is allowed).  */
+  public int getTempData16(int x, int y, int z) {
+    int baseAddr = ((x & 15) << 2) + ((z & 15) << 6) + ((y & 255) << 10);
+    return ((int) tempData[baseAddr] & 0xFF) + (((int) tempData[baseAddr + 1] & 0xFF) << 8);
+  }
+  
+  
 
   /** Assigns the given value to this cell. XZ in world coordinates (ie. > 16 is allowed) */
   public void setTempData(int x, int y, int z, int data) {
@@ -109,6 +121,12 @@ public class ChunkTempData {
     tempData[baseAddr + 1] = (byte) (data >> 8);
     tempData[baseAddr + 2] = (byte) (data >> 16);
     tempData[baseAddr + 3] = (byte) (data >> 24);
+  }
+  /** Sets the lowermost 16 bits in this cell. XZ in world coordinates (ie. > 16 is allowed) */
+  public void setTempData16(int x, int y, int z, int data) {
+    int baseAddr = ((x & 15) << 2) + ((z & 15) << 6) + ((y & 255) << 10);
+    tempData[baseAddr] = (byte) (data & 255);
+    tempData[baseAddr + 1] = (byte) (data >> 8);
   }
 
   // for efficiency: we are skipping the synchronized keyword here

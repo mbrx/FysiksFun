@@ -20,7 +20,7 @@ public class Rain {
       
       if (!FysiksFun.settings.rainInOceans && (biome == BiomeGenBase.ocean || biome == BiomeGenBase.frozenOcean)) {
         // do nothing
-      } else if (biome.rainfall > 0.0 && FysiksFun.settings.waterRainRate>0 && FysiksFun.rand.nextInt(300000) < rainChance) {
+      } else if (biome.rainfall > 0.0 && FysiksFun.settings.waterRainRate>0 && FysiksFun.rand.nextInt(500000) < rainChance) {
         for (int y2 = 255; y2 > 1; y2--) {
           int id = c.getBlockID(dx, y2, dz);
           if (id != 0) {
@@ -29,7 +29,7 @@ public class Rain {
             if (id == Block.mushroomRed.blockID) break;
             if (id == Block.mushroomBrown.blockID) break;
             if (id == Block.melonStem.blockID) break;
-            if (id == Block.pumpkinStem.blockID) break;
+            if (id == Block.pumpkinStem.blgockID) break;
             if (id == Block.tallGrass.blockID) break;
             if (id == Block.plantYellow.blockID) break;
             if (id == Block.plantRed.blockID) break;

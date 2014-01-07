@@ -1,3 +1,6 @@
+Figure out a way to move MORE water when it is pressurized
+
+
 
 Implement .isBlockReplacable for all liquids and gases
 
@@ -216,3 +219,9 @@ Animal hearding behaviour?
 Spread plants only in direct line-of-sight? (or with a random walk?)
 
 Check that plants have sunlight, otherwise die
+
+
+
+---
+http://www.minecraftforum.net/topic/1854988-tutorial-162-changing-vanilla-without-editing-base-classes-coremods-and-events-very-advanced/
+---

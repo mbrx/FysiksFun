@@ -89,7 +89,9 @@ v0.4.2
     * Made trees spread by planting saplings (no dynamic tree growth yet)
     * Modified growth behaviour of volcanoes. Should look better after a few hours.
     
- v0.4.3
-    * Re-enabled erosion (?)
- 
+ v0.5.0
+    * Physics of all blocks
+    * Changed behaviour of leaves for new physics
+    * Re-enabled erosion
+    * Patch for a vanilla in-efficiency with Entity.moveEntity - requires FFCore plugin
     

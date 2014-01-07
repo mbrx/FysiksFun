@@ -1,0 +1,3 @@
+Manifest-Version: 1.0
+FMLCorePlugin: mbrx.ffcore.FFCoreLoadingPlugin
+Created-By: 1.7.0 (Oracle Corporation)

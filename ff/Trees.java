@@ -193,96 +193,84 @@ public class Trees {
 
   public static void doTrees(World w, int cx, int cz) {
 
-    // Cache this chunk
-    IChunkProvider chunkProvider = w.getChunkProvider();
-    if (!chunkProvider.chunkExists(cx >> 4, cz >> 4)) return;
-    int cachedChunkX = cx >> 4, cachedChunkZ = cz >> 4;
-    Chunk cachedChunk = w.getChunkFromChunkCoords(cachedChunkX, cachedChunkZ);
-    Chunk origChunk = cachedChunk;
+    for (int tries = 0; tries < 8; tries++) {
+      int dx = (FysiksFun.rand.nextInt(16) + tries) % 16;
+      int dz = (FysiksFun.rand.nextInt(16) + Counters.tick) % 16;
+      int x = cx + dx, z = cz + dz;
+      checkAndTickTree(w, x, z);
+    }
+  }
+
+  /** Tests if a tree can be found at the given XZ coordinates, and ticks it if so. */
+  public static void checkAndTickTree(World w, int x, int z) {
+    int logCount = 0;
+    int nLeaves = 0;
+    // woodDown represents how many wood blocks straight down that we have walked.
+    // If bigger than a threshold we are on the main trunk, and should now not cross over leaves anymore
+    int woodDown = 0;
+
+    boolean foundTree = false;
+    int treeYStart;
+    for (treeYStart = 128; treeYStart > 20; treeYStart--) {
+      Chunk c = ChunkCache.getChunk(w, x >> 4, z >> 4, false);
+      if (c == null) continue;
+      int id = c.getBlockID(x & 15, treeYStart, z & 15);
+      if (id == Block.wood.blockID) logCount++;
+      else logCount = 0;
+      if (logCount >= 2) {
+        foundTree = true;
+        break;
+      }
+      if (id == 0 || id == Block.leaves.blockID || id == Block.wood.blockID || (Block.blocksList[id] != null && !Block.blocksList[id].isOpaqueCube())) continue;
+      else break;
+    }
+    if (!foundTree) return;
+    int y, steps;
+    // tries += 4; // Reduce the CPU cost by doing fewer tries whenever we found a potential tree...
 
     /*
-     * if((FysiksFun.tickCounter % 100) == 0) { System.out.println("Falling trees: " + fallingTrees.size()); }
+     * Make a random walk that always takes us "down" as much as possible". This serves two purposes: (1) Takes us
+     * from branches into the main trunk and (2) moves us down to the bottom of the tree (even if there are parts of a
+     * large trunk that are cut out).
      */
-
-    for (int tries = 0; tries < 16; tries++) {
-      int dx = tries; // (FysiksFun.rand.nextInt(16)+tries) % 16;
-      int dz = (Counters.tick / 3) % 16; // (FysiksFun.rand.nextInt(16)+Counters.tick) % 16;
-      int x = cx + dx, z = cz + dz;
-      int treeYStart;
-      int logCount = 0;
-      int nLeaves = 0;
-      // woodDown represents how many wood blocks straight down that we have walked.
-      // If bigger than a threshold we are on the main trunk, and should now not cross over leaves anymore
-      int woodDown = 0;
-
-      boolean foundTree = false;
-      for (treeYStart = 128; treeYStart > 20; treeYStart--) {
-        int id = origChunk.getBlockID(x & 15, treeYStart, z & 15);
-        if (id == Block.wood.blockID) logCount++;
-        else logCount = 0;
-        if (logCount >= 2) {
-          foundTree = true;
-          break;
-        }
-        if (id == 0 || id == Block.leaves.blockID || id == Block.wood.blockID || (Block.blocksList[id] != null && !Block.blocksList[id].isOpaqueCube())) continue;
-        else break;
+    int woodX = x, woodY = treeYStart, woodZ = z;
+    woodDown = 0;
+    for (steps = 0, y = treeYStart; y > 0 && steps < 500; steps++) {
+      Chunk c = ChunkCache.getChunk(w, x >> 4, z >> 4, false);
+      if (c == null) continue;
+      int id = c.getBlockID(x & 15, y - 1, z & 15);
+      if (id == Block.wood.blockID) {
+        y--;
+        woodX = x;
+        woodY = y;
+        woodZ = z;
+        woodDown++;
+        continue;
+      } else if (id == Block.leaves.blockID && woodDown < 3) {
+        y--;
+        nLeaves++;
       }
-      if (!foundTree) continue;
-      int y, steps;
-      // tries += 4; // Reduce the CPU cost by doing fewer tries whenever we found a potential tree...
+      int dx2 = FysiksFun.rand.nextInt(3) - 1;
+      int dz2 = FysiksFun.rand.nextInt(3) - 1;
+      if (dx2 * dx2 + dz2 * dz2 == 1) {
 
-      /*
-       * Make a random walk that always takes us "down" as much as possible". This serves two purposes: (1) Takes us
-       * from branches into the main trunk and (2) moves us down to the bottom of the tree (even if there are parts of a
-       * large trunk that are cut out).
-       */
-      int woodX = x, woodY = treeYStart, woodZ = z;
-      woodDown = 0;
-      for (steps = 0, y = treeYStart; y > 0 && steps < 500; steps++) {
-        if (x >> 4 != cachedChunkX || z >> 4 != cachedChunkZ) {
-          if (!chunkProvider.chunkExists(x >> 4, z >> 4)) return;
-          cachedChunkX = x >> 4;
-          cachedChunkZ = z >> 4;
-          cachedChunk = w.getChunkFromChunkCoords(cachedChunkX, cachedChunkZ);
+        int x2 = x + dx2, z2 = z + dz2;
+        Chunk c2 = ChunkCache.getChunk(w, x2 >> 4, z2 >> 4, false);
+        if (c2 == null) continue;
+        id = c2.getBlockID(x2 & 15, y, z2 & 15);
+        if (id == Block.leaves.blockID) nLeaves++;
+        if (id == Block.wood.blockID || id == Block.leaves.blockID) {
+          x += dx2;
+          z += dz2;
         }
-        int id = cachedChunk.getBlockID(x & 15, y - 1, z & 15);
-        if (id == Block.wood.blockID) {
-          y--;
-          woodX = x;
-          woodY = y;
-          woodZ = z;
-          woodDown++;
-          continue;
-        } else if (id == Block.leaves.blockID && woodDown < 3) {
-          y--;
-          nLeaves++;
-        }
-        int dx2 = FysiksFun.rand.nextInt(3) - 1;
-        int dz2 = FysiksFun.rand.nextInt(3) - 1;
-        if (dx2 * dx2 + dz2 * dz2 == 1) {
-
-          if ((x + dx2) >> 4 != cachedChunkX || (z + dz2) >> 4 != cachedChunkZ) {
-            if (!chunkProvider.chunkExists((x + dx2) >> 4, (z + dz2) >> 4)) return;
-            cachedChunkX = (x + dx2) >> 4;
-            cachedChunkZ = (z + dz2) >> 4;
-            cachedChunk = w.getChunkFromChunkCoords(cachedChunkX, cachedChunkZ);
-          }
-          id = cachedChunk.getBlockID((x + dx2) & 15, y, (z + dz2) & 15);
-          if (id == Block.leaves.blockID) nLeaves++;
-          if (id == Block.wood.blockID || id == Block.leaves.blockID) {
-            x += dx2;
-            z += dz2;
-          }
-        }
-      }
-      // x=woodX; y=woodY; z=woodZ;
-      if (w.getBlockId(x, y, z) == Block.wood.blockID && (woodDown >= 1 || nLeaves > 0)) {
-        // We have found a local minima (Y wise) that is wood. It "must" be the bottom of a tree.
-        tickTree(w, x, y, z);
-        Counters.treeCounter++;
       }
     }
-
+    // x=woodX; y=woodY; z=woodZ;
+    if (w.getBlockId(x, y, z) == Block.wood.blockID && (woodDown >= 2 || nLeaves > 0)) {
+      // We have found a local minima (Y wise) that is wood. It "must" be the bottom of a tree.
+      tickTree(w, x, y, z);
+      Counters.treeCounter++;
+    }
   }
 
   public static void tickTree(World w, int x, int y, int z) {
@@ -413,7 +401,9 @@ public class Trees {
     // System.out.println("A tree is falling, does it make any sound?");
 
     /* First, remove all of the blocks from the world, using the old angle */
-    double oldAngle = fallingAngle * (Math.PI / 120.);
+    final double stepsToFall = 120.0;
+    
+    double oldAngle = fallingAngle * (Math.PI / stepsToFall);
 
     int dx, dy, dz;
     for (TreeBlock b : blocks) {
@@ -424,7 +414,7 @@ public class Trees {
       if (id == b.id) w.setBlock(centerX + dx, centerY + dy, centerZ + dz, 0, 0, 0x01 + 0x02);
     }
 
-    double newAngle = (fallingAngle + 1) * (Math.PI / 120.);
+    double newAngle = (fallingAngle + 1) * (Math.PI / stepsToFall);
     /*
      * Check if the new falling angle would cause a WOOD block to be placed within some other block
      */
@@ -457,7 +447,7 @@ public class Trees {
       }
       if (canFall) centerY--;
     }
-    // If this is reaches we have a problem, maybe a singleton block?
+    // If this is reached we have a problem, maybe a singleton block?
     if (fallingAngle >= 160) hasCollided = true;
 
     /*
