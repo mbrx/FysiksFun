@@ -47,7 +47,7 @@ public class MPWorldTicker {
           // {
           Chunk chunk = ChunkCache.getChunk(w, xz.chunkXPos, xz.chunkZPos, true);
           ChunkTempData tempData = ChunkCache.getTempData(w, xz.chunkXPos, xz.chunkZPos);
-          Runnable worker = new ChunkUpdateWorkerThread(w, chunk, xz, delayedBlockMarkSets);
+          Runnable worker = new WorkerUpdateChunks(w, chunk, xz, delayedBlockMarkSets);
           Future f = FysiksFun.executor.submit(worker);
           toWaitFor.add(f);
         }

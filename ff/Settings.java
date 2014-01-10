@@ -158,7 +158,7 @@ public class Settings {
     doNetherfun = config.get(categoryModules, "enable-netherfun", "true", "Enables Fun in the nether").getBoolean(true);
     doExtraFire = config.get(categoryModules, "extra-fires", "true", "Increases the danger and spread of large fires").getBoolean(true);
     doTreeConsumptions = config.get(categoryModules, "enable-dynamic-trees", "true", "Makes trees consume water or die").getBoolean(true);
-    doPhysics = config.get(categoryModules, "enable-physics", "false", "Enables physics of all solid blocks. Experimental.").getBoolean(false);
+    doPhysics = config.get(categoryModules, "enable-physics", "true", "Enables physics of all solid blocks. Experimental.").getBoolean(true);
 
   }
   

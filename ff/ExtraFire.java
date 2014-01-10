@@ -17,7 +17,7 @@ public class ExtraFire {
     //if(w != null) return;
     
     // Block.fire.updateTick(w, x0, y0, z0, FysiksFun.rand);
-    if(FysiksFun.rand.nextInt(4) != 0) return;
+    if(FysiksFun.rand.nextInt(8) != 0) return;
     int fireCount=0;
 
     for (int dx = -3; dx <= 3; dx++)

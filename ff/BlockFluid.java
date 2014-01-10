@@ -1040,8 +1040,8 @@ public class BlockFluid extends BlockFlowing {
         if (Math.abs(contentHere - content2) > 1) {
           int delta = contentHere - content2;
           if (Math.abs(delta) < BlockFluid.maximumContent / 4) delta = 0;
-          myvec.xCoord += 0.3d * ((double) dx * delta) * contentHere / (1.d * BlockFluid.maximumContent * BlockFluid.maximumContent);
-          myvec.zCoord += 0.3d * ((double) dz * delta) * contentHere / (1.d * BlockFluid.maximumContent * BlockFluid.maximumContent);
+          myvec.xCoord += 0.15d * ((double) dx * delta) * contentHere / (1.d * BlockFluid.maximumContent * BlockFluid.maximumContent);
+          myvec.zCoord += 0.15d * ((double) dz * delta) * contentHere / (1.d * BlockFluid.maximumContent * BlockFluid.maximumContent);
         }
       }
     }

@@ -22,6 +22,13 @@ public class ExtraBlockBehaviours {
       Block.blocksList[leavesId]=ffleaves;
       GameRegistry.registerBlock(ffleaves, "modified-leaves");
     }
+    
+    Block stone = Block.stone;
+    Block.blocksList[stone.blockID] = null;
+    BlockFFStone ffstone = new BlockFFStone(stone.blockID);
+    ffstone.setHardness(1.5F).setResistance(10.0F).setStepSound(Block.soundStoneFootstep).setUnlocalizedName("stone").setTextureName("stone");    
+    Block.blocksList[stone.blockID] = ffstone;
+    GameRegistry.registerBlock(ffstone, "modified-stone");
   }
 
   public static void doChunkTick(World world, ChunkCoordIntPair xz) {

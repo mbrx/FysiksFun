@@ -7,13 +7,13 @@ import net.minecraft.world.ChunkCoordIntPair;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.Chunk;
 
-class ChunkUpdateWorkerThread implements Runnable {
+class WorkerUpdateChunks implements Runnable {
   World                                      world;
   Chunk                                      chunk;
   Map<Integer, HashSet<ChunkMarkUpdateTask>> delayedBlockMarkSets;
   ChunkCoordIntPair                          xz;
 
-  public ChunkUpdateWorkerThread(World w, Chunk c, ChunkCoordIntPair xz, Map<Integer, HashSet<ChunkMarkUpdateTask>> delayedBlockMarkSets) {
+  public WorkerUpdateChunks(World w, Chunk c, ChunkCoordIntPair xz, Map<Integer, HashSet<ChunkMarkUpdateTask>> delayedBlockMarkSets) {
     this.world = w;
     this.chunk = c;
     this.xz = xz;

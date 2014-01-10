@@ -140,6 +140,9 @@ public class FysiksFun {
     // Add our water repair generator AFTER the other generators
     // if (settings.repairOceans)
     // GameRegistry.registerWorldGenerator(new OceanRepairGenerator());
+    
+    GameRegistry.registerWorldGenerator(new WorldSupportGenerator());
+    
     if (settings.doFluids) Fluids.postInit();
     if (settings.doGases) Gases.postInit();
     if (settings.doExtraFire) ExtraFire.postInit();
