@@ -92,6 +92,10 @@ v0.4.2
  v0.5.0
     * Physics of all blocks
     * Changed behaviour of leaves for new physics
-    * Re-enabled erosion
+    * Made vanilla stone very strong (and light), but not placeable by player
+    * Uses bedrock as world anchors (to prevent the world from falling onto the four elephants on the great turtle). 
+    * Re-enabled erosion. Decreased rain. Increased direct sunlight evaporation.
     * Patch for a vanilla in-efficiency with Entity.moveEntity - requires FFCore plugin
     
+ v0.5.1
+    * Repaired the nether with the new physics 

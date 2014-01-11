@@ -45,18 +45,18 @@ public class WorkerPhysicsSweep implements Runnable {
   private static Semaphore                   vanillaMutex           = new Semaphore(1);
   private static final int                   pressureBitsMask       = 0x7ffff;
   private static final int                   clockBitsStart         = 19;
-  private static final int                   clockBitsMask          = 0x1ff;
-  private static final int                   clockModulo            = 512;
-  private static final int                   clockMaxDist           = 255;
-  private static final int                   breakBitsStart         = 28;
-  private static final int                   breakBitsMask          = 0x07;
-  private static final int                   breakAtCounter         = 6;
-  private static final int                   counterIsFalling       = 7;
+  private static final int                   clockBitsMask          = 0x0ff;
+  private static final int                   clockModulo            = 256;
+  private static final int                   clockMaxDist           = 127;
+  private static final int                   breakBitsStart         = 27;
+  private static final int                   breakBitsMask          = 0x0f;
+  private static final int                   breakAtCounter         = 14;
+  private static final int                   counterIsFalling       = 15;
   private static final int                   maxChunkDist           = 48;
   private static final int                   countdownToAction      = 20;
-  private static final int                   fallForce              = 10;
+  private static final int                   fallForce              = 20;
   //private static final int                   numSweeps              = 4;
-  private static final int                  maximumStrength = 300;
+  private static final int                  elasticStrengthConstant = 150;
   
   public static void postInit() {
     for (int i = 0; i < 4096; i++) {
@@ -94,28 +94,28 @@ public class WorkerPhysicsSweep implements Runnable {
 
     blockStrength[Block.gravel.blockID] = 4;
     blockWeight[Block.gravel.blockID] = 4;
-    blockStrength[Block.dirt.blockID] = 4;
-    blockWeight[Block.dirt.blockID] = 2;
+    blockStrength[Block.dirt.blockID] = 2;
+    blockWeight[Block.dirt.blockID] = 1;
     blockStrength[Block.sand.blockID] = 4;
-    blockStrength[Block.grass.blockID] = 4;
     blockStrength[Block.cobblestone.blockID] = 40; // 5 times weight
     blockWeight[Block.cobblestone.blockID] = 8;
 
-    blockStrength[Block.stone.blockID] = 400; //      25 times weight (TODO - make block SolidStone)
-    blockWeight[Block.stone.blockID] = 8;
-    blockStrength[Block.stoneBrick.blockID] = 120; // 20 times weight
+    blockStrength[Block.stone.blockID] = 150; //      150 times weight
+    blockWeight[Block.stone.blockID] = 1; // stone is unplaceable, low weight for now!
+    blockStrength[Block.stoneBrick.blockID] = 72; // 12 times weight
     blockWeight[Block.stoneBrick.blockID] = 6;
-    blockStrength[Block.brick.blockID] = 80; //      20 times weight
+    blockStrength[Block.brick.blockID] = 60; //      15 times weight
     blockWeight[Block.brick.blockID] = 4;
 
-    blockStrength[Block.wood.blockID] = 100; //       25 times weight
+    blockStrength[Block.wood.blockID] = 60; //       15 times weight
     blockWeight[Block.wood.blockID] = 4;
-    blockStrength[Block.planks.blockID] = 30; //     15 times weight
+    blockStrength[Block.planks.blockID] = 20; //     10 times weight
     blockWeight[Block.planks.blockID] = 2;
     
     blockDoPhysics[Block.thinGlass.blockID] = true;
     blockStrength[Block.thinGlass.blockID] = 5; // 5 times weight
     blockWeight[Block.thinGlass.blockID] = 1; 
+    blockDoPhysics[Block.glass.blockID] = true;
     blockStrength[Block.glass.blockID] = 10; //      5 times weight
     blockWeight[Block.glass.blockID] = 2;
     blockStrength[Block.glowStone.blockID] = 40; //     20 times weight (it's anyway too expensive to use for this?)
@@ -124,20 +124,20 @@ public class WorkerPhysicsSweep implements Runnable {
     blockStrength[Block.fence.blockID] = 10; // 5 times weight 
     blockWeight[Block.fence.blockID] = 2; 
     
-    blockStrength[Block.blockLapis.blockID] = 150; // 25 times weight
+    blockStrength[Block.blockLapis.blockID] = 120; // 20 times weight
     blockWeight[Block.blockLapis.blockID] = 6;
-    blockStrength[Block.blockIron.blockID] = 160; // 40 times weight 
-    blockWeight[Block.blockIron.blockID] = 4; 
-    blockStrength[Block.blockGold.blockID] = 320; // 40 times weight 
-    blockWeight[Block.blockGold.blockID] = 8; 
-    blockStrength[Block.blockDiamond.blockID] = 300; // 100 times weight (!) 
-    blockWeight[Block.blockDiamond.blockID] = 3; 
-    blockStrength[Block.blockEmerald.blockID] = 300; // 100 times weight (!) 
-    blockWeight[Block.blockEmerald.blockID] = 3; 
-    blockStrength[Block.blockNetherQuartz.blockID] = 180; // 60 times weight (!) 
+    blockStrength[Block.blockNetherQuartz.blockID] = 72; // 24 times weight (!) 
     blockWeight[Block.blockNetherQuartz.blockID] = 3; 
+    blockStrength[Block.blockIron.blockID] = 120; // 30 times weight 
+    blockWeight[Block.blockIron.blockID] = 4; 
+    blockStrength[Block.blockGold.blockID] = 240; // 30 times weight 
+    blockWeight[Block.blockGold.blockID] = 8; 
+    blockStrength[Block.blockDiamond.blockID] = 240; // 80 times weight (!) 
+    blockWeight[Block.blockDiamond.blockID] = 3; 
+    blockStrength[Block.blockEmerald.blockID] = 240; // 80 times weight (!) 
+    blockWeight[Block.blockEmerald.blockID] = 3; 
     
-    blockStrength[Block.obsidian.blockID] = 240; // 15 times weight
+    blockStrength[Block.obsidian.blockID] = 160; // 10 times weight
     blockWeight[Block.obsidian.blockID] = 16; 
 
     blockStrength[Block.blockSnow.blockID] = 3; // 3 times weight
@@ -149,10 +149,26 @@ public class WorkerPhysicsSweep implements Runnable {
     blockWeight[Block.hay.blockID] = 2; 
     blockStrength[Block.cloth.blockID] = 6; // 3 times weight 
     blockWeight[Block.cloth.blockID] = 2; 
-        
+
+    blockStrength[Block.hardenedClay.blockID] = 60; // 15 times weight 
+    blockWeight[Block.hardenedClay.blockID] = 4; 
+
+    /* Hell */
+    // Netherrack is special, modified inside the 'run' method
+    //blockStrength[Block.netherrack.blockID] = 16;
+    //blockWeight[Block.netherrack.blockID] = 4;
+    blockStrength[Block.slowSand.blockID] = 4;
+    blockWeight[Block.slowSand.blockID] = 4;
+    blockStrength[Block.netherBrick.blockID] = 80;  // 20 times weight
+    blockWeight[Block.netherBrick.blockID] = 4;
+
+    
     /* Misc furniture */
     
     /* Aliases */
+    
+    blockStrength[Block.grass.blockID] = blockStrength[Block.dirt.blockID];
+    blockWeight[Block.grass.blockID] = blockWeight[Block.dirt.blockID];
     blockStrength[Block.cobblestoneMossy.blockID] = blockStrength[Block.cobblestone.blockID]; 
     blockWeight[Block.cobblestoneMossy.blockID] = blockWeight[Block.cobblestone.blockID]; 
     blockStrength[Block.cobblestoneWall.blockID] = blockStrength[Block.cobblestone.blockID]; 
@@ -179,6 +195,15 @@ public class WorkerPhysicsSweep implements Runnable {
       if (Counters.tick % ticksPerUpdate != 0) return;
       //int sweep = (Counters.tick/ticksPerUpdate) % numSweeps;
       
+      /* TODO: these modifications are dangerous inside a server with multiple worlds to be ticked (or maybe not?) */
+      if(w.provider.dimensionId == 0) {
+        blockStrength[Block.netherrack.blockID] = 16;
+        blockWeight[Block.netherrack.blockID] = 4;
+      } else {
+        blockStrength[Block.netherrack.blockID] = 50;
+        blockWeight[Block.netherrack.blockID] = 1;        
+      }
+
       
       HashSet<ChunkMarkUpdateTask> delayedBlockMarkSet = delayedBlockMarkSets.get(tid);
       if (delayedBlockMarkSet == null) {
@@ -258,14 +283,15 @@ public class WorkerPhysicsSweep implements Runnable {
             int breakThreshold = blockStrength[id];
             /** Amount of pressure that we will NOT move due to us already starting to break. */
             int elasticPressure = (breakThreshold / 2) * curBreak;
-            elasticPressure=maximumStrength/(breakAtCounter-1) * curBreak;
+            elasticPressure=elasticStrengthConstant/(breakAtCounter-1) * curBreak;
             
             boolean debugMe = false;
 
             /***** debug *****/
             if (Counters.tick % 50 == 0) {
+              if (id == Block.hardenedClay.blockID) debugMe = true;
               //if (id == Block.planks.blockID) debugMe = true;
-             // if(x0 == -1837 && z0==1339) debugMe=true;
+             // if(x0 == -1837 && z0==1339) debugMe=true;             
               //if (id == Block.bedrock.blockID && x0 == 222 && z0 == 119) debugMe = true;
             }
 
@@ -277,7 +303,8 @@ public class WorkerPhysicsSweep implements Runnable {
             /* Iterate over all neighbours, update our clock and pressure accordingly */
             for (int dir = 0; dir < 6; dir++) {
               int x2 = x + dx + Util.dirToDx(dir);
-              int y2 = y + Util.dirToDy(dir);
+              int dy = Util.dirToDy(dir);
+              int y2 = y + dy;
               int z2 = z + dz + Util.dirToDz(dir);
               int nnId = 0;
               if ((x2 >> 4) == (x >> 4) && (z2 >> 4) == (z >> 4)) {
@@ -290,6 +317,23 @@ public class WorkerPhysicsSweep implements Runnable {
                 if (c2 == null) continue;
                 nnId = c2.getBlockID(x2 & 15, y2, z2 & 15);
               }
+              /*if(Fluids.isLiquid[nnId] && dy != 0) {
+                Chunk c2 = ChunkCache.getChunk(w, x2 >> 4, z2 >> 4, false);
+                ChunkTempData tempData2 = ChunkCache.getTempData(w, x2 >> 4, z2 >> 4);
+                int nnTmpVal = tempData2.getTempData(x2, y2, z2);
+                int liquidContent = Fluids.fluid[nnId].getBlockContent(c2, tempData2, x2,y2,z2);
+                if(dy > 0) {
+                  // Note the difference in rounding of the cases where dy>0
+                  int liquidWeight = (liquidContent*6) / BlockFluid.maximumContent;
+                  curPressure += liquidWeight;
+                } else {
+                  int liftingForce = (liquidContent / BlockFluid.maximumContent) * 6;
+                  if(liftingForce > 0) {
+                    curPressure = Math.max(0,curPressure-liftingForce);
+                    if(curPressure < 5000) curClock = timeNow;
+                  }
+                }
+              }*/
               if (!blockDoPhysics[nnId]) {
                 if (blockDoSimplePhysics[nnId] == 0) continue;
                 if (blockDoSimplePhysics[nnId] > simplifiedPhysics) continue;

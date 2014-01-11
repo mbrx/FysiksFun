@@ -55,8 +55,29 @@ public class WorldSupportGenerator implements IWorldGenerator {
     }
   }
 
-  private void generateFlyingSupports(World world, Chunk c, int i, int j) {
-    FysiksFun.logger.log(Level.SEVERE, "No support for the end/nether in world support generator yet.");
+  private void generateFlyingSupports(World world, Chunk c, int x, int z) {
+    //FysiksFun.logger.log(Level.SEVERE, "No support for the end/nether in world support generator yet.");
+    
+    for (int tries = 0; tries < 4; tries++) {
+      int dx = FysiksFun.rand.nextInt(16);
+      int dz = (FysiksFun.rand.nextInt(16) + Counters.tick) % 16;
+      int y;
+      for (y = 8; y < 128; y++) {
+        int id = c.getBlockID(dx, y, dz);
+        if(id == 0 || Fluids.isLiquid[id]) {
+          world.setBlock(x + dx, y - 1, z + dz, Block.bedrock.blockID);
+          while(true) {
+            y=y+1;
+            id = c.getBlockID(dx, y, dz);
+            if(id != 0 && !Fluids.isLiquid[id]) break;
+          }
+          int tmp = FysiksFun.rand.nextInt(3);
+          if(c.getBlockID(dx, y+tmp, dz) == 0)
+            world.setBlock(x + dx, y + tmp, z + dz, Block.bedrock.blockID);
+        }
+      }
+    }
+    
   }
 
 }

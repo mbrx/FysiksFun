@@ -10,8 +10,8 @@ import net.minecraft.world.chunk.IChunkProvider;
 
 public class Plants {
 
-  public static int minDrink = BlockFluid.maximumContent / 32; 
-      
+  public static int minDrink = BlockFluid.maximumContent / 32;
+
   public static void doPlants(World w, int x, int z) {
     if (FysiksFun.settings.plantGrowth == 0) return;
     if (FysiksFun.rand.nextInt(1 + 457 / FysiksFun.settings.plantGrowth) != 0) return;
@@ -25,20 +25,21 @@ public class Plants {
     for (int tries = 0; tries < FysiksFun.settings.plantsThirst; tries++) {
       int dx = FysiksFun.rand.nextInt(16);
       int dz = FysiksFun.rand.nextInt(16);
-      int x0 = x+dx;
-      int z0 = z+dz;
+      int x0 = x + dx;
+      int z0 = z + dz;
       for (int y = 0; y < 256; y++) {
         int id = c.getBlockID(dx, y, dz);
         if (id == 0) continue;
         Block b = Block.blocksList[id];
         if (b == null) continue;
         int meta = c.getBlockMetadata(dx, y, dz);
-        if (meta == 7 && !FysiksFun.settings.cropsDrinkContinously) continue;
+        // Is this even crops?????? TODO
+        // if (meta == 7 && !FysiksFun.settings.cropsDrinkContinously) continue;
         if (b == Block.plantRed || b == Block.plantYellow || b == Block.tallGrass) {
 
           /* Determine radius in which these plants should consume stuff */
           int drinkRange = 4;
-          int skipChance = 0;    // Chances in 10 of skipping this plant (to make for slower plants)
+          int skipChance = 0; // Chances in 10 of skipping this plant (to make for slower plants)
           int spreadFailures = 4; // Probabilities to NOT spread when drinking (will still consume)
           int spreadRange = 12; // Probabilities to NOT spread when drinking
           int plantDensity = 4; // How many plants of this type is allowed in
@@ -62,7 +63,7 @@ public class Plants {
           }
 
           // Skip doing anything for some slow plants
-          if(FysiksFun.rand.nextInt(10) < skipChance) continue;
+          if (FysiksFun.rand.nextInt(10) < skipChance) continue;
           boolean shouldConsume = (FysiksFun.rand.nextInt(drinkQuantityInv) == 0);
           if (!checkForWater(w, x0, y, z0, drinkRange, yMin, yMax, 64, shouldConsume)) {
             /*
@@ -75,7 +76,7 @@ public class Plants {
                 Counters.cropsDie++;
                 FysiksFun.setBlockWithMetadataAndPriority(w, x + dx, y, z + dz, 0, 0, 0);
                 //System.out.println("Crop died cause of lack of water: "+x+" "+z);
-              }               
+              }
             }
           } else {
             /* Let them spread naturally */
@@ -172,24 +173,24 @@ public class Plants {
           /* Matches both crops, carrots and perhaps blocks added by other mods? */
           int dirOffset = FysiksFun.rand.nextInt(4);
           boolean foundWater = false;
-          for (int dir = 0; dir < 4; dir++) {
-            int dx2 = Util.dirToDx((dir + dirOffset) % 4);
-            int dz2 = Util.dirToDz((dir + dirOffset) % 4);
-            int x2 = x + dx + dx2, z2 = z + dz + dz2;
-            int id2;
-            if (x2 >> 4 == x >> 4 && z2 >> 4 == z >> 4) id2 = c.getBlockID(x2 & 15, y - 1, z2 & 15);
-            else id2 = w.getBlockId(x2, y - 1, z2);
-            if (id2 == Fluids.stillWater.blockID || id2 == Fluids.flowingWater.blockID) {
-              Fluids.flowingWater.consume(w, c, x2, y - 1, z2, minDrink);
-              // int amount = Fluids.flowingWater.getBlockContent(w, x2, y - 1,
-              // z2) - 1;
-              // Fluids.flowingWater.setBlockContent(w, x + dx + dx2, y - 1, z +
-              // dz + dz2, amount);
-              Counters.cropsDrink++;
-              foundWater = true;
-              break;
-            }
-          }
+          for (int dx2 = -1; dx2 <= 1; dx2++)
+            for (int dz2 = -1; dz2 <= 1; dz2++)
+              for (int dy = -2; dy <= 0; dy++) {
+                int x2 = x + dx + dx2, z2 = z + dz + dz2;
+                int id2;
+                if (x2 >> 4 == x >> 4 && z2 >> 4 == z >> 4) id2 = c.getBlockID(x2 & 15, y + dy, z2 & 15);
+                else id2 = w.getBlockId(x2, y - 1, z2);
+                if (id2 == Fluids.stillWater.blockID || id2 == Fluids.flowingWater.blockID) {
+                  Fluids.flowingWater.consume(w, c, x2, y + dy, z2, minDrink);
+                  // int amount = Fluids.flowingWater.getBlockContent(w, x2, y - 1,
+                  // z2) - 1;
+                  // Fluids.flowingWater.setBlockContent(w, x + dx + dx2, y - 1, z +
+                  // dz + dz2, amount);
+                  Counters.cropsDrink++;
+                  foundWater = true;
+                  break;
+                }
+              }
           if (!foundWater) {
             /* No water was found, eliminate the crops */
             /* reducing the meta by one to avoid dropping anything too good */

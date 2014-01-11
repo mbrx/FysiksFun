@@ -1,6 +1,16 @@
+Test use of buckets in survival mode.
+
+
+Solid stone vs. stone
+Make some randomly placed stones on world gen be normal stones, so mining is more dangeours
+Make planks release (magically!) some of the pressure from WorldGen-stone's. (Only from block above, no it should not be possible to make floating islands).
+
+
+When rain falls on existing water, we are currently adding TOO MUCH (it becomes an emergent phenomena!)
+
 Figure out a way to move MORE water when it is pressurized
-
-
+Let blocks break "sideways" if they have a block above them
+Make some physics blocks "fragile", ie. destroy when they break.
 
 Implement .isBlockReplacable for all liquids and gases
 

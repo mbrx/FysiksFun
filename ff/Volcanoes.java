@@ -198,6 +198,9 @@ public class Volcanoes {
                  */
                 Fluids.stillLava.setBlockContent(w, chunk0, tempData0, x0, y0, z0, BlockFluid.maximumContent, "[Lava feed]", null);
               } else {
+                // Lower chance to explode at higher altitudes (to reduce the insane growth up there)
+                if(y0 > 64+FysiksFun.rand.nextInt(64)) continue;
+                if(y0 > 64+FysiksFun.rand.nextInt(64)) continue;
                 /*
                  * Non-lava, non-air block. Plume is blocked, make an explosion
                  */
@@ -500,7 +503,7 @@ public class Volcanoes {
       int x0 = (xz.chunkXPos << 4) + rx;
       int z0 = (xz.chunkZPos << 4) + rz;
       // A tweak factor to reshape the growth of the volcanoes, max altitude=128
-      int lowestY = 1 + FysiksFun.rand.nextInt(64) + FysiksFun.rand.nextInt(64);
+      int lowestY = 1 + FysiksFun.rand.nextInt(64) + FysiksFun.rand.nextInt(32) + FysiksFun.rand.nextInt(32);
       
       for (int y0 = 255; y0 >= lowestY; y0--) {
         int id = chunk0.getBlockID(x0 & 15, y0, z0 & 15);

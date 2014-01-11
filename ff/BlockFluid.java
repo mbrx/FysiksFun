@@ -199,7 +199,7 @@ public class BlockFluid extends BlockFlowing {
   public int getBlockContent(World w, Chunk c, int x, int y, int z) {
     return getBlockContent(c, ChunkTempData.getChunk(w, x, y, z), x, y, z);
   }
-
+  /** Gets the fluid content in this cell, XYZ expressed in world coordinates (ie. >16 allowed) */
   public int getBlockContent(Chunk chunk, ChunkTempData tempData, int x, int y, int z) {
     int temp = tempData.getTempData16(x, y, z);
     if (temp == 0) {

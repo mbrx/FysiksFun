@@ -1,0 +1,268 @@
+[center][b]Fysiks Fun, Alpha release 0.5.0[/b]
+[URL=http://imgur.com/mkkhWxr][IMG]http://i.imgur.com/mkkhWxr.png[/IMG][/URL]
+ [/center]
+
+[b]Minecraft version:[/b] 1.6.4
+[b]Forge version[/b]: 9.11.1 (build 942)
+[b]Single player:[/b] working "ok" in alpha
+[b]Multi player[/b]: technically it works but [b]will[/b] cause lag
+[b][url="https://drive.google.com/folderview?id=0B7lmYe8w-r-Cc1RrSzRjdlNkTTA&amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;usp=sharing#list"]Download link[/url][/b]
+
+
+[u][b]Latest news[/b][/u]
+
+Release 0.5.0 now comes with a highly experimental and CPU intensive full world block physics. This physics module computes which blocks are supported in the world and which should fall, making all non-supported blocks fall. Additionally, it computes the [i]forces[/i] that act on each block in the world based on the [i]weight[/i] of different blocks. If these forces become too large then the block may break and slip away and/or fall. 
+
+The physics computations are currently limited to an area close to the player, and computing the forces that act on blocks are done gradually and takes time. Therefore a block may support very high loads for a small amount of time until the physics calculations have caught up. Also, blocks n the ground may sometimes be affected by stress forces depending on the underground activities (think of this as earth quakes). There are currently no animation/sounds to assist in knowing this, that will happen with the 1.7 releases in the future. 
+
+Naturally occurring stone have been made very strong (otherwise mining would be impossible), and as such it is no longer possible for the player to place stone in the world himself. Use cobblestone or stonebricks instead for your houses. (You can still craft stone and use it in recipes). 
+
+[b] Note that you need to install both the FysiksFun and the FysiksFunCore mods in your minecraft/mods directory. [/b]
+
+[u][b]About[/b][/u]
+Fysiks Fun is a work in progress that aim to more realism to the minecraft world and to make it come alive with natural phenomena. It does this by adding a number of physics effects as well as by adding a few ecology based effects. 
+
+The former category of effects include making all liquids finite and to flow in a "natural" way, a full world computation of forces and blocks that fall/break depending on the forces acting on them, and trees that fall sideways when you chop them down. 
+All of these effects are applied to [i] every [/i] block in the world (ie. all the water in oceans, all the blocks under/over the player in the world). 
+
+The later category of effects include plant life that consume water and that spreads by themselves, and rewritten AI routines for animals to eat and spread in the world, an eco-system for the water coming from rain, falling over the terrain humidifying underground, evaporating into steam based on heat and sunlight and finally coming back as rain again when the steam has moved with the winds. 
+
+The mod aims to be compatible with most other Forge mods.
+
+Currently implemented features (may need some more testing!) include:
+[list]
+[*] Full world physics of all solid blocks. Falling when not supported by other blocks, and breaking when they support too many/too heavy blocks. Different structural strengths for different blocks. 
+[*]Liquids move and flow in the "natural" way, even oceans are simulated as a finite body of liquid (!)
+[*]Volcanoes, that grow by emitting lava (which cools to stone)
+[*]Trees are falling in a "natural" way when they are cut down.
+[*]Rain, sunshine, evaporation form an ecology where water is added in the form of rain or underground humidity, evaporates from heat and sunlight and finally comes back as rain again. 
+[*]Landscapes may erode when water is flowing over it, slowly forming new natural rivers. 
+[*]Vegetation (tallgrass, flowers, trees, crops) consume nearby water. They spread (slowly) under good conditions and die (slowly) under bad conditions.
+[*]Animals (cows, pigs, sheep and chicken) have an AI that actively seek out and eat vegetation. If they can't eat for a long time they die. If they do eat they may have babies.
+[*]Heat from active fires and lava slowly evaporates nearby water. So if you want to keep you underground mine dry and tidy you may want to start some fires
+[*]Water may seep through dirt/sand/gravel (sometimes even cobblestone) - so don't build your big water falls from those materials. [i]Disabled in latest release.[/i]
+[*]Physics for gases, such as steam and pyroclastic clouds released by volcanoes. 
+[*]Enable/disable different modules for each of these features, so you can eg. only use the fluid dynamics or only the dynamic plants, falling trees etc.
+[/list]
+
+This mod is [b]very[/b] CPU intensive and uses multithreading for all of it's own computations. Thus it is beneficial to use a computer with many cores.  Unless you have a very many cores (or very fast ones) the game will run slower than the nominal speed (ie. lag). 
+It will most likely cause lag on all but very tiny servers.
+
+[u][b]Details about the features:[/b][/u] (not complete yet)
+[list]
+
+[*] Full world block physics [spoiler]
+Full world block physics work by computing a gradient field of forces that act on all block. The force that acts on a block is the sum of all blocks that are supported through it (kinda). If these forces become too large the block may [i] break [/i] and slide away from it's position and/or fall. 
+
+If a block can track an uninterrupted path of "physics block" to bedrock then it is said to be supported. If it is not supported it will fall. 
+
+If a falling block or breaking block moves over blocks that are not "physics blocks" then they will destroy these blocks and drop the corresponding items. 
+
+A falling block that hits other blocks will cause a temporary pressure wave that increases the forces acting on the blocks and that may break nearby connected blocks that are close to their maximum threshold. 
+[/spoiler]
+
+[*] Liquid physics [spoiler]
+Liquid physics currently work for water, lava and maybe for BC3's Oil blocks (not tested for a long time). A liquid cell can contain from 0 - 4096 parts of water where 4096 parts are required for the cell to be a "full" block that can be picked up by buckets or pumps from other mods. 
+Liquids spread to nearby cells until the liquid levels have leveled out.  Liquids also propagate a pressure of up to strength 65535. Pressurized liquids can move even upwards. They loose more (256)  pressure when moving upwards than sideways (1). 
+[/spoiler]
+[*] Pyroclastic clouds [spoiler pyroclastic]
+Pyroclastic clouds are a gas that is released by volcanoes and that is [u]lighter than air[/u] (this is not realistic, but looks nicer). A while after it has moved with the wind it will drop a small quantity of lava some distance from the volcanoe. This can cause forestfires, make your roofs burn etc. Don't try to breath pyroclastic clouds - look at how it went for the poor citizens of pompei. 
+[\spoiler]
+[*] Vegetation based eco-system [spoiler]
+Forests can regrow by themselves now (slowly) by spreading saplings. 
+[/spoiler]
+
+[*] Terra-firma craft [spoiler]
+When playing with TFC you need to set the y-offset to 80 since it raises the ground level. Note that FF+TFC is 2-3 times slower due to the sheer amount of additional volume of the world. Don't use the full world block physics when using TFC. Some other features may also be broken. 
+[/spoiler]
+[*] Volcanoes [spoiler]
+Volcanoes grow dynamically from semi-random chunks in the world with an activity degree that varies over time. While a volcano is active it grows in a non-straight path until it reaches the surface where it will spill out it's lava and pyroclastic gases.  Lava on the surface will slowly turn to stone/cobblestone/gravel - which will make a small mountain grow around the volcano over time. 
+
+[i] There are still diamonds and emeralds inside the volcanoes[/i], if you dare try to fetch them. Try to time your adventure to when the volcano is inactive.
+
+[/spoiler]
+
+[*] Other [spoiler]
+An addition of more aggressive forest fires, red-neck fishing (water shockwaves from explosions). 
+[/spoiler]
+
+[/list]
+
+
+[u][b]Development plans[/b][/u][list]
+[*]Test/debug behaviour in the Nether and in the End
+[*]Maybe in future: model water/boiling water/steam. Create block for heat exchanger and some form of generator blocks for tech mods. Create block for uranium + rules for chain reactions so you can build powerplants generating steam (and energy) using pistons + water to regulate the reaction. (Could even let lava generate steam to manually build steam engines powered by lava+water).
+[/list]
+Note: it may [i]appear[/i] as if gases stop moving after 16 blocks above you - this is only due to a delay before they are visualized to the client. It's a trade-off in performance that I hope to make more smooth in the future. But i'm waiting a bit before doing a 1.7 release which have the new network code. 
+
+[b]Notable changes[/b]
+[spoiler]
+
+Version 0.5.0
+[list]
+[*] Physics of all blocks
+[*] Changed behaviour of leaves for new physics
+[*]  Made vanilla stone very strong (and light), but not placeable by player
+[*]  Uses bedrock as world anchors (to prevent the world from falling onto the four elephants on the great turtle). 
+[*]  Re-enabled erosion. Decreased rain. Increased direct sunlight evaporation.
+[*]  Patch for a vanilla in-efficiency with Entity.moveEntity - requires FFCore plugin
+[/list]
+
+Version 0.4.2
+[list]
+[*] Implemented first experimental version of pyroclastic clouds
+[*] Made textures of gases different depending on density. Also animated. 
+[*] Fixed bug that created too much steam in water-lava interactions
+[*] Made wind randomly change direction (slowly), changed movement behaviour of gases
+[*] Made trees spread by planting saplings (no dynamic tree growth yet)
+[*] Modified growth behaviour of volcanoes. Should look better after a few hours of growing. 
+[/list]
+
+Version 0.4.1
+[list]
+[*] Fixed error computing movement in waters that are falling through non-air gases. (It should now not be possible to swim in the steam cloud over a water volcano)
+[*] Moved more parts multithreaded
+[*] Red-neck fishing, explosives in water are effective in a larger radius 
+[*] Changed shape of how volcanoes grow
+[*] Removed lighting computations from being performed by WorldManager whenever gas/fluid has moved
+ [*] Faster, lowlevel, access to world blocks during sweeps
+ [*] More parallelism, various optimisations
+ [*] Fixed bug with tree ticking depending on number of nearby trees
+ [*] Improved the 'extra-fire' option to spread forest fires easier
+ [*] Made water extinguish fires
+ [*] Added TerraFrimaCraft compatability 
+[/list]
+
+Version 0.4.0
+[list]
+[*] Volcanoes have varying degrees of activity at different points in time
+[*] Volcanoes have some mineral loot inside them, better at lower depths
+[*] Volcanoes grow non-straight before reaching the surface
+[*] Multithreading of the fluid dynamics code (hopefully bug free?)
+[*] New texture/rendering method for steam
+[/list]
+
+Version 0.3.91[list]
+[*]Added configuration settings for enabling/disabling the various internal modules. Not all combinations work, but using "all on", "all off","only fluid/gases" and "only tree falling" seem to work.
+[/list]
+Version 0.3.90[list]
+[*]
+[*]Implemented completely new fluid dynamics, acceptable computational cost near oceans.
+[*]Steam is generated when water interacts with lava
+[*]Volcanoes!
+[*]First (very early) version of dynamic weather systems
+[/list]
+Version 0.3.4[list]
+[*]Recompiled for MC 1.6.2, no other notable changes (as far as I can remember)
+[*]Oh, i remembered. A first pressure system for liquids - a bit buggy so far.
+[/list]
+Version 0.3.3[list]
+[*]Updated for MC 1.5.2 / Forge 7.8.0
+[*]Added dynamics for gases (steam)
+[/list]
+Version 0.3.2[list]
+[*]Fixed a bug where liquids didn't interact with other liquids below them (eg. water falling onto lava)
+[*]Fixed a bug that made tiny pools of water (lv 1) move too quickly, almost randomly.
+[*]Fixed bug with missing textures for buildcraft oil
+[*]Added support for the liquid &amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;quot;Hydrochloric Acid&amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;quot; from the mod Factorization. Be careful around that stuff!
+[/list]
+Version 0.3.1[list]
+[*]Fixed so liquids can flow through open doors and fences
+[*]New rule for rain amount  should help replenish rivers and lakes quicker, while avoiding small ponds everywhere. (May need to lower total rain amount in settings)
+[*]Fixed a few bugs causing crashes in flat world types
+[/list]
+Version 0.3.0[list]
+[*]Major re-write of how the blocks/chunks are marked for update over the network leading to much smaller queues of block updates and higher throughput (= smaller lag)
+[*]Found a bug where some trees would not fall properly (introduced in the CPU fix of 0.2.7)
+[*]Changed code for how growing plants spread, trying to make it look more natural
+[*]Fixed bug causing way too high evaporation rates
+[*]Major CPU performance rewriting, trying to stay below 50ms
+[/list]
+Version 0.2.7[list]
+[*]Reduced CPU cost for tree finding (aim to keep all server ticks <50ms)
+[*]Tweaked tree finding algorithm to avoid crashing log-based houses. Currently testing.
+[*]Tweaked update of big water flows to make them smoother (also fixed a serious bug - oceans was broken since some time?)
+[*]Water can seep through dirt/sand/gravel/cobblestone and even erode these material in the worst cases.
+[/list]
+Version 0.2.6[list]
+[*]Netherrack can now melt if it is burning long enough, producing lava as output
+[*]Water is now evaporating at very low depths due to ground heat
+[*]Natural aquifiers are now (slowly) creating water that drips underground from gravel, cobblestone and dirt
+[*]Water anywhere in the world have a small chance of evaporating slowly
+[*]Tweaking the plant growing/consumption code
+[/list]
+Version 0.2.5[list]
+[*]Lowered number of blocks sent to client significantly, new code for prioritizing blocks closer to the clients to maintain good visual appearance. Lowered default value of &amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;quot;max-client-updates-per-tick&amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;quot; to 50. (Delete or update your config file manually!)
+[*]Misc. optimisations for all water updates leading to less CPU usage
+[*]Tweaking of default rates of rain, evaporation and plant consumption. Still needs more tweaking.
+[/list]
+[/spoiler]
+
+[b][u] Configuration files and modules [/u][/b]
+[spoiler]
+
+ The mod consists of a number of separate "modules" that are each much smaller than a mod and with dependencies making it hard to move them into separate forge mods. By enabling/disabling the different modules in the configuration file you can customize what aspects of FF that you want to play with. All modules are actived/disabled through the corresponding option  in the section "modules" in the FysiksFun configuration file (minecraft/config/FysiksFun.cfg).
+
+ Note that due to the dependencies not all combinations of modules are possible. The modules are as follows:
+
+
+[list]
+[*] physics: This enables the full world block physics described above. 
+[*] tree-falling: A module that makes trees fall semi-realistic whenever a part of the trunk is  removed or the lowermost block is air. The fallen tree will not automatically turn into wood items to be picked up, but still need to be chopped up using an axe or other device.
+ [b] Requirements: [/b] none.
+[*] volcanoes: This enables the creation of dynamically occurring volcanoes that are an infinite source of lava as well as some ores (iron, diamond, emerald) in a very uncomfortable place. The volcanoes evolve dynamically as time progress and will output more and more lava. The lava slowly harden once on the surface of the world and form slowly growing mountains or even new islands in the oceans. 
+ [b] Requirements: [/b] This module requires the module [u] fluids [/u] to be active.    
+[*] dynamic-plants: This module activates a dynamic growth pattern for most plants (grass, flowers, trees) that will make them consume nearby water.  If they manage to consume water they will slowly spread to nearby areas.  If they cannot find nearby water they will slowly die.   
+ [b] Requirements: [/b] This module requires the module [u] fluids [/u] to be active.
+[*] new-animal-ai: Makes the vanilla animals (sheep, pigs, cows. Not horses) use a modified AI that keeps track of hunger and searches for food on a regular basis. If they manage to find food they will eat it, and may even produce even offspring. If they starve they will die. 
+ [b] Requirements: [/b] none, but it is recommended to also use the dynamic-plants module since the plants otherwise will be depleted. 
+[*] rain: This modules adds small amounts of water to the world whenever minecraft uses the rain" animation. It is not the same as water falling from steam that reaches the top of the world. 
+ This feature may be removed once the cycle of evaporating oceans -> steam clouds -> water has been tested better. 
+  [b] Requirements: [/b] This module requires the module [u] fluids [/u] to be active.
+[*] gases: A module that enables the use gases (currently only steam) that can exist in 16 different levels of pressure and that will move in the world according to the local wind (currently always +X, will be changed). The gases are traversable by the player and mobs but may cause damage. Once steam have risen to Y-level 128 then it will turn back into water and fall down to the world as rain. 
+  [b] Requirements: [/b] none (I think?).
+[*] nether-fun: Causes a few small effects in the nether such as turning burning nether slowly into lava.  
+[b] Requirements: [/b] This module requires the module [u] fluids [/u] to be active.
+[*] extra-fires: Increases the spread of fires somewhat. Needs more work.
+  [b] Requirements: [/b] none.
+[/list]
+[/spoiler]
+
+[b][u]Videos[/u][/b]
+[spoiler=Exciting volcanoes]
+[media]http://www.youtube.com/watch?v=2xzPJP7gT9Q[/media]
+[/spoiler]
+[spoiler=Earlier releases]
+[media]http://www.youtube.com/watch?v=wcPwuidmYrg[/media]
+[/spoiler]
+
+[u][b]Screenshots[/b][/u]
+[spoiler=A water fall]
+[URL=http://imgur.com/ghq6Hnf][IMG]http://i.imgur.com/ghq6Hnf.gif[/IMG][/URL]
+
+Obviously, the water will run out eventually. Options for more permanent waterfalls would be to make a hole in the bottom of the world and drain the whole ocean... That should take some time. 
+[/spoiler]
+
+[spoiler=Timber! Trees falling naturally]
+[url="http://imgur.com/OLRP3Xe"][img]http://i.imgur.com/OLRP3Xe.png[/img][/url]
+Result of a tree falling after I removed one block from it. If anyone has a better picture (or animated gif?) please give me a shout - i'd love to add that one here![/spoiler]
+
+[spoiler=Finite oil (when using Buildcraft)]
+[url="http://imgur.com/NHUmb6D"][img]http://i.imgur.com/NHUmb6D.png[/img][/url]
+Note especially how the Oil is occupying only a small part of the blocks. Buildcraft pumps will refuse to use the partial blocks, to successfully pump them up you need to excavate one of the cells under the blocks so that a full bucket worth of oil occupies it.
+[/spoiler]
+
+[u][b]Download and Installation[/b] [/u]
+
+[url="https://drive.google.com/folderview?id=0B7lmYe8w-r-Cc1RrSzRjdlNkTTA&amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;usp=sharing#list"]Download link[/url]
+
+The mod is continuously updated and you can download the latest release. If you have problems downloading the actual zip file, select "File Download" (or press Ctrl-S) from within the Google Drive page.
+
+Assuming that you have the right version of Forge installed you can just drop the zip file in your mods/ directory to install it. Please take a look at the configuration file for some of the options. The name of the release now contain the minecraft version (mc164) and the forge version (942) in them so you know which version is needed.
+
+If you have a when loading the mod in Forge this is caused by old version of Java, you need atleast Java 7 or 8.
+
+[u][b]License[/b][/u]
+
+I haven't yet quite decided for the final license for this mod. In the meantime: This modification (henceforth called "The Mod") to Minecraft is copyrighted and is the intellectual property of mbrx (henceforth called "The Author"), The Mod may only be distributed by The Author or by any of the appointed websites ("minecraftforum.net") or people, and may not be hosted on any other website or distributed publicly, in the original and/or a modified state, without advance written permission from The Author, however mirrors are allowed if credit is due, and The Author is informed directly of said mirror. ©2013 mbrx
+[size=1]License written by EnergyRay[/size]
