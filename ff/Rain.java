@@ -20,7 +20,7 @@ public class Rain {
       
       if (!FysiksFun.settings.rainInOceans && (biome == BiomeGenBase.ocean || biome == BiomeGenBase.frozenOcean)) {
         // do nothing
-      } else if (biome.rainfall > 0.0 && FysiksFun.settings.waterRainRate>0 && FysiksFun.rand.nextInt(500000) < rainChance) {
+      } else if (biome.rainfall > 0.0 && FysiksFun.settings.waterRainRate>0 && FysiksFun.rand.nextInt(10000) < rainChance) {
         for (int y2 = 255; y2 > 1; y2--) {
           int id = c.getBlockID(dx, y2, dz);
           if (id != 0) {
@@ -35,12 +35,13 @@ public class Rain {
             if (id == Block.plantRed.blockID) break;
             */
             
-            int rainAmount=1;
+            int rainDelta=BlockFluid.maximumContent/16;
+            int rainAmount=rainDelta;
             if ((id == Fluids.stillWater.blockID || id == Fluids.flowingWater.blockID) && 
-                Fluids.stillWater.getBlockContent(w, x+dx, y2, z+dz) > 4) rainAmount++;
-            if (y2 >= 1 && c.getBlockID(dx, y2-1, dz) == Fluids.stillWater.blockID) rainAmount++;
-            if (y2 >= 2 && c.getBlockID(dx, y2-2, dz) == Fluids.stillWater.blockID) rainAmount++;
-            if (y2 >= 3 && c.getBlockID(dx, y2-3, dz) == Fluids.stillWater.blockID) rainAmount++;
+                Fluids.stillWater.getBlockContent(w, x+dx, y2, z+dz) > BlockFluid.maximumContent/2) rainAmount+=rainDelta;
+            if (y2 >= 1 && c.getBlockID(dx, y2-1, dz) == Fluids.stillWater.blockID) rainAmount+=rainDelta;
+            if (y2 >= 2 && c.getBlockID(dx, y2-2, dz) == Fluids.stillWater.blockID) rainAmount+=rainDelta;
+            if (y2 >= 3 && c.getBlockID(dx, y2-3, dz) == Fluids.stillWater.blockID) rainAmount+=rainDelta;
             
             try {
               BlockFluid.preventSetBlockLiquidFlowover = true;

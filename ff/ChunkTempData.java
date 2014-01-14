@@ -90,7 +90,7 @@ public class ChunkTempData {
     return getChunk(w, x, z);
   }
 
-  /** Expects arguments in WORLD coordinates. */
+  /** Expects arguments in WORLD coordinates (ie. not shifted down). */
   public static ChunkTempData getChunk(World w, int x, int z) {
     tempCoordinate.set(w, x >> 4, 0, z >> 4);
     ChunkTempData chunk = chunks.get(tempCoordinate);

@@ -221,7 +221,7 @@ public class Fluids {
       int r = w.rand.nextInt(200);
       int newId = 0;
       if (r == 0 || (r <= 3 && hasObsidianNeighbour)) newId = Block.obsidian.blockID;
-      else if (r <= 10) newId = Block.gravel.blockID;
+      else if (r <= 10) newId = Block.stone.blockID;
       else if (r <= 20) newId = Block.cobblestone.blockID;
 
       if (newId != 0) {

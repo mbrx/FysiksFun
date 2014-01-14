@@ -193,7 +193,7 @@ public class BlockFluid extends BlockFlowing {
     IChunkProvider chunkProvider = w.getChunkProvider();
     Chunk c = chunkProvider.provideChunk(x >> 4, z >> 4);
     ChunkTempData tempData = ChunkTempData.getChunk(w, x, y, z);
-    return tempData.getTempData(x, y, z);
+    return tempData.getTempData16(x, y, z);
   }
 
   public int getBlockContent(World w, Chunk c, int x, int y, int z) {
@@ -481,7 +481,7 @@ public class BlockFluid extends BlockFlowing {
         } else if (dY == 0 && content0 > content1) {
           if (content1 < maximumContent) {
             content0 = Math.min(maximumContent, content0);
-            int toMove = Math.min((content0 - content1) / 2, maximumContent - content1);
+            int toMove = Math.min(((content0 - content1)*3)/4, maximumContent - content1);            
             if (isDiagonal) toMove -= toMove / 3;
             if (content1 + toMove >= minimumLiquidLevel) {
               content0 -= toMove;
@@ -545,7 +545,7 @@ public class BlockFluid extends BlockFlowing {
         // if (dY == 0 && dZ != 0 && dX != 0) erodeChance *= 2;
 
         // DEBUG
-        if (content0 != prevContent0 && dY == 0 && r.nextInt(500000) < erodeChance) {
+        if (content0 != prevContent0 && dY == 0 && r.nextInt(1000000) < erodeChance) {
           int idSideA = world.getBlockId(x0 + dZ, y0, z0 + dX);
           if (canErodeBlock(idSideA)) erodeBlock(world, x0 + dZ, y0, z0 + dX);
           int idSideB = world.getBlockId(x0 - dZ, y0, z0 - dX);
@@ -728,7 +728,7 @@ public class BlockFluid extends BlockFlowing {
           // Block.blocksList[id1].blockMaterial;
           if (id1 == 0) {
             setBlockContent(world, c, tempData, x1, y1, z1, content0, "", null);
-            setBlockContent(world, c, tempData, x0, y0, z0, 0, "", null);
+            setBlockContent(world, chunk0, tempData0, x0, y0, z0, 0, "", null);
             break;
           }
         }
@@ -895,11 +895,11 @@ public class BlockFluid extends BlockFlowing {
     // ChunkTempData tempData = ChunkTempData.getChunk(w, x, y, z);
     // tempData.liquidHistogram(y,+1);
     
-    ChunkTempData tempData = ChunkCache.getTempData(w, x>>4, z>>4);
-    tempData.setTempData(x, y, z, 0);
-
+    ChunkTempData tempData = ChunkCache.getTempData(w, x >> 4, z >> 4);
+    
     int x2, y2, z2;
-
+    //System.out.println("BlockFluid:breakBlock "+Util.xyzString(x, y, z)+" preventFlowover: "+preventSetBlockLiquidFlowover);
+    
     if (preventSetBlockLiquidFlowover) {
       // ChunkTempData.setTempData(w, x, y, z, 0);
       return;
@@ -908,19 +908,20 @@ public class BlockFluid extends BlockFlowing {
     try {
       preventSetBlockLiquidFlowover = true;
 
-      IChunkProvider chunkProvider = w.getChunkProvider();
-      if (!chunkProvider.chunkExists(x >> 4, z >> 4)) return;
-      Chunk chunk = chunkProvider.provideChunk(x >> 4, z >> 4);
+      Chunk chunk = ChunkCache.getChunk(w, x>>4, z>>4, false);
+      if(chunk == null) return;
 
       int newIdHere = chunk.getBlockID(x & 15, y, z & 15);
+    //System.out.println("New ID here: "+newIdHere+" old meta: "+oldMetaData);
       if (newIdHere == 0 || isSameLiquid(newIdHere)) return;
       // Overwriting AIR into a block means that the block should be deleted...
 
       int thisContent = getBlockContent(w, x, y, z, oldMetaData);
       if (thisContent > maximumContent) thisContent = maximumContent;
-
+      //System.out.println("thisContent: "+thisContent);
       for (int dy = 1; dy < 50 && y + dy < 255 && thisContent > 0; dy++) {
         int id = w.getBlockId(x, y + dy, z);
+        //System.out.println("dy: "+dy+" id: "+id);
         if (id == stillID) continue;
         else if (id == 0 || id == movingID) {
           int newContent = Math.min(maximumContent, getBlockContent(w, x, y, z));
@@ -934,7 +935,7 @@ public class BlockFluid extends BlockFlowing {
               newContent = maximumContent;
             } else thisContent = 0;
           }
-
+          //System.out.println("Setting content at: "+Util.xyzString(x, y+dy, z)+" to "+newContent);
           setBlockContent(w, chunk, tempData, x, y + dy, z, newContent, "[From displaced block]", null);
 
           if (thisContent == 0) break;
@@ -942,7 +943,7 @@ public class BlockFluid extends BlockFlowing {
       }
     } finally {
       preventSetBlockLiquidFlowover = false;
-
+      tempData.setTempData(x, y, z, 0);
       // Remove any temp data. Note that other blocks should not add new temp
       // data until _after_ they have written their ID into the cell. */
       // ChunkTempData.setTempData(w, x, y, z, 0);

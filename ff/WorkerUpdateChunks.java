@@ -37,7 +37,7 @@ class WorkerUpdateChunks implements Runnable {
       if (world.provider.dimensionId == -1 && settings.doNetherfun) NetherFun.doNetherFun(world, x, z);
 
     } catch (Exception e) {
-      System.out.println("ChunkUpdateWorkerThread got an exception" + e);
+      System.out.println("WorkerUpdateChunks got an exception" + e);
       e.printStackTrace();
     }
   }

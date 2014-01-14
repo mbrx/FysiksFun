@@ -14,7 +14,7 @@ public class Plants {
 
   public static void doPlants(World w, int x, int z) {
     if (FysiksFun.settings.plantGrowth == 0) return;
-    if (FysiksFun.rand.nextInt(1 + 457 / FysiksFun.settings.plantGrowth) != 0) return;
+    if (FysiksFun.rand.nextInt(1 + 1117 / FysiksFun.settings.plantGrowth) != 0) return;
 
     doCrops(w, x, z);
     doOtherPlants(w, x, z);
@@ -22,6 +22,8 @@ public class Plants {
 
   private static void doOtherPlants(World w, int x, int z) {
     Chunk c = w.getChunkFromChunkCoords(x >> 4, z >> 4);
+    if(FysiksFun.rand.nextInt(10) > 5) return;
+
     for (int tries = 0; tries < FysiksFun.settings.plantsThirst; tries++) {
       int dx = FysiksFun.rand.nextInt(16);
       int dz = FysiksFun.rand.nextInt(16);
@@ -159,6 +161,7 @@ public class Plants {
 
   private static void doCrops(World w, int x, int z) {
     Chunk c = w.getChunkFromChunkCoords(x >> 4, z >> 4);
+    if(FysiksFun.rand.nextInt(10) >= 2) return;
     for (int tries = 0; tries < FysiksFun.settings.cropsThirst; tries++) {
       int dx = FysiksFun.rand.nextInt(16);
       int dz = FysiksFun.rand.nextInt(16);

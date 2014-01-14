@@ -1,65 +1,77 @@
-Test use of buckets in survival mode.
+Needs to be verified
+--------------------
 
+Anchors in the END 
+Does the mod work when only using tree felling. 
+Small liquid movements can go through plants?
+
+What happens to volcanos in hell?
+
+Verified Bugs
+-------------
+Pistons cannot move water, since they write "air" into the water block -> create new (better) pistons instead
+
+Tuning
+------
+Stone weaker?
+When rain falls on existing water, we are currently adding TOO MUCH (it becomes an emergent phenomena!)
+Lava (or other heat sources) that boils water have a chance to turn into cobblestone
+
+(Speed of grass growing, now halved)
+
+Length of volacano activity
+Volcanoes only producing stone/obsidian so they don't collapse as much?
+
+Optimisation
+------------
+Remove redundant code in physics
+Split physics into multiple parts, check time consumption and optimise
+
+Features
+--------
+Stone that breaks should become cobblestone?
+Sound effect when convertin stone to cobblestone
+Sound effect when blocks successfully break/fall
+
+Stone that breaks may have a chance to turn neighbouring stone into cobblestone (propagating breaks, for caveins!)
+Create "temporary" observers inside a volcanoe that keeps them ticking for 200 ticks (10 seconds) OR
+make clockwise sweeps that extend range of chunk distance tests. Slowly rotate, (stay in each chunk for atleast 10 seconds). 
+
+ 
+Move more blocks to client through memory connection? (wait for 1.7?)
+Sound effects from falling trees
+Sound effects from breaking blocks
 
 Solid stone vs. stone
 Make some randomly placed stones on world gen be normal stones, so mining is more dangeours
-Make planks release (magically!) some of the pressure from WorldGen-stone's. (Only from block above, no it should not be possible to make floating islands).
-
-
-When rain falls on existing water, we are currently adding TOO MUCH (it becomes an emergent phenomena!)
-
+Implement floating forces when in liquids, how to do the counters?
 Figure out a way to move MORE water when it is pressurized
 Let blocks break "sideways" if they have a block above them
 Make some physics blocks "fragile", ie. destroy when they break.
-
-Implement .isBlockReplacable for all liquids and gases
-
+Implement .isBlockReplacable for all liquids and gases (not needed, inherited?!)
 Let pyroclastic clouds + water -> hydrochloric acid (when the right mod is installed)
-
-Let erosion dump the removed block somewhere else.... walking towards lower pressures. (Lots of special cases to deal with!)
+Let erosion dump the removed block somewhere else.... walking towards lower presures. (Lots of special cases to deal with!)
 Water/rain should help stop wild-fires
-Make piston based pumps work again
-
-Debug when running with only tree felling. 
 
 
-
-Buildcraft integration
+Buildcraft integration: can suck up liquids
+Buildcraft integration: new block for dumping liquids 
 
 Create list of "scary" blocks, let AI's run away from them 
+Craftable tools that can break bedrock
 
-Change probability of generating obsidian in lava-water interctions so that it is more likely where there are neighbours. Create clusters.
-Lava-snow interactions.
-
-Make sure that everything can be enabled/disabled in the settings file. 
-
-Water lava interactions may create slabs instead of full blocks.... check emptiness below
-
-To optimize:
-
+Typhoons, Earthquakes, Tornadoes
    
- Manually call chunk updateSkyLight?  
-   
-Make gas perform randomwalk through water (ie. always move somewhere), so that it can eventually escape from underwater
-Craftable tools that can break bedrock 
+ 
 Blocks that can generate infinite water (for creative mode only!) 
 Make diamonds by having coal blocks surrounded by highly pressurized lava
 
--- DEBUG: check that it works: Small liquid movements can go through plants
-
-Typhoons / Volcanoes
-Pyroplasm - lava turns into a gas, that can turn back into lava when it's at the top of the world
+Make a seismograph (detects falling blocks within a certain radius, also add activities from volcanoes (client side can use same forumla as server side)
 
 
-Implement "Wind" to move all gases
- - Push gases up when the terrain moves up (assuming they are above the highest terrain).  
- - Higher ground pushes winds "up" faster
- - Whenever gas reaches altitude 128, no more moving up. Chance each tick to become rain.
+
 
 Client side: different drawing style of lone pieces of water in the sky "rain drop"
-
-Liquid Reaction of Lava+Water: make steam.
-Lava (or other heat sources) that boils water have a chance to turn into cobblestone
 Fires that boil water have a chance to consume the block they are burning on
 
 ----------------------- 
@@ -69,17 +81,11 @@ Test that features still work
 - Verify that trees fall correctly
 - Test that fluids work with buildcraft 
 
-Neccesarry implementations
-
-- Script for moving textures into the deployed folder
-- A clean MC+Forge to test the deployed zip against
-
 Good to make implementation
 
 - Redo the initialization scripts (pre-init/post-init) since they are depracated
 
 Missing features / "removed" for now
-- Erosion
 - Items that are overflowed by liquids
 
 -----------------------

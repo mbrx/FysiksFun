@@ -111,11 +111,11 @@ public class Settings {
     
     treeThirst = config.get(categoryEcology, "tree-thirst", "10", "Amount of water consumed by trees", Property.Type.INTEGER).getInt(10);
     treesFall = config.get(categoryEcology, "trees-fall", "true", "Trees fall in a semi-natural way when chopped down", Property.Type.BOOLEAN).getBoolean(true);
-    cropsThirst = config.get(categoryEcology, "crops-thirst", "10", "Amount of water consumed by crops (zero disables need for water)",
+    cropsThirst = config.get(categoryEcology, "crops-thirst", "10", "Amount of water consumed by crops (default 10, zero disables need for water)",
         Property.Type.INTEGER).getInt(10);
     cropsDrinkContinously = config.get(categoryEcology, "crops-continously-thirsty", "true", "If true, also full-grown crops consumes water",
         Property.Type.BOOLEAN).getBoolean(true);
-    plantsThirst = config.get(categoryEcology, "plants-thirst", "10", "Speed with which plants drink water and spread themselves.r",
+    plantsThirst = config.get(categoryEcology, "plants-thirst", "10", "Speed with which plants drink water and spread themselves. (default 10)",
         Property.Type.INTEGER).getInt(10);
     weatherSpeed = config.get(categoryEcology, "weather-speed", "10", "Multiplier (> 1) for how often weather changes", Property.Type.INTEGER)
         .getInt(10);
@@ -136,7 +136,7 @@ public class Settings {
     
     
     visualizeVolcanoes = config.get(categoryVolcanoes, "visualize-volcanoes", "false", "If true, places a pillar of glas high over volcanoes for finding them before developed", Property.Type.BOOLEAN)
-        .getBoolean(false);
+        .getBoolean(false); 
     volcanoFrequency = config.get(categoryVolcanoes, "volcano-freqency", "100", "Frequency of volcanoes in percent of default occurance", Property.Type.INTEGER)
         .getInt(100);
     volcanoRadius = config.get(categoryVolcanoes, "volcano-radius", "5", "Maximum radius of the plume feeding a volcano (default 5, safe max 8)", Property.Type.INTEGER)

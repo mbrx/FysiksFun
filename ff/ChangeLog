@@ -98,4 +98,11 @@ v0.4.2
     * Patch for a vanilla in-efficiency with Entity.moveEntity - requires FFCore plugin
     
  v0.5.1
-    * Repaired the nether with the new physics 
+    * Added anchors points to the nether so it wil not ALL come crashing down. 
+    * Wooden supports in mines stronger. 
+    * Tweaking elasticity to reduce earthquakes. 
+    * Tweaking water consumption of crops
+    * Tweaking volcano growth behaviour, tweaking ore generation in volcanos
+    * Found a bug that duplicated puddles of water, leading to eventual flooding of the world
+    * Fixed bug with physics and TileEntites (chests etc) 
+    * Stone may shatter into cobblestone in a chain reaction when mining
