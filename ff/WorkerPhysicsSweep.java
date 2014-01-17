@@ -67,9 +67,9 @@ public class WorkerPhysicsSweep implements Runnable {
       blockStrength[i] = 16;
       blockWeight[i] = 4;
       blockDoSimplePhysics[i] = 0;
-      blockDoPhysics[i]=false;      
-      if(b == null) continue;
-      if (b.isOpaqueCube()) blockDoPhysics[i]=true;
+      blockDoPhysics[i] = false;
+      if (b == null) continue;
+      if (b.isOpaqueCube()) blockDoPhysics[i] = true;
 
       /* Default value for all ores */
       if (b instanceof BlockOre) {
@@ -78,12 +78,12 @@ public class WorkerPhysicsSweep implements Runnable {
       } else if (b instanceof ITileEntityProvider) {
         blockStrength[i] = 40;
         blockWeight[i] = 4;
-        blockDoPhysics[i] = true;      
+        blockDoPhysics[i] = true;
       }
-      if(Fluids.isLiquid[i] || Gases.isGas[i] || i == 0) blockDoPhysics[i]=false;
+      if (Fluids.isLiquid[i] || Gases.isGas[i] || i == 0) blockDoPhysics[i] = false;
       //if (!blockDoPhysics[i]) continue;
     }
-    
+
     /*
     blockDoPhysics[Block.leaves.blockID] = true;
     blockStrength[Block.leaves.blockID] = 10; //        100 times weight!
@@ -106,8 +106,8 @@ public class WorkerPhysicsSweep implements Runnable {
     blockStrength[Block.cobblestone.blockID] = 40; // 5 times weight
     blockWeight[Block.cobblestone.blockID] = 8;
 
-    blockStrength[Block.stone.blockID] = 120; //      150 times weight
-    blockWeight[Block.stone.blockID] = 1; // stone is unplaceable, low weight for now!
+    blockStrength[Block.stone.blockID] = 200; //      100 times weight
+    blockWeight[Block.stone.blockID] = 2; // stone is unplaceable, low weight for now!
     blockStrength[Block.stoneBrick.blockID] = 72; // 12 times weight
     blockWeight[Block.stoneBrick.blockID] = 6;
     blockStrength[Block.brick.blockID] = 60; //      15 times weight
@@ -237,6 +237,9 @@ public class WorkerPhysicsSweep implements Runnable {
       }
 
       int timeNow = Counters.tick % clockModulo;
+      /** Number of sound effects we are still allowed to play for this chunk */
+      int maxSoundEffects = 5, nSoundEffectsLeft = maxSoundEffects;
+      int soundEffectAttempts = 0;
 
       ExtendedBlockStorage blockStorage[] = c.getBlockStorageArray();
 
@@ -535,6 +538,22 @@ public class WorkerPhysicsSweep implements Runnable {
                 }
               }
 
+              int idBelowTarget = targetChunk.getBlockID(targetX & 15, targetY - 1, targetZ & 15);
+              if (doBreak || (idBelowTarget != 0 && !Fluids.isLiquid[idBelowTarget] && !Gases.isGas[idBelowTarget])) {
+                soundEffectAttempts++;
+                if (FysiksFun.rand.nextInt(maxSoundEffects) < nSoundEffectsLeft) {
+                  int effectiveWeight = weight <= 0 ? 1 : weight;
+                  if (id == Block.stone.blockID) effectiveWeight = 8;
+                  else if (id == Block.dirt.blockID) effectiveWeight = 4;
+                  vanillaMutex.acquire();
+                  nSoundEffectsLeft--;
+                  float volume = (float) (0.5F * effectiveWeight + soundEffectAttempts * 0.2);
+                  float pitch = (float) (FysiksFun.rand.nextFloat() + 1.0F) * 0.5F / effectiveWeight;
+                  w.playSoundEffect(targetX + 0.5, targetY + 0.5, targetZ + 0.5, "fysiksfun:rubble", volume, pitch);
+                  vanillaMutex.release();
+                }
+              }
+
               if (doBreak) Counters.brokenBlocks++;
               else Counters.fallenBlocks++;
 
@@ -577,7 +596,7 @@ public class WorkerPhysicsSweep implements Runnable {
                 boolean doDrop = false;
 
                 if (Block.blocksList[targetId] instanceof BlockDoor) {
-                  if (targetY>0 && targetChunk.getBlockID(targetX & 15, targetY-1, targetZ & 15) == targetId) doDrop = true;
+                  if (targetY > 0 && targetChunk.getBlockID(targetX & 15, targetY - 1, targetZ & 15) == targetId) doDrop = true;
                 } else if (Block.blocksList[targetId] instanceof BlockBed) {
                   BlockBed bed = (BlockBed) Block.blocksList[targetId];
                   if (bed.isBlockHeadOfBed(targetMeta)) doDrop = true;
@@ -619,13 +638,13 @@ public class WorkerPhysicsSweep implements Runnable {
               }
 
               /* Swap our block with the target, and update target entity if applicable  */
-              if (useSlowSetBlock) {                
+              if (useSlowSetBlock) {
                 vanillaMutex.acquire();
                 //BlockFluid.preventSetBlockLiquidFlowover=true; // Not needed, breakBlock is not called!  
                 c.setBlockIDWithMetadata(x0 & 15, y0, z0 & 15, targetId, targetMeta);
                 delayedBlockMarkSet.add(new ChunkMarkUpdateTask(w, x0, y0, z0, myId, myMeta));
                 //BlockFluid.preventSetBlockLiquidFlowover=false;
-                vanillaMutex.release();                
+                vanillaMutex.release();
               } else {
                 // No need to use preventSetBlockLiquidFlowover here
                 FysiksFun.setBlockIDandMetadata(w, c, x0, y0, z0, targetId, targetMeta, myId, myMeta, delayedBlockMarkSet);

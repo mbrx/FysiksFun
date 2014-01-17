@@ -12,6 +12,7 @@ import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.FieldInsnNode;
 import org.objectweb.asm.tree.InsnList;
 import org.objectweb.asm.tree.InsnNode;
+import org.objectweb.asm.tree.IntInsnNode;
 import org.objectweb.asm.tree.JumpInsnNode;
 import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.LdcInsnNode;
@@ -27,26 +28,80 @@ public class FFCoreClassTransformer implements IClassTransformer {
 
   @Override
   public byte[] transform(String targetClassName, String arg1, byte[] bytecode) {
-
-    if (targetClassName.equals("nn")) return patchClassASM(targetClassName, bytecode, true);
-    else if (targetClassName.equals("net.minecraft.entity.Entity")) return patchClassASM(targetClassName, bytecode, false);
+    //System.out.println("Transforming: "+targetClassName);
+    if (targetClassName.equals("nn")) return patchEntity(targetClassName, bytecode, true);
+    else if (targetClassName.equals("net.minecraft.entity.Entity")) return patchEntity(targetClassName, bytecode, false);
+    else if (targetClassName.equals("cn")) return patchMemoryConnection(targetClassName, bytecode, true);
+    else if (targetClassName.equals("net.minecraft.network.MemoryConnection")) return patchMemoryConnection(targetClassName, bytecode, false);
     return bytecode;
   }
 
-  private byte[] patchClassASM(String targetClassName, byte[] bytecode, boolean isObfuscated) {
-    System.out.println("FF: is patching " + targetClassName+"  obf: "+isObfuscated);
+  private byte[] patchMemoryConnection(String targetClassName, byte[] bytecode, boolean isObfuscated) {
+    //System.out.println("******** [FF] is patching " + targetClassName+"  obf: "+isObfuscated);
+    
+    String targetMethodName = "";
+
+    if (isObfuscated == true) targetMethodName = "b";
+    else targetMethodName = "processReadPackets";
+
+    ClassNode classNode = new ClassNode();
+    ClassReader classReader = new ClassReader(bytecode);
+    classReader.accept(classNode, 0);
+
+    Iterator<MethodNode> methods = classNode.methods.iterator();
+    while (methods.hasNext()) {
+      MethodNode m = methods.next();
+      if (m.name.equals(targetMethodName) && m.desc.equals("()V")) {        
+        System.out.println("Found the target method: "+m.desc);
+
+        Iterator<AbstractInsnNode> iter = m.instructions.iterator();
+        // currentNode is first instruction in the function
+        AbstractInsnNode currentNode = iter.next();
+        int index=0;
+        while(currentNode.getOpcode() != Opcodes.SIPUSH && iter.hasNext()) {
+          index++;
+          currentNode=iter.next();
+        }
+        if(!iter.hasNext()) {
+          System.out.println("[FF] Warning, could not find the correct instruction (SIPUSH) to patch");
+          return bytecode;
+        }
+
+        InsnList replacedInstructions = new InsnList();
+        replacedInstructions.add(new IntInsnNode(Opcodes.SIPUSH, 10000));
+        m.instructions.insertBefore(currentNode, replacedInstructions);
+        m.instructions.remove(currentNode);
+        System.out.println("FF finished patching net.minecraft.network.MemoryConnection/processReadPackets to allow more packages per tick");
+
+        /*
+        iter = m.instructions.iterator();
+        currentNode = iter.next();
+        index=0;
+        while(iter.hasNext()) {
+          System.out.println(""+currentNode);
+          index++;
+          currentNode=iter.next();
+          if(index > 20) break;
+        }*/        
+        break;        
+      }
+    }
+    ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+    classNode.accept(writer);
+    return writer.toByteArray();        
+  }
+
+  private byte[] patchEntity(String targetClassName, byte[] bytecode, boolean isObfuscated) {
+    //System.out.println("FF: is patching " + targetClassName+"  obf: "+isObfuscated);
 
     String targetMethodName = "";
 
     if (isObfuscated == true) targetMethodName = "d";
     else targetMethodName = "moveEntity";
 
-    //set up ASM class manipulation stuff. Consult the ASM docs for details
     ClassNode classNode = new ClassNode();
     ClassReader classReader = new ClassReader(bytecode);
     classReader.accept(classNode, 0);
-
-    //Now we loop over all of the methods declared inside the Explosion class until we get to the targetMethodName "doExplosionB"
 
     Iterator<MethodNode> methods = classNode.methods.iterator();
     while (methods.hasNext()) {

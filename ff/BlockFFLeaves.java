@@ -24,12 +24,11 @@ public class BlockFFLeaves extends BlockLeaves {
     super(id);
     superSpecial = leaves;
     
-    FysiksFun.logger.log(Level.INFO, "Patching leaves with block id "+id);
+    FysiksFun.logger.log(Level.INFO, "Replacing leaves with block id "+id);
     setHardness(leaves.blockHardness);
     setStepSound(leaves.stepSound);
     String unlocalizedName = leaves.getUnlocalizedName();
     String[] parts = unlocalizedName.split("\\.");
-    System.out.println("Name: "+parts[1]);
     setUnlocalizedName(parts[1]);
   }
 

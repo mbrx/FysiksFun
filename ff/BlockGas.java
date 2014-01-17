@@ -120,7 +120,7 @@ public class BlockGas extends Block {
       }
     } else {
       if (origId != blockID || origMeta != 16 - quantity) {
-        if (ebs != null && !FysiksFun.settings.slowBlockUpdates) {
+        if (ebs != null) {
           ebs.setExtBlockID(x & 15, y & 15, z & 15, blockID);
           ebs.setExtBlockMetadata(x & 15, y & 15, z & 15, 16 - quantity);
         } else c.setBlockIDWithMetadata(x & 15, y, z & 15, blockID, 16 - quantity);

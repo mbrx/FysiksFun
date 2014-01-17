@@ -14,7 +14,7 @@ public class BlockSteam extends BlockGas {
   @Override
   protected void condenseFromAltitude(World w, int x, int y, int z, Chunk origChunk, int newContent) {
     // Discard 50% of the water that evaporates to reduce water inflation
-    if(FysiksFun.rand.nextInt(2) != 1) return;
+    // if(FysiksFun.rand.nextInt(2) != 1) return;
     
     /* High chance that we move the water straight down to where it should go to remove amount of liquid that is falling in the sky. */
     if (FysiksFun.rand.nextInt(8) != 0) {

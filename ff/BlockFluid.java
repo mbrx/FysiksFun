@@ -247,7 +247,7 @@ public class BlockFluid extends BlockFlowing {
 
     Counters.fluidSetContent++;
     if (newId != oldId || newMetaData != oldMetaData) {
-      if (ebs != null && !FysiksFun.settings.slowBlockUpdates) {
+      if (ebs != null) {
         ebs.setExtBlockID(x & 15, y & 15, z & 15, newId);
         ebs.setExtBlockMetadata(x & 15, y & 15, z & 15, newMetaData);
       } else {

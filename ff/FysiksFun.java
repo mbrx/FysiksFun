@@ -106,10 +106,15 @@ public class FysiksFun {
   public void preInit(FMLPreInitializationEvent event) {
     logger = event.getModLog();
     config = new Configuration(event.getSuggestedConfigurationFile());
+    MinecraftForge.EVENT_BUS.register(new Sounds());
   }
 
   @Init
   public void load(FMLInitializationEvent event) {
+    System.out.println("[FF] FysiksFun, by M. Broxvall ");
+    System.out.println("[FF] Credits: Rubble sounds created by Dan Oberbaur; Earthquake sound created by Tim Kahn");
+
+    
     proxy.registerRenderers();
 
     config.load();
@@ -213,12 +218,12 @@ public class FysiksFun {
     }
     Fluids.checkBlockOverwritten();
 
-    /*if (Counters.tick == 500) {
+    if (Counters.tick == 500) {
       System.out.println("[FF] Dumping list of all blocks");
       for (Block b : Block.blocksList) {
         if (b != null) System.out.println("Block " + b.blockID + " name: '" + b.getUnlocalizedName() + "'");
       }
-    }*/
+    }
 
     try {
       inWorldTick = true;

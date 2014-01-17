@@ -236,7 +236,17 @@ Spread plants only in direct line-of-sight? (or with a random walk?)
 
 Check that plants have sunlight, otherwise die
 
+---- Floating blocks
+When checking the "up" neighbour for a block in the Physics update, 
+if it is water then treat is special. Let it keep going "up" until it find a non-liquid block. 
+It it found air/gas then skip. Otherwise let it move pressures (3/4 of difference) as usual. If the 
+amount moved is less than a "floatThreshold" then also update the clocks.
 
+The "floatThreshold" is dependent on the liquid pressure of the last block visited on the way to the supported block. 
+
+This method should not allow any self-supporting structures etc. "Should" make it possible to float.
+
+ 
 
 ---
 http://www.minecraftforum.net/topic/1854988-tutorial-162-changing-vanilla-without-editing-base-classes-coremods-and-events-very-advanced/

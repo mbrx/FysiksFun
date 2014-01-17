@@ -24,7 +24,7 @@ public class BlockFFStone extends BlockStone {
   public void breakBlock(World w, int x, int y, int z, int oldId, int oldMetaData) {
     
     if(overrideShatter) return;
-    if(Counters.tick % 11 != 1) return;
+    if(Util.smear(Counters.tick/300)%373+y < 74) return;
     if(maxShatterDepth <= 0) return;
     --maxShatterDepth;
     
@@ -40,6 +40,9 @@ public class BlockFFStone extends BlockStone {
       if(id == blockID) {
         // TODO - thread safety here????
         FysiksFun.setBlockWithMetadataAndPriority(w, x1, y1, z1, Block.cobblestone.blockID, 0, 0);
+        float volume = 0.75F + FysiksFun.rand.nextFloat()*0.5F;
+        float pitch = 1.0F;    
+        w.playSoundEffect(x1 + 0.5, y1 + 0.5, z1 + 0.5, "fysiksfun:rubble", volume, pitch);
         //System.out.println("stones are shattering!");
       }
     }

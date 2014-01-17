@@ -98,7 +98,8 @@ v0.4.2
     * Patch for a vanilla in-efficiency with Entity.moveEntity - requires FFCore plugin
     
  v0.5.1
-    * Added anchors points to the nether so it wil not ALL come crashing down. 
+    * Increased number of packages sent from server to client in single player games
+    * Added anchors points to the nether so it will not ALL come crashing down. 
     * Wooden supports in mines stronger. 
     * Tweaking elasticity to reduce earthquakes. 
     * Tweaking water consumption of crops
@@ -106,3 +107,8 @@ v0.4.2
     * Found a bug that duplicated puddles of water, leading to eventual flooding of the world
     * Fixed bug with physics and TileEntites (chests etc) 
     * Stone may shatter into cobblestone in a chain reaction when mining
+    
+v0.5.2
+    * Added soundeffects for breaking/falling blocks and volcanoes
+    * Removed unused settings and settings only used for debugging
+    

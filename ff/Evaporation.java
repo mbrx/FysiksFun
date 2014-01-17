@@ -18,7 +18,7 @@ public class Evaporation {
     
     if (FysiksFun.settings.undergroundWater) {
       doUndergroundEvaporation(w, x, z);
-      //doHumidification(w, x, z);
+      doHumidification(w, x, z);
     }
     doIndirectEvaporation(w, x, z);
     doSunlightEvaporation(w, x, z);

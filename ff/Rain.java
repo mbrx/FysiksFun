@@ -6,21 +6,22 @@ import net.minecraft.world.biome.BiomeGenBase;
 import net.minecraft.world.chunk.Chunk;
 
 public class Rain {
-  
+
   /** Precipation from rain on the chunk with center XZ */
   public static void doPrecipation(World w, int x, int z) {
 
-    Chunk c = w.getChunkFromChunkCoords(x>>4, z>>4);
-    
+    Chunk c = w.getChunkFromChunkCoords(x >> 4, z >> 4);
+
     if (FysiksFun.settings.alwaysRaining || w.rainingStrength > 0.0) {
       int dx = (FysiksFun.rand.nextInt(117) + 7 * Counters.tick) % 16;
       int dz = (FysiksFun.rand.nextInt(187) + 11 * Counters.tick) % 16;
       BiomeGenBase biome = w.getBiomeGenForCoords(x + dx, z + dz);
       int rainChance = (int) (250.0 * FysiksFun.settings.waterRainRate * biome.rainfall * (FysiksFun.settings.alwaysRaining ? 1.0 : w.rainingStrength));
-      
-      if (!FysiksFun.settings.rainInOceans && (biome == BiomeGenBase.ocean || biome == BiomeGenBase.frozenOcean)) {
-        // do nothing
-      } else if (biome.rainfall > 0.0 && FysiksFun.settings.waterRainRate>0 && FysiksFun.rand.nextInt(10000) < rainChance) {
+
+      //if (!FysiksFun.settings.rainInOceans && (biome == BiomeGenBase.ocean || biome == BiomeGenBase.frozenOcean)) {
+      //  // do nothing
+      //} else 
+      if (biome.rainfall > 0.0 && FysiksFun.settings.waterRainRate > 0 && FysiksFun.rand.nextInt(10000) < rainChance) {
         for (int y2 = 255; y2 > 1; y2--) {
           int id = c.getBlockID(dx, y2, dz);
           if (id != 0) {
@@ -34,19 +35,19 @@ public class Rain {
             if (id == Block.plantYellow.blockID) break;
             if (id == Block.plantRed.blockID) break;
             */
-            
-            int rainDelta=BlockFluid.maximumContent/16;
-            int rainAmount=rainDelta;
-            if ((id == Fluids.stillWater.blockID || id == Fluids.flowingWater.blockID) && 
-                Fluids.stillWater.getBlockContent(w, x+dx, y2, z+dz) > BlockFluid.maximumContent/2) rainAmount+=rainDelta;
-            if (y2 >= 1 && c.getBlockID(dx, y2-1, dz) == Fluids.stillWater.blockID) rainAmount+=rainDelta;
-            if (y2 >= 2 && c.getBlockID(dx, y2-2, dz) == Fluids.stillWater.blockID) rainAmount+=rainDelta;
-            if (y2 >= 3 && c.getBlockID(dx, y2-3, dz) == Fluids.stillWater.blockID) rainAmount+=rainDelta;
-            
+
+            int rainDelta = BlockFluid.maximumContent / 16;
+            int rainAmount = rainDelta;
+            if ((id == Fluids.stillWater.blockID || id == Fluids.flowingWater.blockID)
+                && Fluids.stillWater.getBlockContent(w, x + dx, y2, z + dz) > BlockFluid.maximumContent / 2) rainAmount += rainDelta;
+            if (y2 >= 1 && c.getBlockID(dx, y2 - 1, dz) == Fluids.stillWater.blockID) rainAmount += rainDelta;
+            if (y2 >= 2 && c.getBlockID(dx, y2 - 2, dz) == Fluids.stillWater.blockID) rainAmount += rainDelta;
+            if (y2 >= 3 && c.getBlockID(dx, y2 - 3, dz) == Fluids.stillWater.blockID) rainAmount += rainDelta;
+
             try {
               BlockFluid.preventSetBlockLiquidFlowover = true;
               Fluids.flowingWater.setBlockContent(w, x + dx, y2 + 1, z + dz, rainAmount);
-              Counters.rainCounter+= rainAmount;
+              Counters.rainCounter += rainAmount;
               //FysiksFun.scheduleBlockTick(w, Fluids.stillWater, x + dx, y2 + 1, z + dz, 10);
             } finally {
               BlockFluid.preventSetBlockLiquidFlowover = false;
@@ -59,4 +60,3 @@ public class Rain {
   }
 
 }
-
