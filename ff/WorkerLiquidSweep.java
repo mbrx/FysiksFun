@@ -112,7 +112,7 @@ class WorkerLiquidSweep implements Runnable {
 
             /* For fluids */
             if (Fluids.isLiquid[id] && FysiksFun.settings.doFluids) {
-              BlockFluid b = (BlockFluid) Block.blocksList[id];
+              BlockFluid b = Fluids.asFluid[id];
               b.updateTickSafe(w, c, tempData0, x + dx, y, z + dz, FysiksFun.rand, wstate.sweepCounter, delayedBlockMarkSet);
               // b.updateTickSafe(w, c, tempData0, x + dx, y, z + dz, FysiksFun.rand, wstate.sweepCounter, null);
               if (FysiksFun.rand.nextInt(5 * b.liquidUpdateRate) == 0) b.updateRandomWalk(w, c, tempData0, x + dx, y, z + dz, FysiksFun.rand);

@@ -132,7 +132,7 @@ public class Volcanoes {
                 w.playSoundEffect(x0+0.5, y0+0.5, z0+0.5, "fysiksfun:earthquake", volume, pitch);
                 System.out.println("Playing volcano @volume: "+volume+" pitch: "+pitch);
               }
-              if(FysiksFun.rand.nextInt(500) == 0) {
+              if(FysiksFun.rand.nextInt(1000) == 0) {
                 float volume = (float)(activity*1.0+1.0);
                 float pitch = (float)(1.4-FysiksFun.rand.nextFloat()*0.4-activity*0.3)*0.2F;
                 w.playSoundEffect(x0+0.5, y0+0.5, z0+0.5, "random.explode", volume, pitch);

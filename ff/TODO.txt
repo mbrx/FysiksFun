@@ -1,6 +1,7 @@
 Needs to be verified
 --------------------
 
+What happens to other dimensions?
 Anchors in the END 
 Does the mod work when only using tree felling. 
 Small liquid movements can go through plants?
@@ -9,7 +10,12 @@ What happens to volcanos in hell?
 
 Verified Bugs
 -------------
+
+Dependency between liquids and physics?
+
 Pistons cannot move water, since they write "air" into the water block -> create new (better) pistons instead
+
+Cannot pump more than the first block of fuel/oil? Problem with meta value when full?
 
 Tuning
 ------
@@ -26,6 +32,8 @@ Optimisation
 ------------
 Remove redundant code in physics
 Split physics into multiple parts, check time consumption and optimise
+
+Move WorkerLiquidSweep and WorkerPhysicsSweep into one single worker, reduces number of blocksid's queried. Needs something smart about the sweeps.
 
 Features
 --------

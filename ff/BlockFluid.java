@@ -110,9 +110,6 @@ public class BlockFluid extends BlockFlowing {
 
   public BlockFluid(Block superWrapper, int id, Material par2Material, int stillID, int movingID, String n) {
     super(id, par2Material);
-    // this.blockIndexInTexture = superWrapper.blockIndexInTexture;
-    // this.setTextureFile(superWrapper.getTextureFile());
-
     name = n;
     this.superWrapper = superWrapper;
     liquidUpdateRate = 1;
@@ -148,8 +145,11 @@ public class BlockFluid extends BlockFlowing {
    * is the only chance you get to register icons.
    */
   public void registerIcons(IconRegister par1IconRegister) {
+	  System.out.println("registerIcons "+name);
     if (superWrapper != null) {
+    	System.out.println("*** Registering icons for my superWrapper");
       superWrapper.registerIcons(par1IconRegister);
+      blockIcon = superWrapper.getIcon(0, 0);
     } else {
       super.registerIcons(par1IconRegister);
     }
@@ -158,13 +158,26 @@ public class BlockFluid extends BlockFlowing {
 
   @Override
   public Icon getBlockTexture(IBlockAccess par1IBlockAccess, int par2, int par3, int par4, int par5) {
-    if (superWrapper != null) return superWrapper.getBlockTexture(par1IBlockAccess, par2, par3, par4, par5);
+	  System.out.println("getBlockTexture "+name);
+	  
+	  if(name.equals("blockOil"))
+		  System.out.println("getting texture!");
+
+	  if (superWrapper != null) {
+    	System.out.println("getting texture from my superwrapper");
+    	return superWrapper.getBlockTexture(par1IBlockAccess, par2, par3, par4, par5);
+    }
     else return super.getBlockTexture(par1IBlockAccess, par2, par3, par4, par5);
   }
 
   @Override
-  public Icon getIcon(int par1, int par2) {
-    if (superWrapper != null) return superWrapper.getIcon(par1, par2);
+  public Icon getIcon(int par1, int par2) {	  
+	  if(name.equals("blockOil"))
+		  System.out.println("getting Icon!");
+    if (superWrapper != null) {
+    	System.out.println("*** Getting icon from my superWrapper");
+    	return superWrapper.getIcon(par1, par2);    
+    }
     else return super.getIcon(par1, par2);
   }
 

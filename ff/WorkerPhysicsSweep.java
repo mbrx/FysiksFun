@@ -8,11 +8,13 @@ import java.util.Map;
 import java.util.concurrent.Semaphore;
 import java.util.logging.Level;
 
+import buildcraft.transport.BlockGenericPipe;
 import cpw.mods.fml.common.network.Player;
 import mbrx.ff.FysiksFun.WorldObserver;
 import mbrx.ff.MPWorldTicker.WorldUpdateState;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockBed;
+import net.minecraft.block.BlockBreakable;
 import net.minecraft.block.BlockContainer;
 import net.minecraft.block.BlockDoor;
 import net.minecraft.block.BlockOre;
@@ -41,7 +43,8 @@ public class WorkerPhysicsSweep implements Runnable {
   public static boolean                      blockDoPhysics[]        = new boolean[4096];
   /** 0 all normal blocks, 1+ blocks not affected by full (breakable) physics. Lower numbers can support higher numbers. */
   public static int                          blockDoSimplePhysics[]  = new int[4096];
-
+  public static boolean						 blockIsFragile[]		 = new boolean[4096];
+  
   private static final int                   ticksPerUpdate          = 1;
   private static final int                   timeToFall              = 4;
   /** Mutex for locking the threads whenever a vanilla function is called. */
@@ -68,6 +71,7 @@ public class WorkerPhysicsSweep implements Runnable {
       blockWeight[i] = 4;
       blockDoSimplePhysics[i] = 0;
       blockDoPhysics[i] = false;
+      blockIsFragile[i] = false;
       if (b == null) continue;
       if (b.isOpaqueCube()) blockDoPhysics[i] = true;
 
@@ -75,11 +79,17 @@ public class WorkerPhysicsSweep implements Runnable {
       if (b instanceof BlockOre) {
         blockStrength[i] = 40;
         blockWeight[i] = 8;
+      } else if(FysiksFun.hasBuildcraft && b instanceof BlockGenericPipe) { 
+          blockStrength[i] = 20;
+          blockWeight[i] = 2;
+          blockDoPhysics[i] = true;    	  
       } else if (b instanceof ITileEntityProvider) {
-        blockStrength[i] = 40;
+        blockStrength[i] = 20;
         blockWeight[i] = 4;
         blockDoPhysics[i] = true;
       }
+      if(b instanceof BlockBreakable) blockIsFragile[i]=true;
+      
       if (Fluids.isLiquid[i] || Gases.isGas[i] || i == 0) blockDoPhysics[i] = false;
       //if (!blockDoPhysics[i]) continue;
     }
@@ -119,14 +129,17 @@ public class WorkerPhysicsSweep implements Runnable {
     blockWeight[Block.planks.blockID] = 2;
 
     blockDoPhysics[Block.thinGlass.blockID] = true;
+    blockIsFragile[Block.thinGlass.blockID] = true;
     blockStrength[Block.thinGlass.blockID] = 5; // 5 times weight
     blockWeight[Block.thinGlass.blockID] = 1;
     blockDoPhysics[Block.glass.blockID] = true;
     blockStrength[Block.glass.blockID] = 10; //      5 times weight
     blockWeight[Block.glass.blockID] = 2;
+    blockIsFragile[Block.glass.blockID] = true;
     blockStrength[Block.glowStone.blockID] = 40; //     20 times weight (it's anyway too expensive to use for this?)
     blockWeight[Block.glowStone.blockID] = 2;
-
+    blockIsFragile[Block.glowStone.blockID] = true;
+    
     blockStrength[Block.fence.blockID] = 10; // 5 times weight 
     blockWeight[Block.fence.blockID] = 2;
 
@@ -539,7 +552,8 @@ public class WorkerPhysicsSweep implements Runnable {
               }
 
               int idBelowTarget = targetChunk.getBlockID(targetX & 15, targetY - 1, targetZ & 15);
-              if (doBreak || (idBelowTarget != 0 && !Fluids.isLiquid[idBelowTarget] && !Gases.isGas[idBelowTarget])) {
+              boolean hasLanded = (idBelowTarget != 0 && !Fluids.isLiquid[idBelowTarget] && !Gases.isGas[idBelowTarget]);
+              if (doBreak || hasLanded) {
                 soundEffectAttempts++;
                 if (FysiksFun.rand.nextInt(maxSoundEffects) < nSoundEffectsLeft) {
                   int effectiveWeight = weight <= 0 ? 1 : weight;
@@ -553,7 +567,12 @@ public class WorkerPhysicsSweep implements Runnable {
                   vanillaMutex.release();
                 }
               }
-
+              if(blockIsFragile[id] && (doBreak || hasLanded)) {            	  
+                  w.playSoundEffect(targetX + 0.5, targetY + 0.5, targetZ + 0.5, "random.break", 1.0F, 1.0F);
+            	  id=0;
+            	  myId=0;
+              }
+              
               if (doBreak) Counters.brokenBlocks++;
               else Counters.fallenBlocks++;
 

@@ -111,4 +111,10 @@ v0.4.2
 v0.5.2
     * Added soundeffects for breaking/falling blocks and volcanoes
     * Removed unused settings and settings only used for debugging
+    * Buildcraft compatability for block physics
+    * Re-added buildcraft liquids as fluid liquids, needs work on pumps
+    
+v0.5.3
+    * Removed bedrock pillars from flat worlds
+    * 
     

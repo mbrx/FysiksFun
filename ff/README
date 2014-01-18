@@ -9,6 +9,18 @@ The earthquake sound created by Tim Kahn: http://www.freesound.org/people/Corsic
 Justin BW
 http://www.freesound.org/people/JustinBW/sounds/70112/
 
+About buildcraft (and other tech mods)
+--------------------------------------
+
+All pipes and other blocks are affected by physics as usual.
+Pumps can only pump from a FULL block of liquid
+The flood gate will only emit ONE block of liquid and then stop, to make it work again toggle it by a switch.
+It's possible to get infinite energy by pumping water up using BC, and drive generators to get back the energy.
+  - How can this be fixed?
+    
+(Todo: make tanks fragile?)
+
+
 Volcanoes
 ---------
 

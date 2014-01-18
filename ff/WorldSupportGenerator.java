@@ -46,6 +46,8 @@ public class WorldSupportGenerator implements IWorldGenerator {
         if (Block.blocksList[id] instanceof BlockOre) continue;
         break;
       }
+      if(y == 20) continue; // This is a flatworld, don't do any pillars
+      
       y = y - FysiksFun.rand.nextInt(6) - 2;
       if (y <= 8) continue;
       for (int tmp = -FysiksFun.rand.nextInt(8); tmp <= 0; tmp++)
