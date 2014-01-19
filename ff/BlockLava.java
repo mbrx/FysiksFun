@@ -10,8 +10,8 @@ import net.minecraftforge.common.ForgeDirection;
 
 public class BlockLava extends BlockFluid {
 
-  public BlockLava(int id, Material par2Material, int stillID, int movingID, String n) {
-    super(id, par2Material, stillID, movingID, n);
+  public BlockLava(int id, Material par2Material, int stillID, int movingID, String n,Block replacedBlock) {
+    super(id, par2Material, stillID, movingID, n, replacedBlock);
   }
 
   public void expensiveTick(World world, Chunk chunk0, ChunkTempData tempData0, int x0, int y0, int z0, Random r) {

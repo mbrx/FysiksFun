@@ -16,7 +16,7 @@ public class BlockFFStone extends BlockStone {
   }
 
   public boolean canPlaceBlockAt(World par1World, int x, int y, int z) {
-    return false;
+    return FysiksFun.settings.canPlaceStone;
   }
 
   /** Called when this block is OVERWRITTEN by another world.setBlock */

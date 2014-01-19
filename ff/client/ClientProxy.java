@@ -14,22 +14,27 @@
 
     You should have received a copy of the GNU General Public License
     along with PilesOfBlocks.  If not, see <http://www.gnu.org/licenses/>.
-*/ 	
-
+ */
 
 package mbrx.ff.client;
 
 import net.minecraftforge.client.MinecraftForgeClient;
+import net.minecraftforge.common.MinecraftForge;
 import mbrx.ff.CommonProxy;
+import mbrx.ff.Sounds;
 
 public class ClientProxy extends CommonProxy {
 
-	public ClientProxy() {
-	}
+  public ClientProxy() {}
 
-	@Override
-	public void registerRenderers() {
-		//MinecraftForgeClient.preloadTexture(ITEMS_PNG);
-		//MinecraftForgeClient.preloadTexture(BLOCK_PNG);
-	}
+  @Override
+  public void registerRenderers() {
+    // MinecraftForgeClient.preloadTexture(ITEMS_PNG);
+    // MinecraftForgeClient.preloadTexture(BLOCK_PNG);
+  }
+
+  @Override
+  public void registerSounds() {
+    MinecraftForge.EVENT_BUS.register(new Sounds());
+  }
 }

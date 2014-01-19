@@ -9,13 +9,13 @@ import net.minecraft.world.chunk.Chunk;
 
 public class BlockWater extends BlockFluid {
 
-  public BlockWater(Block superWrapper, int id, Material par2Material, int stillID, int movingID, String n) {
-    super(superWrapper, id, par2Material, stillID, movingID, n);
+  public BlockWater(int blockID, Material water, int blockID2, int stillID, String string, Block replacedBlock) {
+    super(blockID, water, blockID2, stillID, string,replacedBlock);
   }
 
-  public BlockWater(int id, Material par2Material, int stillID, int movingID, String n) {
-    super(id, par2Material, stillID, movingID, n);
-  }
+  /*public BlockWater(int id, Material par2Material, int stillID, int movingID, String n) {
+    super(id, par2Material, stillID, movingID, n, null);
+  }*/
 
   public void expensiveTick(World world, Chunk chunk0, ChunkTempData tempData0, int x0, int y0, int z0, Random r) {
     int idBelow = chunk0.getBlockID(x0&15, y0-1, z0&15);

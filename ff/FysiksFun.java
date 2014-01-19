@@ -7,6 +7,7 @@ import static net.minecraftforge.common.EnumPlantType.Nether;
 import static net.minecraftforge.common.EnumPlantType.Plains;
 import static net.minecraftforge.common.EnumPlantType.Water;
 
+import java.io.File;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -75,11 +76,11 @@ public class FysiksFun {
 	// Says where the client and server proxy code is loaded.
 	@SidedProxy(clientSide = "mbrx.ff.client.ClientProxy", serverSide = "mbrx.ff.CommonProxy")
 	public static CommonProxy proxy;
-	private static final String ConfigCategory_Generic = "general";
 
 	public static EventListener eventListener;
-	private static Configuration config;
+	private static Configuration config, physicsRuleConfig;
 	public static Logger logger;
+
 	private static WorldTickHandler worldTickHandler = new WorldTickHandler();
 	private static ServerTickHandler serverTickHandler = new ServerTickHandler();
 
@@ -107,9 +108,10 @@ public class FysiksFun {
 
 	@PreInit
 	public void preInit(FMLPreInitializationEvent event) {
-		logger = event.getModLog();
+		logger = event.getModLog(); 		
 		config = new Configuration(event.getSuggestedConfigurationFile());
-		MinecraftForge.EVENT_BUS.register(new Sounds());
+		String physRulesName = event.getSuggestedConfigurationFile().toString().replace(".cfg","-rules.cfg");
+		physicsRuleConfig = new Configuration(new File(physRulesName));
 	}
 
 	@Init
@@ -119,12 +121,13 @@ public class FysiksFun {
 				.println("[FF] Credits: Rubble sounds created by Dan Oberbaur; Earthquake sound created by Tim Kahn");
 
 		proxy.registerRenderers();
+        proxy.registerSounds();
 
 		config.load();
 		settings.loadFromConfig(config);
 		if (config.hasChanged())
 			config.save();
-
+		
 		eventListener = new EventListener();
 		MinecraftForge.EVENT_BUS.register(eventListener);
 
@@ -167,7 +170,10 @@ public class FysiksFun {
 			Gases.postInit();
 		if (settings.doExtraFire)
 			ExtraFire.postInit();
-		WorkerPhysicsSweep.postInit();
+		physicsRuleConfig.load();
+		WorkerPhysicsSweep.postInit(physicsRuleConfig);
+		if (physicsRuleConfig.hasChanged())
+			physicsRuleConfig.save();
 		ExtraBlockBehaviours.postInit();
 	}
 

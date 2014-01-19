@@ -22,6 +22,8 @@ public class Volcanoes {
   }
 
   public static void doChunkTick(World w, ChunkCoordIntPair xz) {
+    if (w.provider.dimensionId == -1) return; // No volcanos in hell
+
     WorldInfo winfo = w.getWorldInfo();
     int seed = smear(Objects.hashCode((int) winfo.getSeed()) + Objects.hashCode(winfo.getWorldName()));
     int volcanoFillY = 3;
@@ -38,16 +40,18 @@ public class Volcanoes {
     if (g == BiomeGenBase.extremeHills || g == BiomeGenBase.iceMountains) volcanoFrequency *= 4;
     if (g == BiomeGenBase.forestHills || g == BiomeGenBase.desertHills || g == BiomeGenBase.taigaHills) volcanoFrequency *= 2;
 
-    // Using prime numbers for shaping the randomness, don't touch the basic volcano constant!    
+    // Using prime numbers for shaping the randomness, don't touch the basic
+    // volcano constant!
     boolean hasVolcano = (((r >> 3) % 1028569) < volcanoFrequency * 11);
     int radius = 1 + ((r / 11) % (FysiksFun.settings.volcanoRadius));
 
     BlockFFStone.overrideShatter = true;
-    
+
     /*
-     * Compute the activity and intensity of volcanoes based on their "zone" coordinates. A zone is defined as a region
-     * of 4x4 chunks. A volcanoes activities is the sum of the phase/intensity of it's own zone and the neighbouring
-     * zones. (With a lower weight for neighbouring zones).
+     * Compute the activity and intensity of volcanoes based on their "zone"
+     * coordinates. A zone is defined as a region of 4x4 chunks. A volcanoes
+     * activities is the sum of the phase/intensity of it's own zone and the
+     * neighbouring zones. (With a lower weight for neighbouring zones).
      */
     int zx = xz.chunkXPos / 16;
     int zz = xz.chunkZPos / 16;
@@ -56,12 +60,15 @@ public class Volcanoes {
       for (int dx = -2; dx <= 2; dx++)
         for (int dz = -2; dz <= 2; dz++) {
           double weight = 0.5 / (dx * dx + dz * dz + 3);
-          //int r2 = smear(r + dx * 17 + dz * 11);
+          // int r2 = smear(r + dx * 17 + dz * 11);
           int r2 = smear((zx + dx) * 17 + smear((zz + dz) * 471));
           /* Each zone has two parts to the sinosoid, a fast part */
           double phase = ((smear(r2 + 7) / 17) % 100) / 50.0 * 3.14159265;
-          double freq = ((smear(r2 + 9) / 17) % 200) / 100.0 + 0.5; // From 0.5 to 2.5
-          double inten = ((smear(r2 + 11) / 17) % 100) / 100.0 + 1.0; // From 100% to 200%
+          double freq = ((smear(r2 + 9) / 17) % 200) / 100.0 + 0.5; // From 0.5
+                                                                    // to 2.5
+          double inten = ((smear(r2 + 11) / 17) % 100) / 100.0 + 1.0; // From
+                                                                      // 100% to
+                                                                      // 200%
           activity += weight * inten * Math.sin(w.getTotalWorldTime() / 9600.0 * freq + phase);
           /* And a slow part (5 times slower) */
           phase = ((smear(r2 + 13) / 17) % 100) / 50.0 * 3.14159265;
@@ -70,8 +77,8 @@ public class Volcanoes {
           activity += weight * inten * 1.5 * Math.sin(w.getTotalWorldTime() / 48000.0 * freq + phase);
         }
     }
-    //activity = +1.5;
-    
+    // activity = +1.5;
+
     // DEBUG
     // activity += 1.0;
     // radius=0;
@@ -80,13 +87,12 @@ public class Volcanoes {
     solidifySurfaceLava(w, xz, chunk0, tempData0, startX, startZ, radius);
 
     if (hasVolcano) {
-      if(Counters.tick%20 == 0)
-        System.out.println("Active volcano at: " + startX + " " + startZ + " Activity: " + activity);
-      retractLavaSource(w, volcanoFillY, chunk0, startX, startZ, radius, activity);
+      //if (Counters.tick % 20 == 0) System.out.println("Active volcano at: " + startX + " " + startZ + " Activity: " + activity);
+      //retractLavaSource(w, volcanoFillY, chunk0, startX, startZ, radius, activity);
       if (FysiksFun.settings.visualizeVolcanoes) visualizeVolcano(chunk0, startX, startZ, radius);
       feedVolcano(w, volcanoFillY, startX, startZ, radius, activity);
     }
-    BlockFFStone.overrideShatter=false;
+    BlockFFStone.overrideShatter = false;
   }
 
   public final static int maximumVolcanoHeight = 128;
@@ -97,7 +103,7 @@ public class Volcanoes {
 
     int worldYOffset = FysiksFun.settings.worldYOffset;
 
-    boolean canDoExpensiveSound = FysiksFun.rand.nextInt(200) == 0; 
+    boolean canDoExpensiveSound = FysiksFun.rand.nextInt(200) == 0;
     for (int tries = 0; tries < 3; tries++) {
       for (int dx = -radius; dx <= radius; dx++) {
         for (int dz = -radius; dz <= radius; dz++) {
@@ -106,15 +112,16 @@ public class Volcanoes {
             int maxY = 1 + FysiksFun.rand.nextInt(maximumVolcanoHeight / 2) + FysiksFun.rand.nextInt(maximumVolcanoHeight / 4)
                 + FysiksFun.rand.nextInt(maximumVolcanoHeight / 4);
 
-                        
             int x0 = startX + dx;
             int z0 = startZ + dz;
             /*
-             * Walk straight up from the start of the plume. If air is encountered, make it lava and stop. If a block is
-             * encountered, make an explosion
+             * Walk straight up from the start of the plume. If air is
+             * encountered, make it lava and stop. If a block is encountered,
+             * make an explosion
              */
             Chunk chunk0 = ChunkCache.getChunk(w, x0 >> 4, z0 >> 4, false);
-            // If lava plume extends outside loaded area, stop feeding volcanoe and wait until it is loaded
+            // If lava plume extends outside loaded area, stop feeding volcanoe
+            // and wait until it is loaded
             if (chunk0 == null) return;
             ChunkCoordIntPair testXZ = new ChunkCoordIntPair(x0 >> 4, z0 >> 4);
             if (!w.activeChunkSet.contains(testXZ)) return;
@@ -122,21 +129,21 @@ public class Volcanoes {
             ChunkTempData tempData0 = ChunkCache.getTempData(w, x0 >> 4, z0 >> 4);
             int seed = smear(smear(startX * 17) + startZ * 311);
             int y0, cnt;
-            int leftToFill=3;
+            int leftToFill = 3;
             for (y0 = volcanoFillY, cnt = 0; y0 < maxY && cnt < 300; y0++, cnt++) {
 
-              if(FysiksFun.rand.nextInt(100)==0 && canDoExpensiveSound) {
-                canDoExpensiveSound=false;
-                float volume = (float)(4.0F+4.0F*activity);
-                float pitch = (float)(1.4-FysiksFun.rand.nextFloat()*0.4-activity*0.2);
-                w.playSoundEffect(x0+0.5, y0+0.5, z0+0.5, "fysiksfun:earthquake", volume, pitch);
-                System.out.println("Playing volcano @volume: "+volume+" pitch: "+pitch);
+              if (FysiksFun.rand.nextInt(100) == 0 && canDoExpensiveSound) {
+                canDoExpensiveSound = false;
+                float volume = (float) (4.0F + 4.0F * activity);
+                float pitch = (float) (1.4 - FysiksFun.rand.nextFloat() * 0.4 - activity * 0.2);
+                w.playSoundEffect(x0 + 0.5, y0 + 0.5, z0 + 0.5, "fysiksfun:earthquake", volume, pitch);
+                // System.out.println("Playing volcano @volume: "+volume+" pitch: "+pitch);
               }
-              if(FysiksFun.rand.nextInt(1000) == 0) {
-                float volume = (float)(activity*1.0+1.0);
-                float pitch = (float)(1.4-FysiksFun.rand.nextFloat()*0.4-activity*0.3)*0.2F;
-                w.playSoundEffect(x0+0.5, y0+0.5, z0+0.5, "random.explode", volume, pitch);
-                System.out.println("Explode @volume: "+volume+" pitch: "+pitch);
+              if (FysiksFun.rand.nextInt(1000) == 0) {
+                float volume = (float) (activity * 1.0 + 1.0);
+                float pitch = (float) (1.4 - FysiksFun.rand.nextFloat() * 0.4 - activity * 0.3) * 0.2F;
+                w.playSoundEffect(x0 + 0.5, y0 + 0.5, z0 + 0.5, "random.explode", volume, pitch);
+                // System.out.println("Explode @volume: "+volume+" pitch: "+pitch);
               }
 
               int r0 = smear(seed + (cnt / 5) * 4711);
@@ -202,9 +209,9 @@ public class Volcanoes {
                   }
                 }
 
-                // Random chance to make a mini-column of lava                 
+                // Random chance to make a mini-column of lava
                 // makeLavaBubble(w, activity, x0, z0, chunk0, tempData0, y0);
-                if(--leftToFill < 0) break;
+                if (--leftToFill < 0) break;
               } else if (Fluids.stillLava.isSameLiquid(id0)) {
                 /*
                  * Lava above, top it it up or keep moving to next layer
@@ -221,56 +228,47 @@ public class Volcanoes {
                  */
                 Fluids.stillLava.setBlockContent(w, chunk0, tempData0, x0, y0, z0, BlockFluid.maximumContent, "[Lava feed]", null);
               } else {
-                
-                if(FysiksFun.rand.nextInt(40) == 0)
-                  doVolcanoExplosion(w, radius, x0, z0, y0);
-                else
-                  Fluids.stillLava.setBlockContent(w, chunk0, tempData0, x0, y0, z0, BlockFluid.maximumContent, "[Lava feed]", null);
+
+                if (FysiksFun.rand.nextInt(40) == 0) doVolcanoExplosion(w, radius, x0, z0, y0);
+                else Fluids.stillLava.setBlockContent(w, chunk0, tempData0, x0, y0, z0, BlockFluid.maximumContent, "[Lava feed]", null);
                 break;
-                
-                // Lower chance to explode at higher altitudes (to reduce the insane growth up there)
-                //if (y0 > 64 + FysiksFun.rand.nextInt(60)) break;
-                //if (y0 > 64 + FysiksFun.rand.nextInt(60)) break;                
-                //doVolcanoExplosion(w, radius, x0, z0, y0);
-                //break;
-                
+
+                // Lower chance to explode at higher altitudes (to reduce the
+                // insane growth up there)
+                // if (y0 > 64 + FysiksFun.rand.nextInt(60)) break;
+                // if (y0 > 64 + FysiksFun.rand.nextInt(60)) break;
+                // doVolcanoExplosion(w, radius, x0, z0, y0);
+                // break;
+
                 /*
-                if(--leftToFill <= 0) {
-                  //if(FysiksFun.rand.nextInt(10) == 0)
-                    doVolcanoExplosion(w, radius, x0, z0, y0);
-                  break;
-                } else {
-                  int dir=FysiksFun.rand.nextInt(4);
-                  x0 += Util.dirToDx(dir);
-                  z0 += Util.dirToDz(dir);
-                } */               
+                 * if(--leftToFill <= 0) { //if(FysiksFun.rand.nextInt(10) == 0)
+                 * doVolcanoExplosion(w, radius, x0, z0, y0); break; } else {
+                 * int dir=FysiksFun.rand.nextInt(4); x0 += Util.dirToDx(dir);
+                 * z0 += Util.dirToDz(dir); }
+                 */
                 // Non-lava, non-air block. Plume is blocked, make an explosion
-                //doVolcanoExplosion(w, radius, x0, z0, y0);
-                //break;
+                // doVolcanoExplosion(w, radius, x0, z0, y0);
+                // break;
               }
             }
-            /* Turn any water above this ending point into stone, as long as we are underground. Stop when we encounter a non-liquid block */
-            /*chunk0 = ChunkCache.getChunk(w, x0 >> 4, z0 >> 4, false);
-            if (chunk0 == null) continue;
-            for (int dx2 = -1; dx2 <= 1; dx2++)
-              for (int dz2 = -1; dz2 <= 1; dz2++) {
-                int maxStones = 3-dx2*dx2-dz2*dz2;
-                Chunk c = ChunkCache.getChunk(w, (x0+dx2)>>4, (z0+dz2)>>4, false);
-                if(c == null) continue;
-                for (y0 += 2; y0 < 66 && maxStones > 0; y0++) {
-                  int id = c.getBlockID((x0+dx2) & 15, y0, (z0+dz2) & 15);
-                  if (id == 0 || Block.blocksList[id] == null) continue;
-                  if (Fluids.stillLava.isSameLiquid(id)) continue;
-                  if (Fluids.stillWater.isSameLiquid(id)) {
-                    Fluids.stillWater.setBlockContent(w, x0+dx2, y0, z0+dz2, 0);
-                    FysiksFun.setBlockWithMetadataAndPriority(w, x0+dx2, y0, z0+dz2, Block.stone.blockID, 0, 0);
-                    maxStones--;
-                    continue;
-                  }
-                  break;
-                }
-              }
-              */
+            /*
+             * Turn any water above this ending point into stone, as long as we
+             * are underground. Stop when we encounter a non-liquid block
+             */
+            /*
+             * chunk0 = ChunkCache.getChunk(w, x0 >> 4, z0 >> 4, false); if
+             * (chunk0 == null) continue; for (int dx2 = -1; dx2 <= 1; dx2++)
+             * for (int dz2 = -1; dz2 <= 1; dz2++) { int maxStones =
+             * 3-dx2*dx2-dz2*dz2; Chunk c = ChunkCache.getChunk(w, (x0+dx2)>>4,
+             * (z0+dz2)>>4, false); if(c == null) continue; for (y0 += 2; y0 <
+             * 66 && maxStones > 0; y0++) { int id = c.getBlockID((x0+dx2) & 15,
+             * y0, (z0+dz2) & 15); if (id == 0 || Block.blocksList[id] == null)
+             * continue; if (Fluids.stillLava.isSameLiquid(id)) continue; if
+             * (Fluids.stillWater.isSameLiquid(id)) {
+             * Fluids.stillWater.setBlockContent(w, x0+dx2, y0, z0+dz2, 0);
+             * FysiksFun.setBlockWithMetadataAndPriority(w, x0+dx2, y0, z0+dz2,
+             * Block.stone.blockID, 0, 0); maxStones--; continue; } break; } }
+             */
           }
         }
       }
@@ -294,7 +292,7 @@ public class Volcanoes {
     {
       int offsetY = 1;
       float explodeStrength = 0.5f + (1.f * radius) * FysiksFun.rand.nextFloat();
-      //float explodeStrength = 1.5f;
+      // float explodeStrength = 1.5f;
       if (FysiksFun.rand.nextInt(10) == 0) {
         FysiksFun.setBlockWithMetadataAndPriority(w, x0, y0, z0, 0, 0, 0);
         FysiksFun.globalWorldChangingMutex.acquireUninterruptibly();
@@ -306,7 +304,10 @@ public class Volcanoes {
     }
   }
 
-  /* Fills the exploded area with lava, may6 also turn neighbouring stones into ores depending on the depth */
+  /*
+   * Fills the exploded area with lava, may6 also turn neighbouring stones into
+   * ores depending on the depth
+   */
   private static void fillExplodedAreaWithLava(World w, int x0, int z0, int y0, int offsetY, float explodeStrength, int explodeRadius) {
     /* Fill exploded area with lava */
     for (int dy2 = -explodeRadius; dy2 <= explodeRadius; dy2++)
@@ -329,7 +330,7 @@ public class Volcanoes {
               /* Chance to create new ores */
               if (idE == Block.stone.blockID && radSq < (int) ((explodeStrength + 2) * (explodeStrength + 2))) {
                 int newId = 0;
-                int v = FysiksFun.rand.nextInt(5000) + (y2/32);                
+                int v = FysiksFun.rand.nextInt(5000) + (y2 / 32);
                 if (v == 0) newId = Block.oreDiamond.blockID;
                 else if (v <= 2) newId = Block.oreEmerald.blockID;
                 else if (v <= 5) newId = Block.oreIron.blockID;
@@ -367,9 +368,11 @@ public class Volcanoes {
               // System.out.println("Trying to feed volcano");
 
               /*
-               * Find a point in which we either (a) add lava, or (b) make an explosion. The point should be the lowest
-               * pressure reachable point, or a point that has a free neighbour We do this by making multiple random
-               * walks (biased towards lower pressures) out from the magma source.
+               * Find a point in which we either (a) add lava, or (b) make an
+               * explosion. The point should be the lowest pressure reachable
+               * point, or a point that has a free neighbour We do this by
+               * making multiple random walks (biased towards lower pressures)
+               * out from the magma source.
                */
 
               int sourceX = x0, sourceY = volcanoFillY, sourceZ = z0;
@@ -432,20 +435,10 @@ public class Volcanoes {
                   targetY = currentY;
                   targetZ = currentZ;
                   targetPressure = currentPressure;
-                  // System.out.println("  New target @"+targetX+","+targetY+","+targetZ+" with pressure: "+targetPressure);
                 }
               }
 
-              // int pressureHere =
-              // Fluids.stillLava.getBlockContent(w,
-              // targetX, targetY, targetZ);
-              // int pressureAbove =
-              // Fluids.stillLava.getBlockContent(w,
-              // targetX, targetY+1, targetZ);
-              // System.out.println("Final target @"+targetX+","+targetY+","+targetZ+" with pressure: "+targetPressure+"("+pressureHere+")"+" above: "+pressureAbove);
-              /*
-               * target X/Y/Z is now the best local minima we have found in the pressure field
-               */
+  
               if (targetPressure < BlockFluid.maximumContent) {
                 for (int dy2 = +1; dy2 >= -1; dy2--)
                   for (int dz2 = -1; dz2 <= 1; dz2++)
@@ -458,7 +451,8 @@ public class Volcanoes {
                     }
                 int contentBefore = Fluids.stillLava.getBlockContent(w, targetX, targetY, targetZ);
                 Fluids.stillLava.setBlockContent(w, targetX, targetY, targetZ, BlockFluid.maximumContent + BlockFluid.pressurePerY * 2);
-                // Fluids.stillLava.updateTick(w, targetX, targetY, targetZ, FysiksFun.rand);
+                // Fluids.stillLava.updateTick(w, targetX, targetY, targetZ,
+                // FysiksFun.rand);
                 // System.out.println("Adding "+(BlockFluid.maximumContent-lowestPressure)+" lava to "+x1+" "+y1+" "+z1);
                 int contentAfter = Fluids.stillLava.getBlockContent(w, targetX, targetY, targetZ);
                 // System.out.println("Lava before update: " +
@@ -468,7 +462,8 @@ public class Volcanoes {
                 // BlockFluid.maximumContent +
                 // BlockFluid.pressurePerY * 16) {
                 /*
-                 * See if it has no free neighbour to flow to, if not make an explosion
+                 * See if it has no free neighbour to flow to, if not make an
+                 * explosion
                  */
                 boolean makeExplosion = true;
                 for (int dy2 = +1; dy2 >= -1; dy2--)
@@ -560,15 +555,14 @@ public class Volcanoes {
               if (FysiksFun.rand.nextInt(10) == 0) FysiksFun.setBlockWithMetadataAndPriority(w, x0, y0, z0, 0, 0, 0);
 
             /*
-            if (activity > 0.0) {
-              if (prevId != Fluids.stillLava.blockID && prevId != Fluids.flowingLava.blockID)
-                chunk0.setBlockIDWithMetadata(x0 & 15, y0, z0 & 15, Fluids.stillLava.blockID, 0);
-              Fluids.stillLava.setBlockContent(w, x0, y0, z0, BlockFluid.pressureMaximum);
-            } else if (activity < 0.0) {
-              // if (prevId == Fluids.stillLava.blockID || prevId ==
-              // Fluids.flowingLava.blockID) w.setBlockToAir(x0, y0, z0);
-            }
-            */
+             * if (activity > 0.0) { if (prevId != Fluids.stillLava.blockID &&
+             * prevId != Fluids.flowingLava.blockID)
+             * chunk0.setBlockIDWithMetadata(x0 & 15, y0, z0 & 15,
+             * Fluids.stillLava.blockID, 0); Fluids.stillLava.setBlockContent(w,
+             * x0, y0, z0, BlockFluid.pressureMaximum); } else if (activity <
+             * 0.0) { // if (prevId == Fluids.stillLava.blockID || prevId == //
+             * Fluids.flowingLava.blockID) w.setBlockToAir(x0, y0, z0); }
+             */
           }
         }
       }
@@ -614,7 +608,10 @@ public class Volcanoes {
                 if (id != 0 && !Fluids.isLiquid[id] && !Gases.isGas[id]) nNeighbours++;
                 if (Fluids.stillLava.isSameLiquid(id)) adjacentLava++;
               }
-              if (nNeighbours >= 2 && adjacentLava < 3) break; // Allow solidifying close to other structures
+              if (nNeighbours >= 2 && adjacentLava < 3) break; // Allow
+                                                               // solidifying
+                                                               // close to other
+                                                               // structures
 
               id = chunk0.getBlockID(x0 & 15, y0 - 1, z0 & 15);
               // if (id != 0 && !Fluids.stillWater.isSameLiquid(id) &&
@@ -627,25 +624,25 @@ public class Volcanoes {
               break;
             }
             /* Count neighbours in the same plane */
-            /*int neighbours = 0;
-            for (int dx = -1; dx <= 1; dx++)
-              for (int dz = -1; dz <= 1; dz++) {
-                Chunk c2 = ChunkCache.getChunk(w, (x0 + dx) >> 4, (z0 + dz) >> 4, false);
-                if (c2 == null) continue;
-                int id2 = c2.getBlockID((x0 + dx) & 15, y0, (z0 + dz) & 15);
-                if (id2 == 0 || Fluids.isLiquid[id2] || Gases.isGas[id2]) continue;
-                neighbours++;
-              }
-            if (neighbours <= 4 && cooldownAttempt != 0) break;
-            */
+            /*
+             * int neighbours = 0; for (int dx = -1; dx <= 1; dx++) for (int dz
+             * = -1; dz <= 1; dz++) { Chunk c2 = ChunkCache.getChunk(w, (x0 +
+             * dx) >> 4, (z0 + dz) >> 4, false); if (c2 == null) continue; int
+             * id2 = c2.getBlockID((x0 + dx) & 15, y0, (z0 + dz) & 15); if (id2
+             * == 0 || Fluids.isLiquid[id2] || Gases.isGas[id2]) continue;
+             * neighbours++; } if (neighbours <= 4 && cooldownAttempt != 0)
+             * break;
+             */
             if (cooldownAttempt != 0 && nNeighbours < 2 && adjacentLava < 3) break;
 
             BlockFluid.preventSetBlockLiquidFlowover = true;
             int r2 = (FysiksFun.rand.nextInt(101) + Counters.tick * 4711) % 10;
-            //if (r2 < 3) 
+            // if (r2 < 3)
             FysiksFun.setBlockWithMetadataAndPriority(w, x0, y0, z0, Block.stone.blockID, 0, 0);
-            //else if (r2 < 6) FysiksFun.setBlockWithMetadataAndPriority(w, x0, y0, z0, Block.cobblestone.blockID, 0, 0);
-            //else FysiksFun.setBlockWithMetadataAndPriority(w, x0, y0, z0, Block.gravel.blockID, 0, 0);
+            // else if (r2 < 6) FysiksFun.setBlockWithMetadataAndPriority(w, x0,
+            // y0, z0, Block.cobblestone.blockID, 0, 0);
+            // else FysiksFun.setBlockWithMetadataAndPriority(w, x0, y0, z0,
+            // Block.gravel.blockID, 0, 0);
             BlockFluid.preventSetBlockLiquidFlowover = false;
           }
           // System.out.println("Turning lava into stone: "+x0+" "+y0+" "+z0);

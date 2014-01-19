@@ -115,6 +115,11 @@ v0.5.2
     * Re-added buildcraft liquids as fluid liquids, needs work on pumps
     
 v0.5.3
+    * New config file with all the physics settings for every individual block
     * Removed bedrock pillars from flat worlds
-    * 
+    * Added option if smooth-stone should be allowed to be placed
+    * Disabled physics in the end world
+    * Disabled volcanos in hell, they cannot form stone there - hence will only flood the world
     
+v0.5.4
+    * Buildcraft fluids handled correctly, working pumps and textures. 

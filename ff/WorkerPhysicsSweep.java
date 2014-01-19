@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.concurrent.Semaphore;
 import java.util.logging.Level;
 
+import buildcraft.factory.BlockFrame;
 import buildcraft.transport.BlockGenericPipe;
 import cpw.mods.fml.common.network.Player;
 import mbrx.ff.FysiksFun.WorldObserver;
@@ -17,7 +18,9 @@ import net.minecraft.block.BlockBed;
 import net.minecraft.block.BlockBreakable;
 import net.minecraft.block.BlockContainer;
 import net.minecraft.block.BlockDoor;
+import net.minecraft.block.BlockFence;
 import net.minecraft.block.BlockOre;
+import net.minecraft.block.BlockStairs;
 import net.minecraft.block.ITileEntityProvider;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.item.EntityItem;
@@ -30,6 +33,8 @@ import net.minecraft.world.ChunkCoordIntPair;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.storage.ExtendedBlockStorage;
+import net.minecraftforge.common.Configuration;
+import net.minecraftforge.common.Property;
 
 public class WorkerPhysicsSweep implements Runnable {
   ChunkCoordIntPair                          xz;
@@ -38,13 +43,19 @@ public class WorkerPhysicsSweep implements Runnable {
   Map<Integer, HashSet<ChunkMarkUpdateTask>> delayedBlockMarkSets;
 
   public static int                          blockStrength[]         = new int[4096];
-  /** The weight of each blockID, negative weights corresponds to fractional (stochastic) weights */
+  /**
+   * The weight of each blockID, negative weights corresponds to fractional
+   * (stochastic) weights
+   */
   public static int                          blockWeight[]           = new int[4096];
   public static boolean                      blockDoPhysics[]        = new boolean[4096];
-  /** 0 all normal blocks, 1+ blocks not affected by full (breakable) physics. Lower numbers can support higher numbers. */
+  /**
+   * 0 all normal blocks, 1+ blocks not affected by full (breakable) physics.
+   * Lower numbers can support higher numbers.
+   */
   public static int                          blockDoSimplePhysics[]  = new int[4096];
-  public static boolean						 blockIsFragile[]		 = new boolean[4096];
-  
+  public static boolean                      blockIsFragile[]        = new boolean[4096];
+
   private static final int                   ticksPerUpdate          = 1;
   private static final int                   timeToFall              = 4;
   /** Mutex for locking the threads whenever a vanilla function is called. */
@@ -58,13 +69,66 @@ public class WorkerPhysicsSweep implements Runnable {
   private static final int                   breakBitsMask           = 0x0f;
   private static final int                   breakAtCounter          = 14;
   private static final int                   counterIsFalling        = 15;
-  private static final int                   maxChunkDist            = 48;
+  private static int                         maxChunkDist            = 48;
   private static final int                   countdownToAction       = 20;
   private static final int                   fallForce               = 20;
-  //private static final int                   numSweeps              = 4;
-  private static final int                   elasticStrengthConstant = 200;
+  // private static final int numSweeps = 4;
+  private static int                         elasticStrengthConstant = 200;
 
-  public static void postInit() {
+  public static void postInit(Configuration physicsRuleConfig) {
+
+    /* Setup a default value for all blocks */
+    setupDefaultPhysicsRules();
+    /* Initialize the physics-rules file */
+    String cat = "physics";
+    physicsRuleConfig.addCustomCategoryComment(cat, "All entries in here modify the rules for physics blocks");
+    /*
+     * For each block, if it exists in the config file use it otherwise add the
+     * default value
+     */
+    maxChunkDist = physicsRuleConfig.get(cat, "0-maxDistanceForPhysics", "" + maxChunkDist, "Radius around player in which physics are computed",
+        Property.Type.INTEGER).getInt(maxChunkDist);
+    elasticStrengthConstant = physicsRuleConfig.get(cat, "0-elasticStrengthConstant", "" + elasticStrengthConstant,
+        "only change this if you know what you do, it effects the total time before physics kick in", Property.Type.INTEGER).getInt(elasticStrengthConstant);
+
+    physicsRuleConfig.get(cat, "1-example-do-full", "true",
+        "If true, the full physics is run for this type of blocks, if false the simplified physics may still be applied", Property.Type.BOOLEAN);
+    physicsRuleConfig
+        .get(
+            cat,
+            "1-example-do-simplified",
+            "0",
+            "Integer order of execution of simplified physics. 0 disables simplified physics. Lower numbers can support higher numbers (but never blocks of full-physics). See leaves and vines for example",
+            Property.Type.INTEGER);
+    physicsRuleConfig.get(cat, "1-example-is-fragile", "true", "If true, the block will break (like glass) when falling", Property.Type.BOOLEAN);
+    physicsRuleConfig.get(cat, "1-example-strength", "16",
+        "Strength of block, must be less than elasticStrenghtConstant. Typical values 5 - 30 times the weight of the block.", Property.Type.INTEGER);
+    physicsRuleConfig.get(cat, "1-example-weight", "4", "Weight of this block, typical values 1 - 16", Property.Type.INTEGER);
+
+    physicsRuleConfig.get(cat, "2-start-of-rules", "", "Here comes the rules for each block in the game", Property.Type.STRING);
+
+    for (int i = 0; i < 4096; i++) {
+      Block b = Block.blocksList[i];
+      if (i == 0 || b == null || b.blockID == 0) continue;
+      String name = b.getUnlocalizedName().replace("tile.", "");
+      if (i == Block.cobblestone.blockID) name = "cobbleStone";
+      if (i == Block.stoneBrick.blockID) name = "stoneBrick";
+
+      blockDoPhysics[i] = physicsRuleConfig.get(cat, name + "-do-full", blockDoPhysics[i] ? "true" : "false", null, Property.Type.BOOLEAN).getBoolean(
+          blockDoPhysics[i]);
+      if (!blockDoPhysics[i])
+        blockDoSimplePhysics[i] = physicsRuleConfig.get(cat, name + "-do-simplified", "" + blockDoSimplePhysics[i], null, Property.Type.INTEGER).getInt(
+            blockDoSimplePhysics[i]);
+      if (blockDoPhysics[i] || blockDoSimplePhysics[i] != 0) {
+        blockIsFragile[i] = physicsRuleConfig.get(cat, name + "-is-fragile", blockIsFragile[i] ? "true" : "false", null, Property.Type.BOOLEAN).getBoolean(
+            blockIsFragile[i]);
+        blockStrength[i] = physicsRuleConfig.get(cat, name + "-strength", "" + blockStrength[i], null, Property.Type.INTEGER).getInt(blockStrength[i]);
+        blockWeight[i] = physicsRuleConfig.get(cat, name + "-weight", "" + blockWeight[i], null, Property.Type.INTEGER).getInt(blockWeight[i]);
+      }
+    }
+  }
+
+  private static void setupDefaultPhysicsRules() {
     for (int i = 0; i < 4096; i++) {
       Block b = Block.blocksList[i];
       blockStrength[i] = 16;
@@ -79,26 +143,39 @@ public class WorkerPhysicsSweep implements Runnable {
       if (b instanceof BlockOre) {
         blockStrength[i] = 40;
         blockWeight[i] = 8;
-      } else if(FysiksFun.hasBuildcraft && b instanceof BlockGenericPipe) { 
-          blockStrength[i] = 20;
-          blockWeight[i] = 2;
-          blockDoPhysics[i] = true;    	  
+      } else if (FysiksFun.hasBuildcraft && b instanceof BlockGenericPipe) {
+        blockStrength[i] = 20;
+        blockWeight[i] = 2;
+        blockDoPhysics[i] = true;
+      } else if (FysiksFun.hasBuildcraft && b instanceof BlockFrame) {
+        blockStrength[i] = 40;
+        blockWeight[i] = 2;
+        blockDoPhysics[i] = true;
       } else if (b instanceof ITileEntityProvider) {
         blockStrength[i] = 20;
         blockWeight[i] = 4;
         blockDoPhysics[i] = true;
+      } else if (b instanceof BlockStairs) {
+        blockStrength[i] = 20;
+        blockWeight[i] = 4;
+        blockDoPhysics[i] = true;
+      } else if (b instanceof BlockFence) {
+        blockStrength[i] = 20;
+        blockWeight[i] = 3;
+        blockDoPhysics[i] = true;
+        blockIsFragile[i] = true;
       }
-      if(b instanceof BlockBreakable) blockIsFragile[i]=true;
-      
+      if (b instanceof BlockBreakable) blockIsFragile[i] = true;
+
       if (Fluids.isLiquid[i] || Gases.isGas[i] || i == 0) blockDoPhysics[i] = false;
-      //if (!blockDoPhysics[i]) continue;
+      // if (!blockDoPhysics[i]) continue;
     }
 
     /*
-    blockDoPhysics[Block.leaves.blockID] = true;
-    blockStrength[Block.leaves.blockID] = 10; //        100 times weight!
-    blockWeight[Block.leaves.blockID] = -10;
-    */
+     * blockDoPhysics[Block.leaves.blockID] = true;
+     * blockStrength[Block.leaves.blockID] = 10; // 100 times weight!
+     * blockWeight[Block.leaves.blockID] = -10;
+     */
 
     blockDoPhysics[Block.bedrock.blockID] = true;
     blockWeight[Block.bedrock.blockID] = 0;
@@ -113,19 +190,20 @@ public class WorkerPhysicsSweep implements Runnable {
     blockStrength[Block.dirt.blockID] = 2;
     blockWeight[Block.dirt.blockID] = 1;
     blockStrength[Block.sand.blockID] = 4;
-    blockStrength[Block.cobblestone.blockID] = 40; // 5 times weight
+    blockStrength[Block.cobblestone.blockID] = 40; // was 40
     blockWeight[Block.cobblestone.blockID] = 8;
 
-    blockStrength[Block.stone.blockID] = 200; //      100 times weight
-    blockWeight[Block.stone.blockID] = 2; // stone is unplaceable, low weight for now!
+    blockStrength[Block.stone.blockID] = 200; // 100 times weight
+    blockWeight[Block.stone.blockID] = 2; // stone is unplaceable, low
+    // weight for now!
     blockStrength[Block.stoneBrick.blockID] = 72; // 12 times weight
     blockWeight[Block.stoneBrick.blockID] = 6;
-    blockStrength[Block.brick.blockID] = 60; //      15 times weight
+    blockStrength[Block.brick.blockID] = 60; // 15 times weight
     blockWeight[Block.brick.blockID] = 4;
 
-    blockStrength[Block.wood.blockID] = 60; //       15 times weight
+    blockStrength[Block.wood.blockID] = 60; // 15 times weight
     blockWeight[Block.wood.blockID] = 4;
-    blockStrength[Block.planks.blockID] = 20; //     10 times weight
+    blockStrength[Block.planks.blockID] = 20; // 10 times weight
     blockWeight[Block.planks.blockID] = 2;
 
     blockDoPhysics[Block.thinGlass.blockID] = true;
@@ -133,27 +211,30 @@ public class WorkerPhysicsSweep implements Runnable {
     blockStrength[Block.thinGlass.blockID] = 5; // 5 times weight
     blockWeight[Block.thinGlass.blockID] = 1;
     blockDoPhysics[Block.glass.blockID] = true;
-    blockStrength[Block.glass.blockID] = 10; //      5 times weight
+    blockStrength[Block.glass.blockID] = 10; // 5 times weight
     blockWeight[Block.glass.blockID] = 2;
     blockIsFragile[Block.glass.blockID] = true;
-    blockStrength[Block.glowStone.blockID] = 40; //     20 times weight (it's anyway too expensive to use for this?)
+    blockStrength[Block.glowStone.blockID] = 40; // 20 times weight (it's
+    // anyway too expensive
+    // to use for this?)
     blockWeight[Block.glowStone.blockID] = 2;
     blockIsFragile[Block.glowStone.blockID] = true;
-    
-    blockStrength[Block.fence.blockID] = 10; // 5 times weight 
+
+    blockStrength[Block.fence.blockID] = 10; // 5 times weight
     blockWeight[Block.fence.blockID] = 2;
 
     blockStrength[Block.blockLapis.blockID] = 120; // 20 times weight
     blockWeight[Block.blockLapis.blockID] = 6;
-    blockStrength[Block.blockNetherQuartz.blockID] = 72; // 24 times weight (!) 
+    blockStrength[Block.blockNetherQuartz.blockID] = 72; // 24 times weight
+    // (!)
     blockWeight[Block.blockNetherQuartz.blockID] = 3;
-    blockStrength[Block.blockIron.blockID] = 120; // 30 times weight 
+    blockStrength[Block.blockIron.blockID] = 120; // 30 times weight
     blockWeight[Block.blockIron.blockID] = 4;
-    blockStrength[Block.blockGold.blockID] = 240; // 30 times weight 
+    blockStrength[Block.blockGold.blockID] = 240; // 30 times weight
     blockWeight[Block.blockGold.blockID] = 8;
-    blockStrength[Block.blockDiamond.blockID] = 240; // 80 times weight (!) 
+    blockStrength[Block.blockDiamond.blockID] = 240; // 80 times weight (!)
     blockWeight[Block.blockDiamond.blockID] = 3;
-    blockStrength[Block.blockEmerald.blockID] = 240; // 80 times weight (!) 
+    blockStrength[Block.blockEmerald.blockID] = 240; // 80 times weight (!)
     blockWeight[Block.blockEmerald.blockID] = 3;
 
     blockStrength[Block.obsidian.blockID] = 160; // 10 times weight
@@ -164,18 +245,18 @@ public class WorkerPhysicsSweep implements Runnable {
     blockStrength[Block.ice.blockID] = 9; // 3 times weight
     blockWeight[Block.ice.blockID] = 3;
 
-    blockStrength[Block.hay.blockID] = 6; // 3 times weight 
+    blockStrength[Block.hay.blockID] = 6; // 3 times weight
     blockWeight[Block.hay.blockID] = 2;
-    blockStrength[Block.cloth.blockID] = 6; // 3 times weight 
+    blockStrength[Block.cloth.blockID] = 6; // 3 times weight
     blockWeight[Block.cloth.blockID] = 2;
 
-    blockStrength[Block.hardenedClay.blockID] = 60; // 15 times weight 
+    blockStrength[Block.hardenedClay.blockID] = 60; // 15 times weight
     blockWeight[Block.hardenedClay.blockID] = 4;
 
     /* Hell */
     // Netherrack is special, modified inside the 'run' method
-    //blockStrength[Block.netherrack.blockID] = 16;
-    //blockWeight[Block.netherrack.blockID] = 4;
+    // blockStrength[Block.netherrack.blockID] = 16;
+    // blockWeight[Block.netherrack.blockID] = 4;
     blockStrength[Block.slowSand.blockID] = 4;
     blockWeight[Block.slowSand.blockID] = 4;
     blockStrength[Block.netherBrick.blockID] = 80; // 20 times weight
@@ -193,7 +274,6 @@ public class WorkerPhysicsSweep implements Runnable {
     blockWeight[Block.cobblestoneWall.blockID] = blockWeight[Block.cobblestone.blockID];
     blockStrength[Block.bookShelf.blockID] = blockStrength[Block.planks.blockID];
     blockWeight[Block.bookShelf.blockID] = blockWeight[Block.planks.blockID];
-
   }
 
   public WorkerPhysicsSweep(World w, WorldUpdateState wstate, ChunkCoordIntPair xz, Map<Integer, HashSet<ChunkMarkUpdateTask>> delayedBlockMarkSets) {
@@ -206,14 +286,20 @@ public class WorkerPhysicsSweep implements Runnable {
   @Override
   public void run() {
 
+    // Don't do any physics in the end world, that is too hard for now
+    if (w.provider.dimensionId == 1) return;
+
     try {
 
       Integer tid = (int) Thread.currentThread().getId();
-      //if(tid != 4711) return;
+      // if(tid != 4711) return;
       if (Counters.tick % ticksPerUpdate != 0) return;
-      //int sweep = (Counters.tick/ticksPerUpdate) % numSweeps;
+      // int sweep = (Counters.tick/ticksPerUpdate) % numSweeps;
 
-      /* TODO: these modifications are dangerous inside a server with multiple worlds to be ticked (or maybe not?) */
+      /*
+       * TODO: these modifications are dangerous inside a server with multiple
+       * worlds to be ticked (or maybe not?)
+       */
       if (w.provider.dimensionId == 0) {
         blockStrength[Block.netherrack.blockID] = 16;
         blockWeight[Block.netherrack.blockID] = 4;
@@ -238,7 +324,8 @@ public class WorkerPhysicsSweep implements Runnable {
         int dist = (int) ((wo.posX - x) * (wo.posX - x) + (wo.posZ - z) * (wo.posZ - z));
         if (dist < minDist) minDist = dist;
       }
-      // Only run the physics calculations for chunks within this distance from an observer
+      // Only run the physics calculations for chunks within this distance
+      // from an observer
       if (minDist >= maxChunkDist * maxChunkDist) return;
 
       boolean restartPhysics = false;
@@ -250,7 +337,9 @@ public class WorkerPhysicsSweep implements Runnable {
       }
 
       int timeNow = Counters.tick % clockModulo;
-      /** Number of sound effects we are still allowed to play for this chunk */
+      /**
+       * Number of sound effects we are still allowed to play for this chunk
+       */
       int maxSoundEffects = 5, nSoundEffectsLeft = maxSoundEffects;
       int soundEffectAttempts = 0;
 
@@ -276,7 +365,12 @@ public class WorkerPhysicsSweep implements Runnable {
               tempData.setTempData(dx, y, dz, 0);
               continue;
             }
-            if (!blockDoPhysics[id] && blockDoSimplePhysics[id] == 0) continue; // It's not a proper "simple physics" block
+            if (!blockDoPhysics[id] && blockDoSimplePhysics[id] == 0) continue; // It's
+                                                                                // not
+                                                                                // a
+                                                                                // proper
+                                                                                // "simple physics"
+            // block
 
             /* Get current pressure, increase by our weight */
             int weight = blockWeight[id];
@@ -285,14 +379,14 @@ public class WorkerPhysicsSweep implements Runnable {
             int totalMoved = 0;
             int tmpVal = tempData.getTempData(dx, y, dz);
             int origPressure = (tmpVal & pressureBitsMask);
-            int curPressure = origPressure + weight; //(sweep==0?weight:0);
+            int curPressure = origPressure + weight; // (sweep==0?weight:0);
             int curClock = (tmpVal >> clockBitsStart) & clockBitsMask;
             int curBreak = (tmpVal >> breakBitsStart);
             boolean isFalling = curBreak == counterIsFalling;
 
             if (restartPhysics || tmpVal == 0 || y <= 1 || id == Block.bedrock.blockID) {
               curClock = timeNow;
-              //curPressure = 0;
+              // curPressure = 0;
               curBreak = 0;
             }
 
@@ -301,7 +395,10 @@ public class WorkerPhysicsSweep implements Runnable {
 
             int origClock = curClock;
             int breakThreshold = blockStrength[id];
-            /** Amount of pressure that we will NOT move due to us already starting to break. */
+            /**
+             * Amount of pressure that we will NOT move due to us already
+             * starting to break.
+             */
             int elasticPressure = (breakThreshold / 2) * curBreak;
             elasticPressure = elasticStrengthConstant / (breakAtCounter - 1) * curBreak;
 
@@ -310,9 +407,10 @@ public class WorkerPhysicsSweep implements Runnable {
             /***** debug *****/
             if (Counters.tick % 50 == 0) {
               if (id == Block.hardenedClay.blockID) debugMe = true;
-              //if (id == Block.planks.blockID) debugMe = true;
-              // if(x0 == -1837 && z0==1339) debugMe=true;             
-              //if (id == Block.bedrock.blockID && x0 == 222 && z0 == 119) debugMe = true;
+              // if (id == Block.planks.blockID) debugMe = true;
+              // if(x0 == -1837 && z0==1339) debugMe=true;
+              // if (id == Block.bedrock.blockID && x0 == 222 &&
+              // z0 == 119) debugMe = true;
             }
 
             if (debugMe) {
@@ -320,7 +418,10 @@ public class WorkerPhysicsSweep implements Runnable {
                   + " prevBreak: " + curBreak);
             }
 
-            /* Iterate over all neighbours, update our clock and pressure accordingly */
+            /*
+             * Iterate over all neighbours, update our clock and pressure
+             * accordingly
+             */
             for (int dir = 0; dir < 6; dir++) {
               int x2 = x + dx + Util.dirToDx(dir);
               int dy = Util.dirToDy(dir);
@@ -337,23 +438,20 @@ public class WorkerPhysicsSweep implements Runnable {
                 if (c2 == null) continue;
                 nnId = c2.getBlockID(x2 & 15, y2, z2 & 15);
               }
-              /*if(Fluids.isLiquid[nnId] && dy != 0) {
-                Chunk c2 = ChunkCache.getChunk(w, x2 >> 4, z2 >> 4, false);
-                ChunkTempData tempData2 = ChunkCache.getTempData(w, x2 >> 4, z2 >> 4);
-                int nnTmpVal = tempData2.getTempData(x2, y2, z2);
-                int liquidContent = Fluids.fluid[nnId].getBlockContent(c2, tempData2, x2,y2,z2);
-                if(dy > 0) {
-                  // Note the difference in rounding of the cases where dy>0
-                  int liquidWeight = (liquidContent*6) / BlockFluid.maximumContent;
-                  curPressure += liquidWeight;
-                } else {
-                  int liftingForce = (liquidContent / BlockFluid.maximumContent) * 6;
-                  if(liftingForce > 0) {
-                    curPressure = Math.max(0,curPressure-liftingForce);
-                    if(curPressure < 5000) curClock = timeNow;
-                  }
-                }
-              }*/
+              /*
+               * if(Fluids.isLiquid[nnId] && dy != 0) { Chunk c2 =
+               * ChunkCache.getChunk(w, x2 >> 4, z2 >> 4, false); ChunkTempData
+               * tempData2 = ChunkCache.getTempData(w, x2 >> 4, z2 >> 4); int
+               * nnTmpVal = tempData2.getTempData(x2, y2, z2); int liquidContent
+               * = Fluids.fluid[nnId].getBlockContent(c2, tempData2, x2,y2,z2);
+               * if(dy > 0) { // Note the difference in rounding of the cases
+               * where dy>0 int liquidWeight = (liquidContent*6) /
+               * BlockFluid.maximumContent; curPressure += liquidWeight; } else
+               * { int liftingForce = (liquidContent /
+               * BlockFluid.maximumContent) * 6; if(liftingForce > 0) {
+               * curPressure = Math.max(0,curPressure-liftingForce);
+               * if(curPressure < 5000) curClock = timeNow; } } }
+               */
               if (!blockDoPhysics[nnId]) {
                 if (blockDoSimplePhysics[nnId] == 0) continue;
                 if (blockDoSimplePhysics[nnId] > simplifiedPhysics) continue;
@@ -366,7 +464,10 @@ public class WorkerPhysicsSweep implements Runnable {
               int nnBreak = (nnTmpVal >> breakBitsStart);
               boolean nnIsFalling = nnBreak == counterIsFalling;
 
-              /* Neighbour belongs to a not-updating chunk. Treat neighbour as static object. */
+              /*
+               * Neighbour belongs to a not-updating chunk. Treat neighbour as
+               * static object.
+               */
               if (tempData2.physicsLastTick < Counters.tick - 2 * ticksPerUpdate) {
                 curClock = timeNow;
                 if (nnPressure < curPressure) curPressure = curPressure - (curPressure - nnPressure) / 2;
@@ -380,9 +481,11 @@ public class WorkerPhysicsSweep implements Runnable {
               int nnClockDist = (nnClock <= timeNow ? timeNow - nnClock : timeNow + clockModulo - nnClock);
               ahead = nnClockDist < myClockDist;
 
-              // Update our clock accordingly, but not if one of us is falling but not the other
+              // Update our clock accordingly, but not if one of
+              // us is falling but not the other
               if (nnIsFalling == isFalling) {
-                //                  nnBreak != breakAtCounter && curBreak != breakAtCounter)
+                // nnBreak != breakAtCounter && curBreak !=
+                // breakAtCounter)
                 if (ahead) curClock = nnClock;
                 else nnClock = curClock;
               }
@@ -393,27 +496,39 @@ public class WorkerPhysicsSweep implements Runnable {
               }
               if (simplifiedPhysics > 0) continue;
 
-              /* If we are restarting the physics computations, then just spread the pressures without eliminating them. */
-              if (restartPhysics) { // || tempData.physicsCountdownToAction > 18) {
+              /*
+               * If we are restarting the physics computations, then just spread
+               * the pressures without eliminating them.
+               */
+              if (restartPhysics) { // ||
+                // tempData.physicsCountdownToAction
+                // > 18) {
                 if (nnPressure > curPressure) curPressure = nnPressure;
                 continue;
               }
 
               if (origPressure == 0 && id != Block.bedrock.blockID && y > 1 && nnPressure > curPressure) {
                 /*
-                 * Special case: we have joined a new block with no previous pressure to this area. Copy the pressure
-                 * from a neighbour.
+                 * Special case: we have joined a new block with no previous
+                 * pressure to this area. Copy the pressure from a neighbour.
                  */
                 curPressure = nnPressure;
               } else
-              /* Only allow forces to be transmitted through us if we are not too broken. Forces will prefer to go through less broken blocks. */
+              /*
+               * Only allow forces to be transmitted through us if we are not
+               * too broken. Forces will prefer to go through less broken
+               * blocks.
+               */
               if (nnPressure > curPressure + 2 + elasticPressure) {
                 int toMove;
 
                 toMove = (nnPressure - curPressure - elasticPressure) / 2;
 
                 if ((id == Block.planks.blockID || id == Block.wood.blockID) && nnId == Block.stone.blockID) {
-                  /* Planks and wood are stronger when supporting original stone. To be used as support in mines. */
+                  /*
+                   * Planks and wood are stronger when supporting original
+                   * stone. To be used as support in mines.
+                   */
                   if (toMove > breakThreshold * 3 && curBreak < breakAtCounter) toMove = breakThreshold * 3;
                   totalMoved += toMove / 3;
                   totalMoved = totalMoved / 3;
@@ -444,7 +559,10 @@ public class WorkerPhysicsSweep implements Runnable {
             boolean fallDueToClock = false;
             int timeCheck = (timeNow - timeToFall + clockModulo) % clockModulo;
 
-            /* Compute if we should start falling due no support from ground (no clock) */
+            /*
+             * Compute if we should start falling due no support from ground (no
+             * clock)
+             */
             if (curClock < timeCheck) {
               fallDueToClock = (timeCheck - curClock) < (clockModulo * 4) / 5;
             } else if (curClock > timeCheck) {
@@ -457,7 +575,10 @@ public class WorkerPhysicsSweep implements Runnable {
             boolean doBreak = totalMoved >= breakThreshold;
             if (simplifiedPhysics > 0) doBreak = false;
 
-            /* Prevent all action if the chunk based "counter since start" haven't reached zero */
+            /*
+             * Prevent all action if the chunk based "counter since start"
+             * haven't reached zero
+             */
             if (tempData.physicsCountdownToAction > 0) {
               if (debugMe) System.out.println("No action due to countdown: " + tempData.physicsCountdownToAction);
               doBreak = false;
@@ -466,16 +587,21 @@ public class WorkerPhysicsSweep implements Runnable {
 
             /* Update COUNTERS */
             if (doBreak == false && doFall == false) {
-              //if(sweep == numSweeps-1)
+              // if(sweep == numSweeps-1)
               curBreak = Math.max(curBreak - 1, 0);
             } else if (curBreak < breakAtCounter) {
               curBreak = Math.min(breakAtCounter, curBreak + 1);
-              //curBreak = Math.min(breakAtCounter, curBreak + Math.max(1, Math.min(4,totalMoved / breakThreshold)));
+              // curBreak = Math.min(breakAtCounter, curBreak +
+              // Math.max(1, Math.min(4,totalMoved /
+              // breakThreshold)));
               doBreak = false;
               doFall = false;
               if (debugMe) System.out.println("No break, but new counter: " + curBreak);
             }
-            /* Wait with falling if sufficient time haven't passed since the last fall */
+            /*
+             * Wait with falling if sufficient time haven't passed since the
+             * last fall
+             */
             if (doFall && !fallDueToClock) {
               if (debugMe) System.out.println("Wait with the fallling");
               doFall = false;
@@ -493,21 +619,20 @@ public class WorkerPhysicsSweep implements Runnable {
               int myMeta = c.getBlockMetadata(x0 & 15, y0, z0 & 15);
 
               /*
-              if (y > 4) {
-                System.out.println((doBreak ? "Break" : "Fall") + " @" + Util.xyzString(x + dx, y, z + dz) + " pres:" + curPressure + " moved: " + totalMoved
-                    + " clock: " + curClock + " timeNow: " + timeNow);
-
-                for (int dir = 0; dir < 6; dir++) {
-                  int tX = x + dx + Util.dirToDx(dir);
-                  int tY = y + Util.dirToDy(dir);
-                  int tZ = z + dz + Util.dirToDz(dir);
-                  int tmpId = w.getBlockId(tX, tY, tZ);
-                  ChunkTempData tData = ChunkCache.getTempData(w, tX >> 4, tZ >> 4);
-                  int p = tData.getTempData(tX, tY, tZ);
-                  System.out.println("Neighbour " + Util.xyzString(tX, tY, tZ) + " id:" + tmpId + " pres:" + (p & pressureBitsMask) + " clock: "
-                      + ((p >> clockBitsStart) & clockBitsMask));
-                }
-              }*/
+               * if (y > 4) { System.out.println((doBreak ? "Break" : "Fall") +
+               * " @" + Util.xyzString(x + dx, y, z + dz) + " pres:" +
+               * curPressure + " moved: " + totalMoved + " clock: " + curClock +
+               * " timeNow: " + timeNow);
+               * 
+               * for (int dir = 0; dir < 6; dir++) { int tX = x + dx +
+               * Util.dirToDx(dir); int tY = y + Util.dirToDy(dir); int tZ = z +
+               * dz + Util.dirToDz(dir); int tmpId = w.getBlockId(tX, tY, tZ);
+               * ChunkTempData tData = ChunkCache.getTempData(w, tX >> 4, tZ >>
+               * 4); int p = tData.getTempData(tX, tY, tZ);
+               * System.out.println("Neighbour " + Util.xyzString(tX, tY, tZ) +
+               * " id:" + tmpId + " pres:" + (p & pressureBitsMask) + " clock: "
+               * + ((p >> clockBitsStart) & clockBitsMask)); } }
+               */
 
               /* Break and/or fall */
               ChunkTempData tempData0 = ChunkCache.getTempData(w, x0 >> 4, z0 >> 4);
@@ -543,9 +668,13 @@ public class WorkerPhysicsSweep implements Runnable {
                       if (!blockDoPhysics[idBelowTarget]) break findFreeNeighbour;
                     }
                   }
-                  // We could not find any place to move the block to. So don't move...
-                  // TODO - reset the pressure here so we avoid checking these for lots of terrain? NO
-                  // maybe increase pressure instead to reduce this guys moved forces?
+                  // We could not find any place to move the
+                  // block to. So don't move...
+                  // TODO - reset the pressure here so we
+                  // avoid checking these for lots of terrain?
+                  // NO
+                  // maybe increase pressure instead to reduce
+                  // this guys moved forces?
                   curBreak = 0;
                   break moveBlock;
                 }
@@ -567,12 +696,12 @@ public class WorkerPhysicsSweep implements Runnable {
                   vanillaMutex.release();
                 }
               }
-              if(blockIsFragile[id] && (doBreak || hasLanded)) {            	  
-                  w.playSoundEffect(targetX + 0.5, targetY + 0.5, targetZ + 0.5, "random.break", 1.0F, 1.0F);
-            	  id=0;
-            	  myId=0;
+              if (blockIsFragile[id] && (doBreak || hasLanded)) {
+                w.playSoundEffect(targetX + 0.5, targetY + 0.5, targetZ + 0.5, "random.break", 1.0F, 1.0F);
+                id = 0;
+                myId = 0;
               }
-              
+
               if (doBreak) Counters.brokenBlocks++;
               else Counters.fallenBlocks++;
 
@@ -580,12 +709,16 @@ public class WorkerPhysicsSweep implements Runnable {
               curBreak = counterIsFalling;
               curClock = timeNow;
 
-              // Check if there where any blocks above us that is not handled by the physics. If so, break them into items. 
+              // Check if there where any blocks above us that is
+              // not handled by the physics. If so, break them
+              // into items.
               if (!blockDoPhysics[idAbove] && idAbove != 0 && !Fluids.isLiquid[idAbove] && !Gases.isGas[idAbove]) {
                 vanillaMutex.acquire();
                 Block.blocksList[idAbove].dropBlockAsItem(w, x0, y0 + 1, z0, 0, 0);
                 vanillaMutex.release();
-                // This is done with the wrong 'old meta', but that doesn't matter since we in the worst case just make a mark too much
+                // This is done with the wrong 'old meta', but
+                // that doesn't matter since we in the worst
+                // case just make a mark too much
                 FysiksFun.setBlockIDandMetadata(w, c, x0, y0 + 1, z0, 0, 0, idAbove, 0, delayedBlockMarkSet);
               }
 
@@ -593,8 +726,12 @@ public class WorkerPhysicsSweep implements Runnable {
               if (myId == Block.grass.blockID) myId = Block.dirt.blockID;
 
               if (Block.blocksList[targetId] instanceof ITileEntityProvider) {
-                /* Find the corresponding tile entity... and move it too */
-                //TileEntity entity = targetChunk.getChunkBlockTileEntity(targetX & 15, targetY, targetZ & 15);
+                /*
+                 * Find the corresponding tile entity... and move it too
+                 */
+                // TileEntity entity =
+                // targetChunk.getChunkBlockTileEntity(targetX &
+                // 15, targetY, targetZ & 15);
                 targetChunk.removeChunkBlockTileEntity(targetX & 15, targetY, targetZ & 15);
                 System.out.println("Crushing a tile entity!");
               }
@@ -602,7 +739,9 @@ public class WorkerPhysicsSweep implements Runnable {
               if (debugMe)
                 System.out.println("  tar:" + Util.xyzString(targetX, targetY, targetZ) + " update clock:" + curClock + " count:" + curBreak + " pres:" + 0);
 
-              /* Assign the original ID/meta to the target position */
+              /*
+               * Assign the original ID/meta to the target position
+               */
               ChunkTempData targetTempData = ChunkCache.getTempData(w, targetX >> 4, targetZ >> 4);
               int targetMeta = targetChunk.getBlockMetadata(targetX & 15, targetY, targetZ & 15);
               int targetTmp = tempData.getTempData(targetX, targetY, targetZ);
@@ -610,7 +749,10 @@ public class WorkerPhysicsSweep implements Runnable {
               int newPressure = curPressure + fallForce * (weight > 0 ? weight : 0);
               tempData.setTempData(targetX, targetY, targetZ, newPressure | (curClock << clockBitsStart) | (curBreak << breakBitsStart));
 
-              /* If the target block is not empty, a gas, or a liquid; then crush it and make a drop of it */
+              /*
+               * If the target block is not empty, a gas, or a liquid; then
+               * crush it and make a drop of it
+               */
               if (targetId != 0 && !Fluids.isLiquid[targetId] && !Gases.isGas[targetId]) {
                 boolean doDrop = false;
 
@@ -629,12 +771,19 @@ public class WorkerPhysicsSweep implements Runnable {
                 vanillaMutex.release();
                 targetId = 0;
               }
-              /* From here on targetId must be zero, or a liquid, or a gas */
+              /*
+               * From here on targetId must be zero, or a liquid, or a gas
+               */
 
-              /* Update the corresponding TileEntity instance if the moved block was a tile entity type of block */
+              /*
+               * Update the corresponding TileEntity instance if the moved block
+               * was a tile entity type of block
+               */
               if (Block.blocksList[myId] instanceof ITileEntityProvider) {
                 vanillaMutex.acquire();
-                /* Find the corresponding tile entity... and move it too */
+                /*
+                 * Find the corresponding tile entity... and move it too
+                 */
                 TileEntity entity = c.getChunkBlockTileEntity(x0 & 15, y0, z0 & 15);
                 System.out.println("Attempting to move a tileentity");
                 if (entity == null) {
@@ -656,34 +805,44 @@ public class WorkerPhysicsSweep implements Runnable {
                 useSlowSetBlock = true;
               }
 
-              /* Swap our block with the target, and update target entity if applicable  */
+              /*
+               * Swap our block with the target, and update target entity if
+               * applicable
+               */
               if (useSlowSetBlock) {
                 vanillaMutex.acquire();
-                //BlockFluid.preventSetBlockLiquidFlowover=true; // Not needed, breakBlock is not called!  
+                // BlockFluid.preventSetBlockLiquidFlowover=true;
+                // // Not needed, breakBlock is not called!
                 c.setBlockIDWithMetadata(x0 & 15, y0, z0 & 15, targetId, targetMeta);
                 delayedBlockMarkSet.add(new ChunkMarkUpdateTask(w, x0, y0, z0, myId, myMeta));
-                //BlockFluid.preventSetBlockLiquidFlowover=false;
+                // BlockFluid.preventSetBlockLiquidFlowover=false;
                 vanillaMutex.release();
               } else {
-                // No need to use preventSetBlockLiquidFlowover here
+                // No need to use preventSetBlockLiquidFlowover
+                // here
                 FysiksFun.setBlockIDandMetadata(w, c, x0, y0, z0, targetId, targetMeta, myId, myMeta, delayedBlockMarkSet);
               }
               tempData0.setTempData(x0, y0, z0, targetTmp);
 
-              /* Finally, after moving. If block above seems to be a tree, then allow it to be triggered early. */
+              /*
+               * Finally, after moving. If block above seems to be a tree, then
+               * allow it to be triggered early.
+               */
               if (idAbove == Block.wood.blockID && myId == Block.wood.blockID && idBelow != Block.wood.blockID) {
                 Trees.checkAndTickTree(w, x0, z0);
               }
 
               continue updateAllBlocks;
             }
-            // Update block with new values (will not be reached by blocks that have successfully moved)
+            // Update block with new values (will not be reached by
+            // blocks that have successfully moved)
             if (debugMe) System.out.println("  " + Util.xyzString(x0, y0, z0) + " update clock:" + curClock + " count:" + curBreak + " pres:" + curPressure);
             tempData.setTempData(dx, y, dz, curPressure | (curClock << clockBitsStart) | (curBreak << breakBitsStart));
           }
         }
       }
-      // Finally, update the "last tick" counter for this chunk. Important to do this last.
+      // Finally, update the "last tick" counter for this chunk. Important
+      // to do this last.
       tempData.physicsLastTick = Counters.tick;
     } catch (Exception e) {
       System.out.println("BlockPhysicsSweeperThread got an exception" + e);

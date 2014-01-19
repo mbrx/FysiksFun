@@ -55,9 +55,9 @@ public class Fluids {
 		// Register new blocks
 		flowingWater = new BlockWater(Block.waterMoving.blockID,
 				Material.water, Block.waterStill.blockID,
-				Block.waterMoving.blockID, "water");
+				Block.waterMoving.blockID, "water",Block.waterMoving);
 		stillWater = new BlockWater(Block.waterStill.blockID, Material.water,
-				Block.waterStill.blockID, Block.waterMoving.blockID, "water");
+				Block.waterStill.blockID, Block.waterMoving.blockID, "water",Block.waterStill);
 		flowingWater.setLiquidUpdateRate(1); // was: 10);
 		flowingWater.setTickRandomly(false);
 		stillWater.setLiquidUpdateRate(1); // was: 10);
@@ -77,9 +77,9 @@ public class Fluids {
 
 		// Register new blocks
 		flowingLava = new BlockLava(Block.lavaMoving.blockID, Material.lava,
-				Block.lavaStill.blockID, Block.lavaMoving.blockID, "lava");
+				Block.lavaStill.blockID, Block.lavaMoving.blockID, "lava",Block.lavaMoving);
 		stillLava = new BlockLava(Block.lavaStill.blockID, Material.lava,
-				Block.lavaStill.blockID, Block.lavaMoving.blockID, "lava");
+				Block.lavaStill.blockID, Block.lavaMoving.blockID, "lava",Block.lavaStill);
 		flowingLava.setLiquidUpdateRate(2);
 		stillLava.setLiquidUpdateRate(2);
 		flowingLava.setTickRandomly(false);

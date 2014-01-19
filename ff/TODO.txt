@@ -1,12 +1,10 @@
+Fuel/Oil flammability (explode?)
+
 Needs to be verified
 --------------------
 
-What happens to other dimensions?
-Anchors in the END 
 Does the mod work when only using tree felling. 
 Small liquid movements can go through plants?
-
-What happens to volcanos in hell?
 
 Verified Bugs
 -------------
@@ -26,7 +24,6 @@ Lava (or other heat sources) that boils water have a chance to turn into cobbles
 (Speed of grass growing, now halved)
 
 Length of volacano activity
-Volcanoes only producing stone/obsidian so they don't collapse as much?
 
 Optimisation
 ------------
