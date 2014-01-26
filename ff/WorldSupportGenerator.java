@@ -3,6 +3,9 @@ package mbrx.ff;
 import java.util.Random;
 import java.util.logging.Level;
 
+import mbrx.ff.fluids.Fluids;
+import mbrx.ff.util.Counters;
+import mbrx.ff.util.Util;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockOre;
 import net.minecraft.world.World;

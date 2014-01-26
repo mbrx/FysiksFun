@@ -8,17 +8,25 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Future;
 
+import mbrx.ff.util.ChunkCache;
+import mbrx.ff.util.ChunkMarkUpdateTask;
+import mbrx.ff.util.ChunkMarkUpdater;
+import mbrx.ff.util.ChunkTempData;
 import net.minecraft.world.ChunkCoordIntPair;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.Chunk;
 
 /**
- * Provides a multithreaded server for ticking all blocks at given layers of a world in sweeps that cycle back.
+ * Provides a multithreaded server for ticking all blocks at given layers of a
+ * world in sweeps that cycle back.
  */
 public class MPWorldTicker {
 
   static class WorldUpdateState {
-    /** Counts the number of steps that subdivides what parts of the world is investigated */
+    /**
+     * Counts the number of steps that subdivides what parts of the world is
+     * investigated
+     */
     int sweepStepCounter;
     /** Counts the total number of sweeps done on the world */
     int sweepCounter;
@@ -27,8 +35,8 @@ public class MPWorldTicker {
   private static Hashtable<World, WorldUpdateState> worldUpdateState = new Hashtable<World, WorldUpdateState>();
 
   /**
-   * Performs multithreaded calls to all update functions for all modules of FF, for every loaded chunk in the given
-   * world.
+   * Performs multithreaded calls to all update functions for all modules of FF,
+   * for every loaded chunk in the given world.
    */
   public static void doUpdateChunks(World w) {
 
@@ -36,13 +44,10 @@ public class MPWorldTicker {
     Map<Integer, HashSet<ChunkMarkUpdateTask>> delayedBlockMarkSets = Collections.synchronizedMap(new Hashtable<Integer, HashSet<ChunkMarkUpdateTask>>());
 
     // Schedule jobs, first the odd coordinates, then the even coordinates
-
     for (int oddeven = 0; oddeven < 2; oddeven++) {
       List<Future> toWaitFor = new ArrayList<Future>();
       for (Object o : w.activeChunkSet) {
         ChunkCoordIntPair xz = (ChunkCoordIntPair) o;
-        // System.out.println("chunk: "+xz.chunkXPos+" "+xz.chunkZPos+"&1 = "+((xz.chunkXPos + xz.chunkZPos)
-        // &1)+" oddeven:"+oddeven);
         if (((xz.chunkXPos + xz.chunkZPos) & 1) == oddeven) {
           // {
           Chunk chunk = ChunkCache.getChunk(w, xz.chunkXPos, xz.chunkZPos, true);
@@ -70,8 +75,9 @@ public class MPWorldTicker {
   }
 
   /**
-   * Performs the main ticks for all functions requiring block ticks. by circulating over all layers in multiple ticks.
-   * Ie, going down from layer 255 to bedrock and then starting over.
+   * Performs the main ticks for all functions requiring block ticks. by
+   * circulating over all layers in multiple ticks. Ie, going down from layer
+   * 255 to bedrock and then starting over.
    */
   public static void doBlockSweeps(World w) {
 
@@ -90,7 +96,8 @@ public class MPWorldTicker {
     ma = Math.min(255, (sweep + 1) * yPerStep);
     if (sweep == 0) wstate.sweepCounter++;
 
-    // Make sure all chunks/tempData are loaded... if this is not done first we may have problems since the loading
+    // Make sure all chunks/tempData are loaded... if this is not done first we
+    // may have problems since the loading
     // functions are not thread safe
     for (Object o : w.activeChunkSet) {
       ChunkCoordIntPair xz = (ChunkCoordIntPair) o;
@@ -107,15 +114,9 @@ public class MPWorldTicker {
       for (Object o : w.activeChunkSet) {
         ChunkCoordIntPair xz = (ChunkCoordIntPair) o;
         if (((xz.chunkXPos + xz.chunkZPos) & 1) == oddeven) {
-          Runnable liquidWorker = new WorkerLiquidSweep(w, wstate, xz, mi, ma, delayedBlockMarkSets);
-          Future f = FysiksFun.executor.submit(liquidWorker);
+          Runnable physicsWorker = new WorkerPhysicsSweep(w, wstate, xz, delayedBlockMarkSets);
+          Future f = FysiksFun.executor.submit(physicsWorker);
           toWaitFor.add(f);
-
-          if (FysiksFun.settings.doPhysics) {
-            Runnable physicsWorker = new WorkerPhysicsSweep(w, wstate, xz, delayedBlockMarkSets);
-            f = FysiksFun.executor.submit(physicsWorker);
-            toWaitFor.add(f);
-          }
         }
       }
       for (Future f : toWaitFor) {

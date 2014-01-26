@@ -122,4 +122,17 @@ v0.5.3
     * Disabled volcanos in hell, they cannot form stone there - hence will only flood the world
     
 v0.5.4
-    * Buildcraft fluids handled correctly, working pumps and textures. 
+    * Buildcraft fluids handled correctly, working pumps and textures.
+    * Introduced turbines that can generate buildcraft energy from flowing liquids (intake at top, outlet bottom). 
+      Wood very inefficient, Iron scale power with higher pressures (until it breaks), 
+      Gold highest efficiency and redstone controllable, Diamond highest robustness to pressures and survives lava (usable in nether!).
+    * Introduced gas turbines that can generate buildcraft energy from gas flows (intake bottom, outlet top).
+      All gas turbines require nether quartz (lots of it), which you can get by running a quary in the nether using diamond generators and lava flows. 
+      Iron is basic gas turbin, breaks at medium pressure. Gold is controllable, more efficent and breaks at high pressure.
+      Diamond is slightly less efficient than gold, but will never break.  
+    * Introduced liquid sensors (not final) that gives a signal output with "value" zero or 2-15. A lower value will only "reach" a lower number of blocks before it needs to be repeated. 
+    * Note: pumping liquids with BC pumps+grates back into generators for infinite energy count as cheating... don't do that.
+    * Fixed compatability bug with IC2-experimental and ProjectRed.
+       
+v0.5.5
+    * Changed order in which physics calculcations are done, might lower the naturally occurring random stress forces. 

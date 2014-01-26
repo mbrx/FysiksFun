@@ -68,7 +68,7 @@ public class FFCoreClassTransformer implements IClassTransformer {
         }
 
         InsnList replacedInstructions = new InsnList();
-        replacedInstructions.add(new IntInsnNode(Opcodes.SIPUSH, 10000));
+        replacedInstructions.add(new IntInsnNode(Opcodes.SIPUSH, 5000));
         m.instructions.insertBefore(currentNode, replacedInstructions);
         m.instructions.remove(currentNode);
         System.out.println("FF finished patching net.minecraft.network.MemoryConnection/processReadPackets to allow more packages per tick");

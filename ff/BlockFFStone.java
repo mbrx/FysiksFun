@@ -1,5 +1,8 @@
 package mbrx.ff;
 
+import mbrx.ff.util.ChunkCache;
+import mbrx.ff.util.Counters;
+import mbrx.ff.util.Util;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockStone;
 import net.minecraft.world.World;
@@ -24,7 +27,7 @@ public class BlockFFStone extends BlockStone {
   public void breakBlock(World w, int x, int y, int z, int oldId, int oldMetaData) {
     
     if(overrideShatter) return;
-    if(Util.smear(Counters.tick/300)%373+y < 74) return;
+    if(Util.smear(Counters.tick/600)%473+y < 74) return;
     if(maxShatterDepth <= 0) return;
     --maxShatterDepth;
     

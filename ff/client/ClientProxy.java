@@ -21,7 +21,7 @@ package mbrx.ff.client;
 import net.minecraftforge.client.MinecraftForgeClient;
 import net.minecraftforge.common.MinecraftForge;
 import mbrx.ff.CommonProxy;
-import mbrx.ff.Sounds;
+import mbrx.ff.FFSounds;
 
 public class ClientProxy extends CommonProxy {
 
@@ -35,6 +35,6 @@ public class ClientProxy extends CommonProxy {
 
   @Override
   public void registerSounds() {
-    MinecraftForge.EVENT_BUS.register(new Sounds());
+    MinecraftForge.EVENT_BUS.register(new FFSounds());
   }
 }

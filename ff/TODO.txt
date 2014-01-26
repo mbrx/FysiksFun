@@ -1,4 +1,27 @@
-Fuel/Oil flammability (explode?)
+Test: use no randomization in order in which blocks are visited for physics
+
+Test: are copper and tin produced in the world?
+
+Only play one volcano sound per volcano, but continousĺy when active. Store in external datastructure. (How do I know when it is finished?)
+
+
+trees with branches are falling
+lower push from water (especially with small difference. Offset value?)
+Special rule to avoid crops from beeing destroyed by small amounts of water?
+Randomness if a gas block moves up (to spread out the evaporation a bit more)
+Write on forum that more memory is needed (through the launcher)
+
+Steam should be able to exit through an open door?!
+Modify speed that crops grow by increasing it slightly?
+
+Reduce the constant noise of falling stones... (base on distance to observer?)
+
+Reduce the amount of stone shattering (longer time periods?)
+
+
+Create hysterizis in the "overpressure" for gases exploding turbines?
+
+Smaller evaporations underground to avoid creating steam? (1/4 chance?)
 
 Needs to be verified
 --------------------
@@ -34,9 +57,27 @@ Move WorkerLiquidSweep and WorkerPhysicsSweep into one single worker, reduces nu
 
 Features
 --------
+Block for sensing liquid pressures, output in variable redstone power 
+Block for sensing gas pressures, output in variable redstone power
+Fuel/Oil flammability (explode?)
+Create streams of falling lava in the nether
+Water should add pressure (weight) to objects
+
 Stone that breaks should become cobblestone?
-Sound effect when convertin stone to cobblestone
-Sound effect when blocks successfully break/fall
+
+New behaviour for the default ore-generator, probabilities depend on "zone". Ores drop in veins. 
+Create a "difficulty" for different zones that affect creature spawn/hostility 
+New gases: smoke, vaporized redstone
+Smoke: should be emitted from BC engines and from furnaces
+Vaporized redstone can be observed by <some block> to generate <doped block>...
+Aluminium: Can be melted for liquid aluminion-oxide
+Liquid aluminium oxide: can be turned to liquid aluminium by "electrodes" and lots of BC power
+Liquid aluminium: turns back to oxide when exposed to air (but not other gases), slowly
+Liquid aluminium + water: turns to aluminium block. Can be melted for ingots. 
+
+Gas: oxygen, makes almost anything burn... consumed gradually by fires
+Produce oxygen by "electrode" + BC-power in water
+Steel by a similar process, needs raw oxygen to react?
 
 Stone that breaks may have a chance to turn neighbouring stone into cobblestone (propagating breaks, for caveins!)
 Create "temporary" observers inside a volcanoe that keeps them ticking for 200 ticks (10 seconds) OR

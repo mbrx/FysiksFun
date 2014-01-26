@@ -1,6 +1,9 @@
 package mbrx.ff;
 
 import cpw.mods.fml.common.registry.GameRegistry;
+import mbrx.ff.fluids.Fluids;
+import mbrx.ff.util.ChunkCache;
+import mbrx.ff.util.Counters;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockLeaves;
 import net.minecraft.world.ChunkCoordIntPair;
@@ -20,7 +23,8 @@ public class ExtraBlockBehaviours {
       Block.blocksList[leavesId]=null;
       BlockFFLeaves ffleaves = new BlockFFLeaves(leavesId,leaves);
       Block.blocksList[leavesId]=ffleaves;
-      GameRegistry.registerBlock(ffleaves, "modified-leaves");
+      //System.out.println("Attempting to register leaf: "+ffleaves.blockID);
+      GameRegistry.registerBlock(ffleaves, "modified-"+leaves.getUnlocalizedName());
     }
     
     Block stone = Block.stone;
