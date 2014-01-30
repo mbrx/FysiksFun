@@ -23,6 +23,7 @@ import mbrx.ff.util.ChunkCache;
 import mbrx.ff.util.ChunkMarkUpdateTask;
 import mbrx.ff.util.ChunkTempData;
 import mbrx.ff.util.Counters;
+import mbrx.ff.util.ObjectPool;
 import mbrx.ff.util.Util;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockBed;
@@ -30,8 +31,10 @@ import net.minecraft.block.BlockBreakable;
 import net.minecraft.block.BlockContainer;
 import net.minecraft.block.BlockDoor;
 import net.minecraft.block.BlockFence;
+import net.minecraft.block.BlockLog;
 import net.minecraft.block.BlockOre;
 import net.minecraft.block.BlockStairs;
+import net.minecraft.block.BlockWood;
 import net.minecraft.block.ITileEntityProvider;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.item.EntityItem;
@@ -88,12 +91,24 @@ public class WorkerPhysicsSweep implements Runnable {
   private static final int                   breakBitsMask           = 0x07f;
   private static final int                   breakAtCounter          = 30;
   private static final int                   counterIsFalling        = 127;
+  private static int                         forceWhileBreaking = 2;
+
+  /* Use of the break counter:
+   * Value 0: The block is stable, can move at most breakThreshold pressures.
+   * Value 1 - breakAtCounter-1: The block is not yet breaking, but might soon. 
+   *   Can move atmost breakThreshold pressure, but needs the pressure to exceed elasticPressure
+   *   before it starts moving. 
+   * Value breakAtCounter - counterIsFalling-1: The block IS breaking (attempting to move), and at the same time
+   *   transmitting breakThreshold+forceWhileBreaking*(curBreak-breakAtCounter), so it smoothly steps up how
+   *   much force is transmitted. 
+   */
+  
   public static int                          maxChunkDist            = 48;
   private static final int                   countdownToAction       = 20;
   private static final int                   fallForce               = 20;
   // private static final int numSweeps = 4;
-  private static int                         elasticStrengthConstant = 240;
-
+  private static int                         elasticStrengthConstant = 80; //240;
+  
   public static void postInit(Configuration physicsRuleConfig) {
 
     /* Setup a default value for all blocks */
@@ -148,7 +163,9 @@ public class WorkerPhysicsSweep implements Runnable {
   }
 
   private static void setupDefaultPhysicsRules() {
-    for (int i = 0; i < 4096; i++) {
+    int rubWood = Util.findBlockIdFromName("blockRubWood");
+    
+    for (int i = 1; i < 4096; i++) {
       Block b = Block.blocksList[i];
       blockStrength[i] = 16;
       blockWeight[i] = 4;
@@ -183,6 +200,12 @@ public class WorkerPhysicsSweep implements Runnable {
         blockWeight[i] = 3;
         blockDoPhysics[i] = true;
         blockIsFragile[i] = true;
+      } else if(b instanceof BlockLog || i == rubWood) {
+        blockStrength[i] = 80; // 20 times weight
+        blockWeight[i] = 4;
+      } else if(b instanceof BlockWood) { // Poor name in vanilla VC, this is correct!
+        blockStrength[i] = 30; // 15 times weight
+        blockWeight[i] = 2;        
       }
       if (b instanceof BlockBreakable) blockIsFragile[i] = true;
 
@@ -220,10 +243,6 @@ public class WorkerPhysicsSweep implements Runnable {
     blockStrength[Block.brick.blockID] = 60; // 15 times weight
     blockWeight[Block.brick.blockID] = 4;
 
-    blockStrength[Block.wood.blockID] = 80; // 20 times weight
-    blockWeight[Block.wood.blockID] = 4;
-    blockStrength[Block.planks.blockID] = 30; // 15 times weight
-    blockWeight[Block.planks.blockID] = 2;
 
     blockDoPhysics[Block.thinGlass.blockID] = true;
     blockIsFragile[Block.thinGlass.blockID] = true;
@@ -280,6 +299,7 @@ public class WorkerPhysicsSweep implements Runnable {
     blockStrength[Block.netherBrick.blockID] = 120; // 30 times weight
     blockWeight[Block.netherBrick.blockID] = 4;
 
+    /* IC2 specifics */
     /* Misc furniture */
 
     /* Aliases */
@@ -356,7 +376,7 @@ public class WorkerPhysicsSweep implements Runnable {
       boolean doFireTicks = (staggeredTime % liquidUpdateRate) == 0;
       boolean doGasTicks = (staggeredTime % liquidUpdateRate) == 0;
       if (!doDetailedPhysics && !doLiquidTicks) return;
-
+      
       boolean restartPhysics = false;
       if (doDetailedPhysics) {
         if (tempData.solidBlockPhysicsLastTick < Counters.tick - ticksPerUpdate) {
@@ -399,7 +419,7 @@ public class WorkerPhysicsSweep implements Runnable {
           for (int dzTmp = 0; dzTmp < 16; dzTmp++) {
             int dz = (dzTmp + oz) & 15;
             int x0 = x + dx, y0 = y, z0 = z + dz;
-
+            
             int id = 0;
             if (ebs != null) {
               id = ebs.getExtBlockID(dx, y & 15, dz);
@@ -428,11 +448,11 @@ public class WorkerPhysicsSweep implements Runnable {
             if (doLiquidTicks && Fluids.isLiquid[id] && FysiksFun.settings.doFluids) {
               BlockFFFluid b = Fluids.asFluid[id];
               b.updateTickSafe(w, c, tempData, x + dx, y, z + dz, FysiksFun.rand, wstate.sweepCounter, delayedBlockMarkSet);
-              if (FysiksFun.rand.nextInt(5 * b.liquidUpdateRate) == 0) b.updateRandomWalk(w, c, tempData, x + dx, y, z + dz, FysiksFun.rand);
-              if (FysiksFun.rand.nextInt(10) == 0) b.expensiveTick(w, c, tempData, x + dx, y, z + dz, FysiksFun.rand);
+              //if (FysiksFun.rand.nextInt(5 * b.liquidUpdateRate) == 0) b.updateRandomWalk(w, c, tempData, x + dx, y, z + dz, FysiksFun.rand);
+              //if (FysiksFun.rand.nextInt(10) == 0) b.expensiveTick(w, c, tempData, x + dx, y, z + dz, FysiksFun.rand);
               fluidCount++;
             }
-
+            
             /* For gases */
             if (doGasTicks && Gases.isGas[id] && FysiksFun.settings.doGases) {
               BlockFFGas b = (BlockFFGas) Block.blocksList[id];
@@ -492,10 +512,10 @@ public class WorkerPhysicsSweep implements Runnable {
     boolean debugMe = false;
 
     /***** debug *****/
-    //if (Counters.tick % 50 == 0) {
+    if (Counters.tick % 50 == 0) {
       if (id == Block.hardenedClay.blockID) debugMe = true;
-    //}
-      if(x+dx == -676 && z+dz == 541) debugMe=true;
+    }
+    //if(x+dx == -676 && z+dz == 541) debugMe=true;
 
     if (debugMe) {
       System.out.println("id:" + id + "@" + Util.xyzString(x + dx, y, z + dz) + " origPressure: " + origPressure + " prevClock: " + curClock + " prevBreak: "
@@ -894,7 +914,9 @@ public class WorkerPhysicsSweep implements Runnable {
     if (useSlowSetBlock) {
       vanillaMutex.acquire();
       c.setBlockIDWithMetadata(x0 & 15, y0, z0 & 15, targetId, targetMeta);
-      delayedBlockMarkSet.add(new ChunkMarkUpdateTask(w, x0, y0, z0, id, myMeta));
+      ChunkMarkUpdateTask task=ObjectPool.poolChunkMarkUpdateTask.getObject();
+      task.set(w, x0, y0, z0, id, myMeta);
+      delayedBlockMarkSet.add(task); //new ChunkMarkUpdateTask(w, x0, y0, z0, id, myMeta));
       vanillaMutex.release();
     } else {
       FysiksFun.setBlockIDandMetadata(w, c, x0, y0, z0, targetId, targetMeta, id, myMeta, delayedBlockMarkSet);

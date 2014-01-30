@@ -61,6 +61,7 @@ import mbrx.ff.util.ChunkCache;
 import mbrx.ff.util.ChunkMarkUpdateTask;
 import mbrx.ff.util.ChunkMarkUpdater;
 import mbrx.ff.util.Counters;
+import mbrx.ff.util.ObjectPool;
 import mbrx.ff.util.Settings;
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
@@ -123,6 +124,8 @@ public class FysiksFun {
   //@PreInit
   @EventHandler
   public void preInit(FMLPreInitializationEvent event) {
+    ObjectPool.init();
+    
     logger = event.getModLog();
     config = new Configuration(event.getSuggestedConfigurationFile());
     config.load();
@@ -187,6 +190,8 @@ public class FysiksFun {
     if(hasBuildcraft)
       BlockTurbine.init();
     BlockFFSensor.init();
+    // Must be after all other blocks (that may be related to trees) have been created
+    Trees.initTreePartClassification();
   }
 
   /**
@@ -312,13 +317,13 @@ public class FysiksFun {
    */
   public static void doWorldTick(World w) {
 
-    if (settings.doAnimalAI) AnimalAIRewriter.rewriteAnimalAIs(w);
-    if (settings.doGases) Gases.doWorldTick(w);
-    if (settings.doTreeFalling) Trees.doTick(w);
+    // Fast forward the time until rain stops/starts
+    int rainTime = w.getWorldInfo().getRainTime();
+    if (rainTime > settings.weatherSpeed - 1) w.getWorldInfo().setRainTime(rainTime + 1 - settings.weatherSpeed);
 
+    // Build list of observers used by chunk marking
     if (!w.isRemote) {
       List allEntities = w.loadedEntityList;
-
       for (Object o : allEntities) {
         if (o instanceof Player) {
           Entity e = (Entity) o;
@@ -329,20 +334,15 @@ public class FysiksFun {
           observer.posZ = e.posZ;
           observers.add(observer);
         }
-        /* Kill all squids! */
-        /*
-         * if (o instanceof EntitySquid) { EntitySquid e = (EntitySquid) o;
-         * if(e.posY < 60) { System.out.println("Killing a squid: "+e);
-         * w.removeEntity(e); } }
-         */
       }
 
     }
 
-    // System.out.println("Players found: "+observers.size());
+    if (settings.doAnimalAI) AnimalAIRewriter.rewriteAnimalAIs(w);
+    if (settings.doGases) Gases.doWorldTick(w);
+    if (settings.doTreeFalling) Trees.doTick(w);
 
-    int rainTime = w.getWorldInfo().getRainTime();
-    if (rainTime > settings.weatherSpeed - 1) w.getWorldInfo().setRainTime(rainTime + 1 - settings.weatherSpeed);
+    // System.out.println("Players found: "+observers.size());
 
     Wind.doTick(w);
     MPWorldTicker.doBlockSweeps(w);
@@ -385,7 +385,12 @@ public class FysiksFun {
     }
 
     if (delayedBlockMarkSet == null) ChunkMarkUpdater.scheduleBlockMark(w, x, y, z, oldId, oldMeta);
-    else delayedBlockMarkSet.add(new ChunkMarkUpdateTask(w, x, y, z, oldId, oldMeta));
+    else {
+      ChunkMarkUpdateTask task=ObjectPool.poolChunkMarkUpdateTask.getObject();
+      task.set(w, x, y, z, oldId, oldMeta);
+      delayedBlockMarkSet.add(task);
+      //delayedBlockMarkSet.add(new ChunkMarkUpdateTask(w, x, y, z, oldId, oldMeta));
+    }
 
   }
 

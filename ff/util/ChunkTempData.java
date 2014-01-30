@@ -44,7 +44,7 @@ public class ChunkTempData {
     
     //tempData = new byte[16 * 16 * 256 * 4];
     tempData = new int[16 * 16 * 256];
-    coordinate = new CoordinateWXYZ(w, x, y, z);
+    coordinate = new CoordinateWXYZ(w, x, y, z); // Goes outside object pool since the tempData is permanent
     for (int dy = 0; dy < 256; dy++)
       for (int dz = 0; dz < 16; dz++)
         for (int dx = 0; dx < 16; dx++)

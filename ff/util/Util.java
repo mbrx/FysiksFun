@@ -1,12 +1,16 @@
 package mbrx.ff.util;
 
+import net.minecraft.block.Block;
 
 public class Util {
   final static int dx[] = { +1, 0, -1, 0, 0, 0 };
   final static int dy[] = { 0, 0, 0, 0, +1, -1 };
   final static int dz[] = { 0, +1, 0, -1, 0, 0 };
 
-  /* Directions are numbers from 0 - 6 that represents the connectivity of the MC world. 4 and 5 corresponds to down/up */
+  /*
+   * Directions are numbers from 0 - 6 that represents the connectivity of the
+   * MC world. 4 and 5 corresponds to down/up
+   */
   public static final int dirToDx(final int d) {
     return dx[d];
   }
@@ -41,5 +45,15 @@ public class Util {
     x = ((x >> 16) ^ x) * 0x45d9f3b;
     x = ((x >> 16) ^ x);
     return x;
+  }
+
+  public static int findBlockIdFromName(String name) {
+    for (int i = 0; i < 4096; i++) {
+      Block b = Block.blocksList[i];
+      if (i == 0 || b == null || b.blockID == 0) continue;
+      String thisName = b.getUnlocalizedName().replace("tile.", "");
+      if (thisName.equals(name)) return i;
+    }
+    return 0;
   }
 }

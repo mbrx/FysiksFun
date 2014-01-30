@@ -1,6 +1,13 @@
-Test: use no randomization in order in which blocks are visited for physics
-
+Too many sapplings are coming from falling trees. Use c.setBlockID instead of w.setBlockID
+Sound effect for falling trees?
+Special trees from IC2 are not falling in the proper way. 
 Test: are copper and tin produced in the world?
+Reduce memory waste?
+Make cobblestone a bit weaker again?
+Special wood (rubber wood) do  not count as wood?
+Special leaves dropping the wrong type of sapplings?
+Make "liquid construction foam" into a proper fluid?
+
 
 Only play one volcano sound per volcano, but continousĺy when active. Store in external datastructure. (How do I know when it is finished?)
 

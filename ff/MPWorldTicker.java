@@ -12,6 +12,7 @@ import mbrx.ff.util.ChunkCache;
 import mbrx.ff.util.ChunkMarkUpdateTask;
 import mbrx.ff.util.ChunkMarkUpdater;
 import mbrx.ff.util.ChunkTempData;
+import mbrx.ff.util.ObjectPool;
 import net.minecraft.world.ChunkCoordIntPair;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.Chunk;
@@ -70,7 +71,9 @@ public class MPWorldTicker {
     for (HashSet<ChunkMarkUpdateTask> delayedBlockMarkSet : delayedBlockMarkSets.values()) {
       for (ChunkMarkUpdateTask task : delayedBlockMarkSet) {
         ChunkMarkUpdater.scheduleBlockMark(task.getWorld(), task.getX(), task.getY(), task.getZ(), task.getOrigId(), task.getOrigMeta());
+        ObjectPool.poolChunkMarkUpdateTask.releaseObject(task);
       }
+      delayedBlockMarkSet.clear();
     }
   }
 
@@ -132,8 +135,11 @@ public class MPWorldTicker {
     for (HashSet<ChunkMarkUpdateTask> delayedBlockMarkSet : delayedBlockMarkSets.values()) {
       for (ChunkMarkUpdateTask coord : delayedBlockMarkSet) {
         ChunkMarkUpdater.scheduleBlockMarkSafe(coord.getWorld(), coord.getX(), coord.getY(), coord.getZ(), coord.getOrigId(), coord.getOrigMeta());
+        ObjectPool.poolChunkMarkUpdateTask.releaseObject(coord);
       }
+      delayedBlockMarkSet.clear();
     }
+    delayedBlockMarkSets.clear();
   }
 
 }

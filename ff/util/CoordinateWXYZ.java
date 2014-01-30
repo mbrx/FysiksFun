@@ -13,6 +13,9 @@ public class CoordinateWXYZ {
   public int getY() { return y; }
   public int getZ() { return z; }
 
+  /** Doesn't initialize private fields - you must use the 'set' function after creating objects. */
+  public CoordinateWXYZ() {
+  }
   
   public CoordinateWXYZ(World w, int x, int y, int z) {
     this.w = w;

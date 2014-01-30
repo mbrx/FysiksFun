@@ -3,11 +3,15 @@ package mbrx.ff.ecology;
 import java.util.Iterator;
 import java.util.LinkedList;
 
+import mbrx.ff.BlockFFLeaves;
 import mbrx.ff.FysiksFun;
 import mbrx.ff.fluids.Fluids;
 import mbrx.ff.util.ChunkCache;
 import mbrx.ff.util.Counters;
+import mbrx.ff.util.Util;
 import net.minecraft.block.Block;
+import net.minecraft.block.BlockLeaves;
+import net.minecraft.block.BlockLog;
 import net.minecraft.block.BlockSapling;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.Chunk;
@@ -18,6 +22,29 @@ public class Trees {
   public static LinkedList<Trees> fallingTrees = new LinkedList<Trees>();
   public static LinkedList<Trees> landedTrees  = new LinkedList<Trees>();
 
+  enum TreeCategory {
+    NOT_TREE, TRUNK_PART, LEAF_PART
+  };
+
+  public static TreeCategory treeCategory[] = new TreeCategory[4096];
+
+  /** Creates the list of which blocks correspond to different parts of trees */
+  public static void initTreePartClassification() {
+    for (int i = 0; i < 4096; i++) {
+      treeCategory[i] = TreeCategory.NOT_TREE;
+      Block b = Block.blocksList[i];
+      if (i == 0 || b == null) continue;
+      if (b instanceof BlockLog) treeCategory[i] = TreeCategory.TRUNK_PART;
+      if (b instanceof BlockLeaves || b instanceof BlockFFLeaves) treeCategory[i] = TreeCategory.LEAF_PART;
+    }
+    int rubWood = Util.findBlockIdFromName("blockRubWood");
+    if (rubWood != 0) treeCategory[rubWood] = TreeCategory.TRUNK_PART;
+  }
+
+  /**
+   * Represents a part of a tree that is stored in a structure while the tree is
+   * falling
+   */
   public static class TreeBlock {
     int dx, dy, dz, id, meta;
 
@@ -30,8 +57,8 @@ public class Trees {
     }
 
     /*
-     * Trees always fall around the Z-axis (for now) so that the order of the loops in which they are placed into the
-     * world appears correct.
+     * Trees always fall around the Z-axis (for now) so that the order of the
+     * loops in which they are placed into the world appears correct.
      */
     public int AngleToDx(double angle, int dir) {
       switch (dir) {
@@ -92,8 +119,8 @@ public class Trees {
   private int                  fallingDirection;
 
   /**
-   * Creates and extracts a tree with it's footprint (XZ) center at the given coordinates and footprint bottom at given
-   * Y
+   * Creates and extracts a tree with it's footprint (XZ) center at the given
+   * coordinates and footprint bottom at given Y
    */
   public Trees(World w2, int x, int y, int z) {
     this.w = w2;
@@ -109,10 +136,9 @@ public class Trees {
 
     IChunkProvider chunkProvider = w.getChunkProvider();
     if (!chunkProvider.chunkExists(x >> 4, z >> 4)) return;
-    int chunkX = x >> 4, chunkZ = z >> 4;
-    Chunk c = w.getChunkFromChunkCoords(chunkX, chunkZ);
+    Chunk c = ChunkCache.getChunk(w2, x>>4, z>>4, false);
+    if(c == null) return;
 
-    // blocks.add(new TreeBlock(0, 0, 0, w.getBlockId(x, y, z), w.getBlockMetadata(x, y, z)));
     blocks.add(new TreeBlock(0, 0, 0, c.getBlockID(x & 15, y, z & 15), c.getBlockMetadata(x & 15, y, z & 15)));
     int treeType = w.getBlockMetadata(x, y, z);
 
@@ -143,23 +169,19 @@ public class Trees {
               }
               if (alreadyContains) continue;
               int x2 = x + dx2, y2 = y + dy2, z2 = z + dz2;
-              // Check to see if we are still in same chunk, othewise grab new chunk
-              if (x2 >> 4 != chunkX || z2 >> 4 != chunkZ) {
-                if (!chunkProvider.chunkExists(x2 >> 4, z2 >> 4)) continue; // Skip this block if we reach outside the
-                                                                            // chunk boundary of the map
-                chunkX = x2 >> 4;
-                chunkZ = z2 >> 4;
-                c = w.getChunkFromChunkCoords(chunkX, chunkZ);
-              }
+              c = ChunkCache.getChunk(w,x2>>4,z2>>4,false);
+              if(c == null) continue;
 
               int id2 = c.getBlockID(x2 & 15, y2, z2 & 15);
               int meta2 = c.getBlockMetadata(x2 & 15, y2, z2 & 15);
 
-              if (id2 == Block.leaves.blockID) {
+              if(treeCategory[id2] == TreeCategory.LEAF_PART) {
                 if (firstLeaf == -1) firstLeaf = meta2;
                 // else if(meta2 != firstLeaf) continue;
               } else if (meta2 != treeType) continue;
-              if ((!allowFoilage && id2 == Block.wood.blockID) || (allowFoilage && id2 == Block.leaves.blockID))
+              // if ((!allowFoilage && id2 == Block.wood.blockID) ||
+              // (allowFoilage && id2 == Block.leaves.blockID))
+              if ((!allowFoilage && treeCategory[id2] == TreeCategory.TRUNK_PART) || (allowFoilage && treeCategory[id2] == TreeCategory.LEAF_PART))
                 blocksToAdd.add(new TreeBlock(dx2, dy2, dz2, id2, meta2));
             }
       }
@@ -197,7 +219,7 @@ public class Trees {
 
   public static void doTrees(World w, int cx, int cz) {
 
-    for (int tries = 0; tries < 8; tries++) {
+    for (int tries = 0; tries < 16; tries++) {
       int dx = (FysiksFun.rand.nextInt(16) + tries) % 16;
       int dz = (FysiksFun.rand.nextInt(16) + Counters.tick) % 16;
       int x = cx + dx, z = cz + dz;
@@ -205,12 +227,17 @@ public class Trees {
     }
   }
 
-  /** Tests if a tree can be found at the given XZ coordinates, and ticks it if so. */
+  /**
+   * Tests if a tree can be found at the given XZ coordinates, and ticks it if
+   * so.
+   */
   public static void checkAndTickTree(World w, int x, int z) {
     int logCount = 0;
     int nLeaves = 0;
-    // woodDown represents how many wood blocks straight down that we have walked.
-    // If bigger than a threshold we are on the main trunk, and should now not cross over leaves anymore
+    // woodDown represents how many wood blocks straight down that we have
+    // walked.
+    // If bigger than a threshold we are on the main trunk, and should now not
+    // cross over leaves anymore
     int woodDown = 0;
 
     boolean foundTree = false;
@@ -219,22 +246,28 @@ public class Trees {
       Chunk c = ChunkCache.getChunk(w, x >> 4, z >> 4, false);
       if (c == null) continue;
       int id = c.getBlockID(x & 15, treeYStart, z & 15);
-      if (id == Block.wood.blockID) logCount++;
+      //if (id == Block.wood.blockID) logCount++;
+      if((treeCategory[id] == TreeCategory.TRUNK_PART)) logCount++;
       else logCount = 0;
       if (logCount >= 2) {
         foundTree = true;
         break;
       }
-      if (id == 0 || id == Block.leaves.blockID || id == Block.wood.blockID || (Block.blocksList[id] != null && !Block.blocksList[id].isOpaqueCube())) continue;
+      if(id == 0) continue;
+      else if(treeCategory[id] != TreeCategory.NOT_TREE) continue;
+      else if(Block.blocksList[id] != null && !Block.blocksList[id].isOpaqueCube()) continue;
+      //if (id == 0 || id == Block.leaves.blockID || id == Block.wood.blockID || (Block.blocksList[id] != null && !Block.blocksList[id].isOpaqueCube())) continue;
       else break;
     }
     if (!foundTree) return;
     int y, steps;
-    // tries += 4; // Reduce the CPU cost by doing fewer tries whenever we found a potential tree...
+    // tries += 4; // Reduce the CPU cost by doing fewer tries whenever we found
+    // a potential tree...
 
     /*
-     * Make a random walk that always takes us "down" as much as possible". This serves two purposes: (1) Takes us
-     * from branches into the main trunk and (2) moves us down to the bottom of the tree (even if there are parts of a
+     * Make a random walk that always takes us "down" as much as possible". This
+     * serves two purposes: (1) Takes us from branches into the main trunk and
+     * (2) moves us down to the bottom of the tree (even if there are parts of a
      * large trunk that are cut out).
      */
     int woodX = x, woodY = treeYStart, woodZ = z;
@@ -243,14 +276,14 @@ public class Trees {
       Chunk c = ChunkCache.getChunk(w, x >> 4, z >> 4, false);
       if (c == null) continue;
       int id = c.getBlockID(x & 15, y - 1, z & 15);
-      if (id == Block.wood.blockID) {
+      if(treeCategory[id] == TreeCategory.TRUNK_PART) {
         y--;
         woodX = x;
         woodY = y;
         woodZ = z;
         woodDown++;
         continue;
-      } else if (id == Block.leaves.blockID && woodDown < 3) {
+      } else if(treeCategory[id] == TreeCategory.LEAF_PART && woodDown < 3) { 
         y--;
         nLeaves++;
       }
@@ -262,16 +295,21 @@ public class Trees {
         Chunk c2 = ChunkCache.getChunk(w, x2 >> 4, z2 >> 4, false);
         if (c2 == null) continue;
         id = c2.getBlockID(x2 & 15, y, z2 & 15);
-        if (id == Block.leaves.blockID) nLeaves++;
-        if (id == Block.wood.blockID || id == Block.leaves.blockID) {
+        if(treeCategory[id] == TreeCategory.LEAF_PART) nLeaves++;
+        //if (id == Block.leaves.blockID) nLeaves++;        
+        //if (id == Block.wood.blockID || id == Block.leaves.blockID) {
+        if(treeCategory[id] != TreeCategory.NOT_TREE) {
           x += dx2;
           z += dz2;
         }
       }
     }
     // x=woodX; y=woodY; z=woodZ;
-    if (w.getBlockId(x, y, z) == Block.wood.blockID && (woodDown >= 2 || nLeaves > 0)) {
-      // We have found a local minima (Y wise) that is wood. It "must" be the bottom of a tree.
+    int finalId = w.getBlockId(x, y, z);
+    if(treeCategory[finalId] == TreeCategory.TRUNK_PART && (woodDown >= 2 || nLeaves > 0)) {
+    //if (w.getBlockId(x, y, z) == Block.wood.blockID && (woodDown >= 2 || nLeaves > 0)) {
+      // We have found a local minima (Y wise) that is wood. It "must" be the
+      // bottom of a tree.
       tickTree(w, x, y, z);
       Counters.treeCounter++;
     }
@@ -285,7 +323,8 @@ public class Trees {
     // Trees hanging in the air should fall in a semi-realistic manner.
     if (blockBelowId == 0 || (Block.blocksList[blockBelowId] != null && !Block.blocksList[blockBelowId].isOpaqueCube())) {
       /**
-       * TODO add a sound effect when trees are falling (is this dobe client-side?)
+       * TODO add a sound effect when trees are falling (is this dobe
+       * client-side?)
        */
       if (FysiksFun.settings.treesFall) fellTree(w, x, y, z);
       return;
@@ -325,7 +364,8 @@ public class Trees {
         for (dx = -4; dx <= 4 && killFoilage; dx++)
           for (dz = -4; dz <= 4 && killFoilage; dz++) {
             int id = w.getBlockId(x + dx, y + dy, z + dz);
-            if (id == Block.leaves.blockID || (id == Block.wood.blockID && dx != 0 && dz != 0)) {
+            if(treeCategory[id] == TreeCategory.LEAF_PART || (treeCategory[id] == TreeCategory.TRUNK_PART && dx != 0 && dz != 0)) {
+              //if (id == Block.leaves.blockID || (id == Block.wood.blockID && dx != 0 && dz != 0)) {
               w.setBlock(x + dx, y + dy, z + dz, 0, 0, 0x02);
               killFoilage = false;
               Counters.treeKill++;
@@ -337,7 +377,8 @@ public class Trees {
         // remaining trunk of the tree
         for (dy = 20; dy >= 0; dy--) {
           int id = w.getBlockId(x, y + dy, z);
-          if (id == Block.wood.blockID) {
+          if(treeCategory[id] == TreeCategory.TRUNK_PART) {
+          //if (id == Block.wood.blockID) {
             w.setBlock(x, y + dy, z, 0, 0, 0x02);
             killFoilage = false;
             break;
@@ -358,11 +399,12 @@ public class Trees {
             // int id = c.getBlockID((x+dx)&15, y2, (z+dz)>>4);
             int id = w.getBlockId(x + dx, y2, z + dz);
             if (id == 0) continue;
-            else if (y2 == y + 5) break; // Can't grow here, ground starts above our starting level.
+            else if (y2 == y + 5) break; // Can't grow here, ground starts above
+                                         // our starting level.
             else if (Block.blocksList[id].canSustainPlant(w, x + dx, y2, z + dz, ForgeDirection.UP, (BlockSapling) Block.sapling)) {
               int myMeta = w.getBlockMetadata(x, y, z);
               FysiksFun.setBlockWithMetadataAndPriority(w, x + dx, y2 + 1, z + dz, Block.sapling.blockID, myMeta & 3, 0);
-              //System.out.println("Planted sapling on top of :" + id);
+              // System.out.println("Planted sapling on top of :" + id);
               tries = 10;
               break findTreeToPlant;
             } else break;
@@ -406,7 +448,7 @@ public class Trees {
 
     /* First, remove all of the blocks from the world, using the old angle */
     final double stepsToFall = 120.0;
-    
+
     double oldAngle = fallingAngle * (Math.PI / stepsToFall);
 
     int dx, dy, dz;
@@ -420,16 +462,19 @@ public class Trees {
 
     double newAngle = (fallingAngle + 1) * (Math.PI / stepsToFall);
     /*
-     * Check if the new falling angle would cause a WOOD block to be placed within some other block
+     * Check if the new falling angle would cause a WOOD block to be placed
+     * within some other block
      */
     boolean hasCollided = false;
     for (TreeBlock b : blocks) {
-      if (b.id != Block.wood.blockID) continue;
+      if(treeCategory[b.id] != TreeCategory.TRUNK_PART) continue;
+      //if (b.id != Block.wood.blockID) continue;
       dx = b.AngleToDx(newAngle, fallingDirection);
       dy = b.AngleToDy(newAngle, fallingDirection);
       dz = b.AngleToDz(newAngle, fallingDirection);
       int id = w.getBlockId(centerX + dx, centerY + dy, centerZ + dz);
-      if (id != 0 && id != Block.leaves.blockID && Block.blocksList[id] != null && Block.blocksList[id].isOpaqueCube()) {
+      if (id != 0 && treeCategory[id] != TreeCategory.LEAF_PART && Block.blocksList[id] != null && Block.blocksList[id].isOpaqueCube()) {
+        //if (id != 0 && id != Block.leaves.blockID && Block.blocksList[id] != null && Block.blocksList[id].isOpaqueCube()) {
         hasCollided = true;
         break;
       }
@@ -439,12 +484,14 @@ public class Trees {
     if (!hasCollided) {
       boolean canFall = true;
       for (TreeBlock b : blocks) {
-        if (b.id != Block.wood.blockID) continue;
+        if(treeCategory[b.id] != TreeCategory.TRUNK_PART) continue;
+        //if (b.id != Block.wood.blockID) continue;
         dx = b.AngleToDx(newAngle, fallingDirection);
         dy = b.AngleToDy(newAngle, fallingDirection);
         dz = b.AngleToDz(newAngle, fallingDirection);
         int id = w.getBlockId(centerX + dx, centerY + dy - 1, centerZ + dz);
-        if (id != 0 && id != Block.leaves.blockID && Block.blocksList[id] != null && Block.blocksList[id].isOpaqueCube()) {
+        if (id != 0 && treeCategory[id] != TreeCategory.LEAF_PART && Block.blocksList[id] != null && Block.blocksList[id].isOpaqueCube()) {
+          //if (id != 0 && id != Block.leaves.blockID && Block.blocksList[id] != null && Block.blocksList[id].isOpaqueCube()) {
           canFall = false;
           break;
         }
@@ -455,8 +502,9 @@ public class Trees {
     if (fallingAngle >= 160) hasCollided = true;
 
     /*
-     * Now, if placing the tree with the new angle ended up with a collision. place it back with the old angle and
-     * remove us from the list of falling trees
+     * Now, if placing the tree with the new angle ended up with a collision.
+     * place it back with the old angle and remove us from the list of falling
+     * trees
      */
     if (hasCollided) {
       placeTreeInWorld(oldAngle);
@@ -468,14 +516,17 @@ public class Trees {
   }
 
   /*
-   * int dy, dx, dz; for (dy = 0; dy < maxDy; dy++) { for (dx = minDx; dx <= maxDx; dx++) for (dz = minDz; dz <= maxDz;
-   * dz++) { TreeBlock t = null; for (TreeBlock t2 : blocksToFall) { if (t2.dx == dx && t2.dy == dy && t2.dz == dz) { t
-   * = t2; break; } } if (t == null) continue;
+   * int dy, dx, dz; for (dy = 0; dy < maxDy; dy++) { for (dx = minDx; dx <=
+   * maxDx; dx++) for (dz = minDz; dz <= maxDz; dz++) { TreeBlock t = null; for
+   * (TreeBlock t2 : blocksToFall) { if (t2.dx == dx && t2.dy == dy && t2.dz ==
+   * dz) { t = t2; break; } } if (t == null) continue;
    * 
-   * int metaHere = w.getBlockMetadata(x + dx, y + dy, z + dz); w.setBlock(x + dx, y + dy, z + dz, 0, 0, 0x02); for (int
-   * fall = 0; fall < 256; fall++) { int id2 = w.getBlockId(x - dy, y + dx - fall - 1, z + dz); if (id2 != 0 && id2 !=
-   * Block.leaves.blockID) { // Foliage that lands under other wood pieces will be crushed by // the above wood pieces
-   * w.setBlock(x - dy, y + dx - fall, z + dz, t.id, t.meta, 3); break; } } } }
+   * int metaHere = w.getBlockMetadata(x + dx, y + dy, z + dz); w.setBlock(x +
+   * dx, y + dy, z + dz, 0, 0, 0x02); for (int fall = 0; fall < 256; fall++) {
+   * int id2 = w.getBlockId(x - dy, y + dx - fall - 1, z + dz); if (id2 != 0 &&
+   * id2 != Block.leaves.blockID) { // Foliage that lands under other wood
+   * pieces will be crushed by // the above wood pieces w.setBlock(x - dy, y +
+   * dx - fall, z + dz, t.id, t.meta, 3); break; } } } }
    */
 
   private void placeTreeInWorld(double angle) {
@@ -483,7 +534,8 @@ public class Trees {
     int dx, dy, dz;
     /* First place the leaves on air */
     for (TreeBlock b : blocks) {
-      if (b.id != Block.leaves.blockID) continue;
+      if(treeCategory[b.id] != TreeCategory.LEAF_PART) continue;
+      //if (b.id != Block.leaves.blockID) continue;
       dx = b.AngleToDx(angle, fallingDirection);
       dy = b.AngleToDy(angle, fallingDirection);
       dz = b.AngleToDz(angle, fallingDirection);
@@ -493,12 +545,13 @@ public class Trees {
     }
     /* Second, place the wood blocks */
     for (TreeBlock b : blocks) {
-      if (b.id != Block.wood.blockID) continue;
+      if(treeCategory[b.id] != TreeCategory.TRUNK_PART) continue;
+      //if (b.id != Block.wood.blockID) continue;
       dx = b.AngleToDx(angle, fallingDirection);
       dy = b.AngleToDy(angle, fallingDirection);
       dz = b.AngleToDz(angle, fallingDirection);
       int id = w.getBlockId(centerX + dx, centerY + dy, centerZ + dz);
-      if (id == 0 || id == Block.leaves.blockID || (Block.blocksList[id] != null && !Block.blocksList[id].isOpaqueCube())) {
+      if (id == 0 || treeCategory[b.id] == TreeCategory.LEAF_PART || (Block.blocksList[id] != null && !Block.blocksList[id].isOpaqueCube())) {
         int newMeta = b.meta;
         if (fallingAngle > 30) {
           if (fallingDirection == 0 || fallingDirection == 1) newMeta ^= 0x04;

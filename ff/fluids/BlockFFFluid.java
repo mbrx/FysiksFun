@@ -15,6 +15,7 @@ import mbrx.ff.util.ChunkMarkUpdateTask;
 import mbrx.ff.util.ChunkMarkUpdater;
 import mbrx.ff.util.ChunkTempData;
 import mbrx.ff.util.Counters;
+import mbrx.ff.util.ObjectPool;
 import mbrx.ff.util.Util;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockFlowing;
@@ -305,7 +306,13 @@ public class BlockFFFluid extends BlockFlowing {
 
     if (oldId != newId || oldMetaData != newMetaData) {
       if (delayedBlockMarkSet == null) ChunkMarkUpdater.scheduleBlockMark(w, x, y, z, oldId, oldActualMetadata);
-      else delayedBlockMarkSet.add(new ChunkMarkUpdateTask(w, x, y, z, oldId, oldActualMetadata));
+      else {
+        ChunkMarkUpdateTask task=ObjectPool.poolChunkMarkUpdateTask.getObject();
+        task.set(w, x, y, z, oldId, oldActualMetadata);
+        delayedBlockMarkSet.add(task);
+        //delayedBlockMarkSet.add(new ChunkMarkUpdateTask(w, x, y, z, oldId, oldActualMetadata));
+      }
+      
     }
   }
 
@@ -568,16 +575,8 @@ public class BlockFFFluid extends BlockFlowing {
                           idA = world.getBlockId(x0 + 0, y0 - 1, z0 + dZ);
                           if (idA != 0 && !Fluids.isLiquid[idA]) erodeBlock(world, x0 + 0, y0 - 1, z0 + dZ);
                         }
-
-                        // setBlockContent(world, x0, y0-1, z0, 0);
-                      } /*
-                         * else System.out.println("Cnt="+cnt+" so no erosion");
-                         */
-                    } /*
-                       * else
-                       * System.out.println("Block below cannot erode id="+id0b
-                       * );
-                       */
+                      } 
+                    } 
                   }
                 }
               }

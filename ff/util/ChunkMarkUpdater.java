@@ -46,7 +46,7 @@ public class ChunkMarkUpdater {
   private static MarkOriginalValue                          tmpMarkTask            = new MarkOriginalValue(-1, -1);
   private static ArrayList<ChunkMarkUpdater>                tmpChunkBlockMarkList  = new ArrayList<ChunkMarkUpdater>();
 
-  private static ArrayDeque<CoordinateWXYZ>                 coordinateWXYZFreePool = new ArrayDeque<CoordinateWXYZ>();
+  //private static ArrayDeque<CoordinateWXYZ>                 coordinateWXYZFreePool = new ArrayDeque<CoordinateWXYZ>();
 
   /**
    * A queue of CML objects containing all chunks that have blocks that should be marked
@@ -123,10 +123,15 @@ public class ChunkMarkUpdater {
     if (mov == null) {
       /* Block had not been scheduled before, schedule it and note the original value for it */
       mov = new MarkOriginalValue(originalId, originalMeta);
-      CoordinateWXYZ coord = coordinateWXYZFreePool.poll();
+      
+      CoordinateWXYZ coord = ObjectPool.poolCoordinateWXYZ.getObject();
+      coord.set(w, x, y, z);
+      
+      /*CoordinateWXYZ coord = coordinateWXYZFreePool.poll();
       if (coord == null) {
         coord = new CoordinateWXYZ(w, x, y, z);
-      } else coord.set(w, x, y, z);
+      } else coord.set(w, x, y, z);*/
+      
       cml.markList.put(coord, mov);
       Counters.chunkMarkScheduled++;
     } else {
@@ -171,6 +176,8 @@ public class ChunkMarkUpdater {
     if (Counters.tick % 5 != 0) return;
     ticksLeft += FysiksFun.settings.maxUpdatesPerTick;
 
+    //System.out.println("markChunkFreePool: "+markChunkFreePool.size()+"ht: "+markChunkHashtable.size()+" q: "+markChunkQueue.size());
+    
     try {
       mutex.acquire();
     } catch (InterruptedException e) {
@@ -194,6 +201,7 @@ public class ChunkMarkUpdater {
         if (ticksLeft < FysiksFun.settings.maxUpdatesPerTick / 2) break;
 
         cml = iterator.next();
+        
         boolean doSend = false;
         for (WorldObserver o : FysiksFun.observers) {
           if (o.w != cml.coordinate.getWorld()) continue;
@@ -257,26 +265,13 @@ public class ChunkMarkUpdater {
 
     Counters.markQueueCounter += collateral;
 
-    // This swapping back/forth of markList is to try to catch a concurrent modification error...
-    /*try {
-      mutex.acquire();
-    } catch (InterruptedException e) {
-      e.printStackTrace();
-    }*/
-    HashMap<CoordinateWXYZ, MarkOriginalValue>        origMarkList;
-    origMarkList=markList;
-    markList=null;
-    for (CoordinateWXYZ coord : origMarkList.keySet()) {
+    for (CoordinateWXYZ coord : markList.keySet()) { //origMarkList.keySet()) {
       coord.getWorld().markBlockForUpdate(coord.getX(), coord.getY(), coord.getZ());
       coord.set(null, 0, 0, 0);
       collateral++;
       Counters.markQueueCounter++;
-    }
-    markList=origMarkList;
-    // Until here
-    //mutex.release();
-    
-    coordinateWXYZFreePool.addAll(markList.keySet());
+    }    
+    ObjectPool.poolCoordinateWXYZ.releaseAll(markList.keySet());
     markList.clear();
 
     if (collateral < 64) return collateral / 8 + 1;
