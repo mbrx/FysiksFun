@@ -22,12 +22,19 @@ public class BlockFFStone extends BlockStone {
     return FysiksFun.settings.canPlaceStone;
   }
 
-  /** Called when this block is OVERWRITTEN by another world.setBlock */
-  @Override
-  public void breakBlock(World w, int x, int y, int z, int oldId, int oldMetaData) {
+  
+  /**
+   * Called right before the block is destroyed by a player.  Args: world, x, y, z, metaData
+   */
+  public void onBlockDestroyedByPlayer(World w, int x, int y, int z, int meta) {
+    shatterStone(w,x,y,z,blockID,meta);
+  }
+  /*public void breakBlock(World w, int x, int y, int z, int oldId, int oldMetaData) {    
+  }*/
+  public void shatterStone(World w, int x, int y, int z, int oldId, int oldMetaData) {
     
     if(overrideShatter) return;
-    if(Util.smear(Counters.tick/600)%473+y < 74) return;
+    if(Util.smear(Counters.tick/600)%4173+y < 64) return;
     if(maxShatterDepth <= 0) return;
     --maxShatterDepth;
     
@@ -43,6 +50,9 @@ public class BlockFFStone extends BlockStone {
       if(id == blockID) {
         // TODO - thread safety here????
         FysiksFun.setBlockWithMetadataAndPriority(w, x1, y1, z1, Block.cobblestone.blockID, 0, 0);
+        shatterStone(w,x1,y1,z1,blockID,-1);
+
+        WorkerPhysicsSweep.addPressure(w,x1,y1,z1,10000);
         float volume = 0.75F + FysiksFun.rand.nextFloat()*0.5F;
         float pitch = 1.0F;    
         w.playSoundEffect(x1 + 0.5, y1 + 0.5, z1 + 0.5, "fysiksfun:rubble", volume, pitch);

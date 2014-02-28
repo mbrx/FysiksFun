@@ -17,6 +17,7 @@ import net.minecraft.world.chunk.Chunk;
 public class ExtraBlockBehaviours {
 
   public static void postInit() {
+    if(FysiksFun.settings.leavesAreSoft) {
     for (int leavesId = 0; leavesId < 4096; leavesId++) {
       if (!(Block.blocksList[leavesId] instanceof BlockLeaves)) continue;
       BlockLeaves leaves = (BlockLeaves) Block.blocksList[leavesId];
@@ -26,13 +27,16 @@ public class ExtraBlockBehaviours {
       //System.out.println("Attempting to register leaf: "+ffleaves.blockID);
       GameRegistry.registerBlock(ffleaves, "modified-"+leaves.getUnlocalizedName());
     }
+    }
     
+    if(FysiksFun.settings.stonesShatter) {
     Block stone = Block.stone;
     Block.blocksList[stone.blockID] = null;
     BlockFFStone ffstone = new BlockFFStone(stone.blockID);
     ffstone.setHardness(1.5F).setResistance(10.0F).setStepSound(Block.soundStoneFootstep).setUnlocalizedName("stone").setTextureName("stone");    
     Block.blocksList[stone.blockID] = ffstone;
     GameRegistry.registerBlock(ffstone, "modified-stone");
+    }
   }
 
   public static void doChunkTick(World world, ChunkCoordIntPair xz) {
@@ -46,7 +50,10 @@ public class ExtraBlockBehaviours {
       int y = FysiksFun.rand.nextInt(200) + 1;
       int id = c.getBlockID(dx, y, dz);
       int idAbove = c.getBlockID(dx, y + 1, dz);
-      if (id == Block.grass.blockID && Fluids.stillWater.isSameLiquid(idAbove)) {
+      boolean waterAbove = false;
+      if(FysiksFun.settings.doFluids) waterAbove = Fluids.stillWater.isSameLiquid(idAbove);
+      else waterAbove = idAbove == Block.waterMoving.blockID || idAbove == Block.waterStill.blockID;
+      if (id == Block.grass.blockID && waterAbove) {
         FysiksFun.setBlockWithMetadataAndPriority(world, x0 + dx, y, z0 + dz, Block.dirt.blockID, 0, 0);
       } else if (FysiksFun.rand.nextInt(5000) < FysiksFun.settings.clayToDirtChance && id == Block.dirt.blockID && Fluids.stillWater.isSameLiquid(idAbove)) {
 

@@ -218,7 +218,7 @@ public class Trees {
   }
 
   public static void doTrees(World w, int cx, int cz) {
-
+    
     for (int tries = 0; tries < 16; tries++) {
       int dx = (FysiksFun.rand.nextInt(16) + tries) % 16;
       int dz = (FysiksFun.rand.nextInt(16) + Counters.tick) % 16;
@@ -418,6 +418,11 @@ public class Trees {
   /** Makes a tree fall to the ground in a somewhat semi-realistic manner */
   private synchronized static void fellTree(final World w, final int x, final int y, final int z) {
 
+    float volume = 1.0F;
+    float pitch = 1.0F;       
+    w.playSoundEffect(x + 0.5, y + 0.5, z + 0.5, "fysiksfun:timber", volume, pitch);
+    
+    
     int dx, dz;
     for (dx = -1; dx <= 1; dx++)
       for (dz = -1; dz <= 1; dz++) {
@@ -443,11 +448,11 @@ public class Trees {
   }
 
   private void tickFallingTree() {
-    // if (++tickCounter % 3 != 0) return;
+    if (++tickCounter % 2 != 0) return;
     // System.out.println("A tree is falling, does it make any sound?");
 
     /* First, remove all of the blocks from the world, using the old angle */
-    final double stepsToFall = 120.0;
+    final double stepsToFall = 200.0;
 
     double oldAngle = fallingAngle * (Math.PI / stepsToFall);
 

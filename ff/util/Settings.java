@@ -77,6 +77,8 @@ public class Settings {
 
   public boolean canPlaceStone;
 
+  public boolean stonesShatter;
+  public boolean leavesAreSoft;
 
 
   public void loadFromConfig(Configuration config) {
@@ -96,17 +98,17 @@ public class Settings {
     doTreeFalling = config.get(categoryModules, "enable-tree-felling", "true", "Enables trees that fall when cut down").getBoolean(true);
     doAnimalAI = config.get(categoryModules, "enable-new-animal-ai", "true", "Rewrites the AI/game rules for animals to eat, breed and die").getBoolean(true);
     doRain = config.get(categoryModules, "enable-rain", "true", "Enables rainfall as partial liquids").getBoolean(true);
-    doEvaporation = config.get(categoryModules, "enable-evaporation", "true", "Enables dynamically generated volcanoes").getBoolean(true);
+    doEvaporation = config.get(categoryModules, "enable-evaporation", "true", "Enables water to evaporate from oceans and deep underground, and humidity to fill up mid-range underground (eg. for wells)").getBoolean(true);
     doErosions = config.get(categoryModules, "enable-erosion", "true", "Enables erosion of terrain based on water flows (not working)").getBoolean(true);
     doFluids = config.get(categoryModules, "enable-fluid-dynamics", "true", "Enables fluid dynamics. Most features require this.").getBoolean(true);
     doGases = config.get(categoryModules, "enable-gases", "true", "Enables dynamic gases.").getBoolean(true);
     doNetherfun = config.get(categoryModules, "enable-netherfun", "true", "Enables Fun in the nether").getBoolean(true);
     doExtraFire = config.get(categoryModules, "extra-fires", "true", "Increases the danger and spread of large fires").getBoolean(true);
     doTreeConsumptions = config.get(categoryModules, "enable-dynamic-trees", "true", "Makes trees consume water or die").getBoolean(true);
-    doPhysics = config.get(categoryModules, "enable-physics", "true", "Enables physics of all solid blocks. Experimental.").getBoolean(true);
+    doPhysics = config.get(categoryModules, "enable-physics", "true", "Enables physics of all solid blocks. ").getBoolean(true);
     doEnergy = config.get(categoryModules, "enable-energy", "true",
         "Allows construction of energy producing machines (turbines) based on liquids&gases. Requires buildcraft.").getBoolean(true);
-
+    
     maxUpdatesPerTick = config
         .get(
             categoryGeneric,
@@ -203,6 +205,10 @@ public class Settings {
 
     canPlaceStone = config.get(categoryGeneric, "can-place-stone", "false", "If ordinary smooth stone can be placed by user", Property.Type.BOOLEAN)
         .getBoolean(false);
+    stonesShatter = config.get(categoryGeneric, "stone-shatters", "true", "Stones that break may create a chain reaction of shattering stones, potentially causing cave-ins", Property.Type.BOOLEAN)
+        .getBoolean(true);
+    stonesShatter = config.get(categoryGeneric, "leaves-are-soft", "true", "Makes leaves act somewhat like spider webs, lettings the player move through at reduced speed. (Avoids exploit by building leaf bridges)", Property.Type.BOOLEAN)
+        .getBoolean(true);
 
   }
 

@@ -1055,7 +1055,7 @@ public class BlockFFFluid extends BlockFlowing {
     }
 
     if (vec.lengthVector() > 0.0D && entity.isPushedByWater()) {
-      double d1 = 0.005d; // 0.014D;
+      double d1 = 0.0025d; // 0.014D;
       entity.motionX += vec.xCoord * d1;
       entity.motionY += vec.yCoord * d1;
       entity.motionZ += vec.zCoord * d1;

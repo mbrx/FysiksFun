@@ -176,7 +176,7 @@ public class BlockFFGas extends Block {
       int chanceToCondense = 1;
       if (y >= 64 + worldYOffset) chanceToCondense += (int) (w.rainingStrength * 100.0);
       if (y >= 100 + worldYOffset) chanceToCondense += 5 * (y - 100 - worldYOffset);
-      if (FysiksFun.rand.nextInt(12345) < chanceToCondense) {
+      if (FysiksFun.rand.nextInt(2123) < chanceToCondense) {
         // if (y >= 120+worldYOffset && (FysiksFun.rand.nextDoubl * 10.0 <
         // w.rainingStrength || FysiksFun.rand.nextInt(250) == 0)) {
         /* Block condensate into water */

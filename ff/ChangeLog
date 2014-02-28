@@ -137,3 +137,9 @@ v0.5.4
 v0.5.5
     * Changed physics calculations, reduces random forces in the ground and gives more stable structures.
     * Fixed bug with wrong sapplings dropped from IC2 rubbertrees. 
+    * New sound effects
+    * Fixed crash when playing without fluid physics
+    
+v0.5.6
+    * Added option "leaves-are-soft", disable if you want vanilla leaf behaviours. 
+        

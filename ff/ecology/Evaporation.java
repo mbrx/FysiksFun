@@ -180,13 +180,13 @@ public class Evaporation {
     // Net effect of this is that water is created!
 
     // DEBUG
-    // if (FysiksFun.rand.nextInt(31) != 0) return;
+    if (FysiksFun.rand.nextInt(2) != 0) return;
 
-    // TODO - let the biome affect this?
+    // TODO - let the biome effect the underground humidification.
 
     Chunk c = w.getChunkFromChunkCoords(x >> 4, z >> 4);
 
-    for (int tries = 0; tries < 3; tries++) {
+    for (int tries = 0; tries < 1; tries++) {
       int dx = FysiksFun.rand.nextInt(16);
       int dz = FysiksFun.rand.nextInt(16);
       int y1 = 24 + FysiksFun.rand.nextInt(17) + FysiksFun.rand.nextInt(17);

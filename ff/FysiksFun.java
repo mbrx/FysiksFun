@@ -140,7 +140,7 @@ public class FysiksFun {
   @EventHandler
   public void load(FMLInitializationEvent event) {
     System.out.println("[FF] FysiksFun, by M. Broxvall ");
-    System.out.println("[FF] Credits: Rubble sounds created by Dan Oberbaur; Earthquake sound created by Tim Kahn");
+    System.out.println("[FF] Credits: Rubble sounds created by Dan Oberbaur; Earthquake/volcano sound created by Tim Kahn");
 
     proxy.registerRenderers();
     proxy.registerSounds();
@@ -260,7 +260,7 @@ public class FysiksFun {
     if (Counters.tick % 50 == 0) {
       Counters.printStatistics();
     }
-    Fluids.checkBlockOverwritten();
+    if(settings.doFluids) Fluids.checkBlockOverwritten();
 
     /*
      * if (Counters.tick == 500) {
@@ -391,7 +391,26 @@ public class FysiksFun {
       delayedBlockMarkSet.add(task);
       //delayedBlockMarkSet.add(new ChunkMarkUpdateTask(w, x, y, z, oldId, oldMeta));
     }
-
+  }
+  
+  public static float minXZDistSqToObserver(World w,float x,float z) {
+    float minDist = 1e6F;
+    for (FysiksFun.WorldObserver wo : FysiksFun.observers) {
+      if(wo.w != w) continue;
+      float dist = (float)((wo.posX - x) * (wo.posX - x) + (wo.posZ - z) * (wo.posZ - z));
+      if (dist < minDist) minDist = dist;
+    }
+    return minDist;    
+  }
+  
+  public static float minDistSqToObserver(World w,float x,float y,float z) {
+    float minDist = 1e6F;
+    for (FysiksFun.WorldObserver wo : FysiksFun.observers) {
+      if(wo.w != w) continue;
+      float dist = (float)((wo.posX - x) * (wo.posX - x) + (wo.posY - y) * (wo.posY - y) + (wo.posZ - z) * (wo.posZ - z));
+      if (dist < minDist) minDist = dist;
+    }
+    return minDist;    
   }
 
 }
