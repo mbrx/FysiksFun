@@ -18,6 +18,7 @@ import mbrx.ff.util.Counters;
 import mbrx.ff.util.ObjectPool;
 import mbrx.ff.util.Util;
 import net.minecraft.block.Block;
+import net.minecraft.block.BlockDoor;
 import net.minecraft.block.BlockFlowing;
 import net.minecraft.block.BlockLeaves;
 import net.minecraft.block.material.Material;
@@ -111,6 +112,7 @@ public class BlockFFFluid extends BlockFlowing {
   public final static int     pressureFullLiquid            = 4096;
   public final static int     minimumLiquidLevel            = pressureFullLiquid / 8;
   public final static int     maximumContent                = pressureFullLiquid;
+  public final static int     minimumLiquidToDestroyPlants  = pressureFullLiquid / 2;
   public final static int     pressureLossPerStep           = 1;
   public final static int     pressurePerY                  = 256;
   public final static int     pressurePerContent            = pressurePerY / 8;
@@ -307,12 +309,13 @@ public class BlockFFFluid extends BlockFlowing {
     if (oldId != newId || oldMetaData != newMetaData) {
       if (delayedBlockMarkSet == null) ChunkMarkUpdater.scheduleBlockMark(w, x, y, z, oldId, oldActualMetadata);
       else {
-        ChunkMarkUpdateTask task=ObjectPool.poolChunkMarkUpdateTask.getObject();
+        ChunkMarkUpdateTask task = ObjectPool.poolChunkMarkUpdateTask.getObject();
         task.set(w, x, y, z, oldId, oldActualMetadata);
         delayedBlockMarkSet.add(task);
-        //delayedBlockMarkSet.add(new ChunkMarkUpdateTask(w, x, y, z, oldId, oldActualMetadata));
+        // delayedBlockMarkSet.add(new ChunkMarkUpdateTask(w, x, y, z, oldId,
+        // oldActualMetadata));
       }
-      
+
     }
   }
 
@@ -478,14 +481,28 @@ public class BlockFFFluid extends BlockFlowing {
           if (Gases.isGas[id1]) continue;
           if (Block.blocksList[id1] == null) continue;
           Material m = Block.blocksList[id1].blockMaterial;
-          if (m.blocksMovement()) continue;
-          else if (content0 > minimumLiquidLevel || dY == -1) {
+          if (!m.blocksMovement() && (dY == -1 || (content0 > minimumLiquidLevel && !Fluids.canFlowThrough[id1]))) {
             /* Flow over this block, dropping the contents */
             int metaData1 = chunk1.getBlockMetadata(x1 & 15, y1, z1 & 15);
             if (id1 != Block.snow.blockID && id1 != Block.tallGrass.blockID) Block.blocksList[id1].dropBlockAsItem(world, x1, y1, z1, metaData1, 0);
             chunk1.setBlockIDWithMetadata(x1 & 15, y1, z1 & 15, 0, 0);
             id1 = 0;
             content1 = 0;
+          } else if (dY == 0 && Fluids.canFlowThrough[id1]) {
+            if (Block.blocksList[id1] instanceof BlockDoor) {
+              int meta1 = chunk1.getBlockMetadata(x1 & 15, y1, z1 & 15);
+              boolean doorState;
+              if ((meta1 & 1) != 0) doorState = (meta1 & 4) != 0;
+              else doorState = (meta1 & 4) == 0;
+              if ((dX == 0 && !doorState) || (dX != 0 && doorState)) continue;
+            }
+
+            x1 = x0 + 2 * dX;
+            z1 = z0 + 2 * dZ;
+            chunk1 = ChunkCache.getChunk(world, x1 >> 4, z1 >> 4, false);
+            if (chunk1 == null) continue;
+            id1 = chunk1.getBlockID(x1 & 15, y1, z1 & 15);
+            if (id1 != 0 && !Fluids.isLiquid[id1]) continue;
           } else continue;
         }
 
@@ -575,8 +592,8 @@ public class BlockFFFluid extends BlockFlowing {
                           idA = world.getBlockId(x0 + 0, y0 - 1, z0 + dZ);
                           if (idA != 0 && !Fluids.isLiquid[idA]) erodeBlock(world, x0 + 0, y0 - 1, z0 + dZ);
                         }
-                      } 
-                    } 
+                      }
+                    }
                   }
                 }
               }
@@ -608,10 +625,13 @@ public class BlockFFFluid extends BlockFlowing {
        * If we have made a pressurized move, make a random walk towards lower
        * pressures until we find a node we can steal liquid from
        */
-      if (oldContent0 >= maximumContent && content0 < maximumContent) {
+      boolean pressurizedPull = oldContent0 >= maximumContent;
+      if (content0 < maximumContent) {
         int steps;
         int xN = x0, yN = y0, zN = z0;
-        int currPressure = maximumContent;
+        int currValue;
+        if (pressurizedPull) currValue = maximumContent;
+        else currValue = content0;
         Chunk chunkN = chunk0;
         ChunkTempData tempDataN = tempData0;
         Chunk bestChunkM = null;
@@ -619,7 +639,7 @@ public class BlockFFFluid extends BlockFlowing {
 
         for (steps = 0; steps < 16; steps++) {
           int bestDir = -1;
-          int bestPressure = 0;
+          int bestValue = 0;
           for (int dir = 0; dir < 6; dir++) {
             // TODO, use a 10 neighbourhood here instead
             int dX = Util.dirToDx(dir);
@@ -629,49 +649,44 @@ public class BlockFFFluid extends BlockFlowing {
             int yM = yN + dY;
             int zM = zN + dZ;
             if (yM < 0 || yM > 255) continue;
+            if (!pressurizedPull && dY != 0) continue;
 
             Chunk chunkM = ChunkCache.getChunk(world, xM >> 4, zM >> 4, false);
             if (chunkM == null) continue;
 
-            /*
-             * if (xM >> 4 == xN >> 4 && zM >> 4 == zN >> 4) chunkM = chunkN;
-             * else { if (!chunkProvider.chunkExists(xM >> 4, zM >> 4))
-             * continue; chunkM = chunkProvider.provideChunk(xM >> 4, zM >> 4);
-             * }
-             */
             int idM = chunkM.getBlockID(xM & 15, yM, zM & 15);
             if (!isSameLiquid(idM)) continue;
 
             ChunkTempData tempDataM = ChunkCache.getTempData(world, xM >> 4, zM >> 4);
-            // if (xM >> 4 == xN >> 4 && zM >> 4 == zN >> 4) tempDataM =
-            // tempDataN;
-            // else tempDataM = ChunkTempData.getChunk(world, xM, yM, zM);
             int contentM = getBlockContent(chunkM, tempDataM, xM, yM, zM);
             int modifiedPressure = contentM + pressurePerY * dY - 2 * pressureLossPerStep;
-            if (modifiedPressure > bestPressure) {
+            if (modifiedPressure > bestValue) {
               bestDir = dir;
-              bestPressure = modifiedPressure;
+              bestValue = modifiedPressure;
               bestChunkM = chunkM;
               bestTempDataM = tempDataM;
             }
           }
-          // WAS if (bestPressure < currPressure) break;
-          if (bestPressure < currPressure) break;
+          if (bestDir == -1) break; // !
+          if (bestValue < currValue) break;
           xN += Util.dirToDx(bestDir);
           yN += Util.dirToDy(bestDir);
           zN += Util.dirToDz(bestDir);
           chunkN = bestChunkM;
           tempDataN = bestTempDataM;
         }
-        /* Steal as much as possible from N */
-        int contentN = getBlockContent(chunkN, tempDataN, xN, yN, zN);
-        contentN = Math.min(maximumContent, contentN);
-        int toMove = Math.min(contentN, maximumContent - content0);
-        contentN -= toMove;
-        content0 += toMove;
+        if (xN != x0 || yN != y0 || zN != z0) {
+          /* Steal as much as possible from N */
+          int contentN = getBlockContent(chunkN, tempDataN, xN, yN, zN);
+          contentN = Math.min(maximumContent, contentN);
+          int toMove = Math.min(contentN, maximumContent - content0);
+          if(!pressurizedPull) toMove=toMove/2;
+          contentN -= toMove;
+          content0 += toMove;
 
-        setBlockContent(world, chunkN, tempDataN, xN, yN, zN, contentN, "[Propagated pressurized liquid]", delayedBlockMarkSet);
-        if (content0 == maximumContent) content0 = oldContent0;
+          setBlockContent(world, chunkN, tempDataN, xN, yN, zN, contentN, "[Propagated pressurized liquid]", delayedBlockMarkSet);
+          if (content0 == maximumContent) content0 = oldContent0;
+        }
       }
 
       /* Write our updated content to the world if it has changed */
@@ -1075,7 +1090,7 @@ public class BlockFFFluid extends BlockFlowing {
     int contentHere = getBlockContent(w, x, y, z);
 
     if (idBelow == 0 || idBelow == movingID || Gases.isGas[idBelow]) {
-      int belowContent = (idBelow == movingID) ? getBlockContent(w, x, y - 1, z) : 0;      
+      int belowContent = (idBelow == movingID) ? getBlockContent(w, x, y - 1, z) : 0;
       if (contentHere < belowContent) myvec.yCoord = 0.0;
       else myvec.yCoord = -2.0 * (contentHere - belowContent) / (1.d * BlockFFFluid.maximumContent);
 

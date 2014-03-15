@@ -25,7 +25,7 @@ public class Rain {
       //if (!FysiksFun.settings.rainInOceans && (biome == BiomeGenBase.ocean || biome == BiomeGenBase.frozenOcean)) {
       //  // do nothing
       //} else 
-      if (biome.rainfall > 0.0 && FysiksFun.settings.waterRainRate > 0 && FysiksFun.rand.nextInt(20000) < rainChance) {
+      if (biome.rainfall > 0.0 && FysiksFun.settings.waterRainRate > 0 && FysiksFun.rand.nextInt(40123) < rainChance) {
         for (int y2 = 255; y2 > 1; y2--) {
           int id = c.getBlockID(dx, y2, dz);
           if (id != 0) {

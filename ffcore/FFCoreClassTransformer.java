@@ -33,11 +33,12 @@ public class FFCoreClassTransformer implements IClassTransformer {
     else if (targetClassName.equals("net.minecraft.entity.Entity")) return patchEntity(targetClassName, bytecode, false);
     else if (targetClassName.equals("cn")) return patchMemoryConnection(targetClassName, bytecode, true);
     else if (targetClassName.equals("net.minecraft.network.MemoryConnection")) return patchMemoryConnection(targetClassName, bytecode, false);
+    else if (targetClassName.equals("net.minecraft.world.gen.feature.WorldGenBigTree")) return patchWorldGenBigTree(targetClassName, bytecode, false);
     return bytecode;
   }
 
   private byte[] patchMemoryConnection(String targetClassName, byte[] bytecode, boolean isObfuscated) {
-    //System.out.println("******** [FF] is patching " + targetClassName+"  obf: "+isObfuscated);
+    System.out.println("******** [FFCore] is patching " + targetClassName+"  obf: "+isObfuscated);
     
     String targetMethodName = "";
 
@@ -68,21 +69,10 @@ public class FFCoreClassTransformer implements IClassTransformer {
         }
 
         InsnList replacedInstructions = new InsnList();
-        replacedInstructions.add(new IntInsnNode(Opcodes.SIPUSH, 5000));
+        replacedInstructions.add(new IntInsnNode(Opcodes.SIPUSH, 20000));
         m.instructions.insertBefore(currentNode, replacedInstructions);
         m.instructions.remove(currentNode);
-        System.out.println("FF finished patching net.minecraft.network.MemoryConnection/processReadPackets to allow more packages per tick");
-
-        /*
-        iter = m.instructions.iterator();
-        currentNode = iter.next();
-        index=0;
-        while(iter.hasNext()) {
-          System.out.println(""+currentNode);
-          index++;
-          currentNode=iter.next();
-          if(index > 20) break;
-        }*/        
+        System.out.println("FF finished patching net.minecraft.network.MemoryConnection/processReadPackets to allow more packages per tick");      
         break;        
       }
     }
@@ -92,7 +82,7 @@ public class FFCoreClassTransformer implements IClassTransformer {
   }
 
   private byte[] patchEntity(String targetClassName, byte[] bytecode, boolean isObfuscated) {
-    //System.out.println("FF: is patching " + targetClassName+"  obf: "+isObfuscated);
+    System.out.println("******** [FFCore] is patching " + targetClassName+"  obf: "+isObfuscated);
 
     String targetMethodName = "";
 
@@ -108,7 +98,6 @@ public class FFCoreClassTransformer implements IClassTransformer {
       MethodNode m = methods.next();
 
       //System.out.println("Method: "+m.name+" sign: "+m.desc);
-      //Check if this is doExplosionB and it's method signature is (Z)V which means that it accepts a boolean (Z) and returns a void (V)
       if ((m.name.equals(targetMethodName) && m.desc.equals("(DDD)V"))) {        
         System.out.println("Found the target method");
 
@@ -140,11 +129,7 @@ public class FFCoreClassTransformer implements IClassTransformer {
         toInject.add(new InsnNode(Opcodes.DCMPL));
         LabelNode l5 = new LabelNode();
         toInject.add(new JumpInsnNode(Opcodes.IFLE, l5));
-        
-        //toInject.add(new FieldInsnNode(Opcodes.GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;"));
-        //toInject.add(new LdcInsnNode("patched moveEntity triggered"));
-        //toInject.add(new MethodInsnNode(Opcodes.INVOKEVIRTUAL, "java/io/PrintStream", "println", "(Ljava/lang/String;)V"));
-        
+                
         toInject.add(new InsnNode(Opcodes.DCONST_0));
         toInject.add(new VarInsnNode(Opcodes.DSTORE, 1));
         
@@ -153,53 +138,84 @@ public class FFCoreClassTransformer implements IClassTransformer {
 
         toInject.add(new InsnNode(Opcodes.DCONST_0));
         toInject.add(new VarInsnNode(Opcodes.DSTORE, 5));
-        
-        /*
-        toInject.add(new VarInsnNode(Opcodes.ALOAD, 0));        
-        toInject.add(new TypeInsnNode(Opcodes.INSTANCEOF, isObfuscated ? "uf" : "net/minecraft/entity/player/EntityPlayer"));
-        toInject.add(new JumpInsnNode(Opcodes.IFNE, l5));
-
-        toInject.add(new VarInsnNode(Opcodes.ALOAD, 0));
-                      
-        String entity = isObfuscated ? "nn" : "net/minecraft/entity/Entity";
-        String world = isObfuscated ? "abw" : "net/minecraft/world/World";        
-        
-        //toInject.add(new FieldInsnNode(Opcodes.GETFIELD, "net/minecraft/entity/Entity", "worldObj", "Lnet/minecraft/world/World;"));
-        // not p, maybe h?
-        toInject.add(new FieldInsnNode(Opcodes.GETFIELD, entity, isObfuscated ? "h" : "worldObj", "L"+world+";"));
-
-        toInject.add(new VarInsnNode(Opcodes.ALOAD, 0));        
-        //toInject.add(new MethodInsnNode(Opcodes.INVOKEVIRTUAL, "net/minecraft/world/World", isObfuscated ? "e" : "removeEntity", "(Lnet/minecraft/entity/Entity;)V"));
-        toInject.add(new MethodInsnNode(Opcodes.INVOKEVIRTUAL, world, isObfuscated ? "e" : "removeEntity", "(L"+entity+";)V"));
-        */
-        
+                
         toInject.add(l5);
         
         m.instructions.insertBefore(currentNode, toInject);
-        System.out.println("FF finished patching net.minecraft.entity.Entity/moveEntity");
-        
-/*
-        iter = m.instructions.iterator();
-        // currentNode is first instruction in the function
-        currentNode = iter.next();
-        index=0;
-        while(iter.hasNext()) {
-          System.out.println(""+currentNode);
-          index++;
-          currentNode=iter.next();
-          if(index > 20) break;
-        }
-        */        
+        System.out.println("FF finished patching net.minecraft.entity.Entity/moveEntity");            
         break;
       }
-      //ASM specific for cleaning up and returning the final bytes for JVM processing.
-      //ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
     }
     ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_MAXS);
     classNode.accept(writer);
     return writer.toByteArray();        
-
-    //System.out.println("Warning, couldn't find the target method to patch...");
-    //return bytecode;
   }
+
+  private byte[] patchWorldGenBigTree(String targetClassName, byte[] bytecode, boolean isObfuscated) {
+    System.out.println("******** [FFCore] is patching " + targetClassName+"  obf: "+isObfuscated);
+
+    String targetMethodName = "";
+
+    if (isObfuscated == true) targetMethodName = "d";
+    else targetMethodName = "placeBlockLine";
+    String targetDesc = "([I[II)V";
+    
+    ClassNode classNode = new ClassNode();
+    ClassReader classReader = new ClassReader(bytecode);
+    classReader.accept(classNode, 0);
+
+    Iterator<MethodNode> methods = classNode.methods.iterator();
+    while (methods.hasNext()) {
+      MethodNode m = methods.next();
+
+      System.out.println("Method: "+m.name+" sign: "+m.desc);
+      if ((m.name.equals(targetMethodName) && m.desc.equals(targetDesc))) {        
+        System.out.println("Found the target method");
+
+        Iterator<AbstractInsnNode> iter = m.instructions.iterator();
+        // currentNode is first instruction in the function
+        AbstractInsnNode currentNode = iter.next();
+        currentNode=iter.next();
+        currentNode=iter.next();
+        int index=2;
+                
+        InsnList toInject = new InsnList();     
+
+        toInject.add(new VarInsnNode(Opcodes.ALOAD, 0));
+        toInject.add(new FieldInsnNode(Opcodes.GETFIELD, "net/minecraft/world/gen/feature/WorldGenBigTree", "worldObj", "Lnet/minecraft/world/World;"));
+        toInject.add(new VarInsnNode(Opcodes.ALOAD, 1));        
+        toInject.add(new VarInsnNode(Opcodes.ALOAD, 2));
+        toInject.add(new VarInsnNode(Opcodes.ILOAD, 3));
+        toInject.add(new MethodInsnNode(Opcodes.INVOKESTATIC, "mbrx/ff/ecology/WorldGenTreeHelper", "placeBlockLine", "(Lnet/minecraft/world/World;[I[II)V"));
+        toInject.add(new InsnNode(Opcodes.RETURN));       
+        
+        m.instructions.insertBefore(currentNode, toInject);
+        System.out.println("FF finished patching net.minecraft.entity.Entity/moveEntity");
+        
+
+        iter = m.instructions.iterator();
+        // currentNode is first instruction in the function
+        currentNode = iter.next();
+        index=0;
+        while(iter.hasNext()) {          
+          System.out.println(""+currentNode);
+          /*if(currentNode instanceof FieldInsnNode) {
+            FieldInsnNode node = (FieldInsnNode) currentNode;
+            System.out.println("FieldInsnNode name: "+node.name+" desc: "+node.desc);
+          }*/
+          index++;
+          currentNode=iter.next();
+          if(index > 20) break;
+        }
+                
+        break;
+      }
+    }
+    ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+    classNode.accept(writer);
+    return writer.toByteArray();        
+  }
+
+  
+  
 }

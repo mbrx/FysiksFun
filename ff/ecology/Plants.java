@@ -20,7 +20,7 @@ public class Plants {
   public static void doPlants(World w, int x, int z) {
     if (FysiksFun.settings.plantGrowth == 0) return;
     if (FysiksFun.rand.nextInt(1 + 1117 / FysiksFun.settings.plantGrowth) != 0) return;
-
+    
     doCrops(w, x, z);
     doOtherPlants(w, x, z);
   }
@@ -51,7 +51,7 @@ public class Plants {
           int spreadRange = 12; // Probabilities to NOT spread when drinking
           int plantDensity = 4; // How many plants of this type is allowed in
                                 // the same 5x5 area (roughly)
-          int droughtDeath = 4; // Chance to NOT die when failing to find water
+          int droughtDeath = 4; // Chance NOT to die when failing to find water
 
           int yMin = -16, yMax = +1;
           // Fraction of a content level that will be drunk by the plant
@@ -66,7 +66,7 @@ public class Plants {
             spreadFailures = 2;
             spreadRange = 3;
             plantDensity = 8;
-            droughtDeath = 16;
+            droughtDeath = 32;
           }
 
           // Skip doing anything for some slow plants

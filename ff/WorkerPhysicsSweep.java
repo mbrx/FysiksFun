@@ -202,11 +202,11 @@ public class WorkerPhysicsSweep implements Runnable {
         blockDoPhysics[i] = true;
         blockIsFragile[i] = true;
       } else if (b instanceof BlockLog || i == rubWood) {
-        blockStrength[i] = 100; // 25 times weight
+        blockStrength[i] = 120; // 30 times weight
         blockWeight[i] = 4;
       } else if (b instanceof BlockWood) { // Poor name in vanilla, this is the
                                            // planks!!
-        blockStrength[i] = 60; // 30 times weight
+        blockStrength[i] = 80; // 40 times weight
         blockWeight[i] = 2;
       }
       if (b instanceof BlockBreakable) blockIsFragile[i] = true;
@@ -223,8 +223,12 @@ public class WorkerPhysicsSweep implements Runnable {
 
     blockDoPhysics[Block.bedrock.blockID] = true;
     blockWeight[Block.bedrock.blockID] = 0;
+    
     blockDoPhysics[Block.leaves.blockID] = false;
     blockDoSimplePhysics[Block.leaves.blockID] = 1;
+    /*blockWeight[Block.leaves.blockID] = 1;
+    blockStrength[Block.leaves.blockID] = 10;*/
+    
     blockDoPhysics[Block.vine.blockID] = false;
     blockDoSimplePhysics[Block.vine.blockID] = 2;
 
@@ -241,9 +245,9 @@ public class WorkerPhysicsSweep implements Runnable {
     blockStrength[Block.stone.blockID] = 200; // 50 times weight
     blockWeight[Block.stone.blockID] = 4; // stone is unplaceable, low weight
                                           // for now!
-    blockStrength[Block.stoneBrick.blockID] = 150; // 25 times weight
+    blockStrength[Block.stoneBrick.blockID] = 180; // 30 times weight
     blockWeight[Block.stoneBrick.blockID] = 6;
-    blockStrength[Block.brick.blockID] = 120; // 30 times weight
+    blockStrength[Block.brick.blockID] = 160; // 40 times weight
     blockWeight[Block.brick.blockID] = 4;
 
     blockDoPhysics[Block.thinGlass.blockID] = true;
@@ -251,7 +255,7 @@ public class WorkerPhysicsSweep implements Runnable {
     blockStrength[Block.thinGlass.blockID] = 5; // 5 times weight
     blockWeight[Block.thinGlass.blockID] = 1;
     blockDoPhysics[Block.glass.blockID] = true;
-    blockStrength[Block.glass.blockID] = 10; // 5 times weight
+    blockStrength[Block.glass.blockID] = 20; // 10 times weight
     blockWeight[Block.glass.blockID] = 2;
     blockIsFragile[Block.glass.blockID] = true;
     blockStrength[Block.glowStone.blockID] = 40; // 20 times weight (it's
@@ -364,17 +368,29 @@ public class WorkerPhysicsSweep implements Runnable {
       // from an observer
       if (minDist >= maxChunkDist * maxChunkDist) doDetailedPhysics = false;
       int liquidUpdateRate = 10;
+      int gasUpdateRate = 10;
       int totalLiquid = 0;
       for (int y = 0; y < 255; y++)
         totalLiquid += tempData.getFluidHistogram(y);
-      if (totalLiquid > 16 * 16 * 4) liquidUpdateRate = 30;
-      if (!doDetailedPhysics) liquidUpdateRate *= 3;
+      boolean isOcean = totalLiquid > 16*16*4;
+      int oceanUpdateRate;
+      if(isOcean) oceanUpdateRate=30;
+      else oceanUpdateRate=10;
+        
+      //if (totalLiquid > 16 * 16 * 4) liquidUpdateRate = 30;
+      if (!doDetailedPhysics) { liquidUpdateRate *= 3; gasUpdateRate *= 3; oceanUpdateRate *= 3; }
       int staggeredTime = Counters.tick + xz.chunkXPos + 411 * xz.chunkZPos;
+      boolean doOceanTicks = (staggeredTime % oceanUpdateRate) == 0;
       boolean doLiquidTicks = (staggeredTime % liquidUpdateRate) == 0;
       boolean doFireTicks = (staggeredTime % liquidUpdateRate) == 0;
-      boolean doGasTicks = (staggeredTime % liquidUpdateRate) == 0;
-      if (!doDetailedPhysics && !doLiquidTicks) return;
+      boolean doGasTicks = (staggeredTime % gasUpdateRate) == 0;
 
+      if (!doDetailedPhysics && !doLiquidTicks && !doGasTicks) return;
+      int minY, maxY;
+      if(isOcean && !doOceanTicks) minY=70;
+      else minY=0;
+      maxY=192;
+      
       boolean restartPhysics = false;
       if (doDetailedPhysics) {
         if (tempData.solidBlockPhysicsLastTick < Counters.tick - ticksPerUpdate) {
@@ -404,7 +420,7 @@ public class WorkerPhysicsSweep implements Runnable {
        * return; }
        */
 
-      for (int y = 0; y < 255; y++) {
+      for (int y = minY; y < maxY; y++) {
         int fluidCount = 0;
         int gasCount = 0;
 
@@ -424,9 +440,9 @@ public class WorkerPhysicsSweep implements Runnable {
             } else id = c.getBlockID(dx, y, dz);
 
             // TODO: is this neccessary? Test it!
-            if (id == 0 || Gases.isGas[id]) {
+            /*if (id == 0 || Gases.isGas[id]) {
               tempData.setTempData(dx, y, dz, 0);
-            }
+            }*/
 
             // TODO: is this still neccessary? sometimes triggered...
             if (id != 0 && Block.blocksList[id] == null) {
@@ -719,8 +735,10 @@ public class WorkerPhysicsSweep implements Runnable {
           int maxMoved = breakThreshold + Math.max(0, (curBreak - breakAtCounter) * 2);
           if (debugMe) System.out.println("toMove before capping: " + toMove + " cap: " + maxMoved);
           if (toMove > maxMoved && id != Block.bedrock.blockID && y > 1) toMove = maxMoved;
-          if (dir < 4) totalMoved += toMove * 2;
-          else totalMoved += toMove;
+          
+          totalMoved += toMove;
+          /*if (dir < 4) totalMoved += toMove * 2;
+          else totalMoved += toMove;*/
         }
         if (debugNN) {
           System.out.println("To move from NN: " + toMove);

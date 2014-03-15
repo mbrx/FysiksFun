@@ -80,6 +80,8 @@ public class Settings {
   public boolean stonesShatter;
   public boolean leavesAreSoft;
 
+  public int threadPoolSize;
+
 
   public void loadFromConfig(Configuration config) {
 
@@ -209,7 +211,9 @@ public class Settings {
         .getBoolean(true);
     stonesShatter = config.get(categoryGeneric, "leaves-are-soft", "true", "Makes leaves act somewhat like spider webs, lettings the player move through at reduced speed. (Avoids exploit by building leaf bridges)", Property.Type.BOOLEAN)
         .getBoolean(true);
-
+    threadPoolSize = config.get(categoryGeneric, "thread-pool-size", "17", "Number of threads used in physics calculations. Recommended for AMD number of cores+1, for Intel number of cores*2+1", Property.Type.INTEGER)
+        .getInt(17);
+    
   }
 
 }

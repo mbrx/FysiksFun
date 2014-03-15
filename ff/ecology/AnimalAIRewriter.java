@@ -9,6 +9,7 @@ import net.minecraft.entity.ai.EntityAITaskEntry;
 import net.minecraft.entity.passive.EntityAnimal;
 import net.minecraft.entity.passive.EntityChicken;
 import net.minecraft.entity.passive.EntityCow;
+import net.minecraft.entity.passive.EntityHorse;
 import net.minecraft.entity.passive.EntityPig;
 import net.minecraft.entity.passive.EntitySheep;
 import net.minecraft.world.World;
@@ -19,7 +20,7 @@ public class AnimalAIRewriter {
     
      List allEntities = w.loadedEntityList;
      for(Object o : allEntities) {
-       if(o instanceof EntityCow || o instanceof EntitySheep || o instanceof EntityPig || o instanceof EntityChicken) {
+       if(o instanceof EntityCow || o instanceof EntitySheep || o instanceof EntityPig || o instanceof EntityChicken || o instanceof EntityHorse) {
          EntityAnimal animal = (EntityAnimal) o;
          boolean hasFeedingAI=false;
          for(Object o2 : animal.tasks.taskEntries) {
@@ -27,18 +28,21 @@ public class AnimalAIRewriter {
            if(taskEntry.action instanceof EntityAIFeeding) hasFeedingAI=true;              
          }
          if(!hasFeedingAI) {
-           EntityAIFeeding ai=new EntityAIFeeding(animal, 0.25f);
+           EntityAIFeeding ai=new EntityAIFeeding(animal, 0.75f);
            ai.addFoodtype(Block.tallGrass.blockID);
            ai.addFoodtype(Block.crops.blockID);
            ai.addFoodtype(Block.plantYellow.blockID);
            ai.addFoodtype(Block.plantRed.blockID);
            insertAI(animal, 4, ai);
+           EntityAIHerd herdAi = new EntityAIHerd(animal, 1.0F);
+           insertAI(animal, 5, herdAi); 
          }
        }                     
      }
     
   }
 
+  /** All AI's with higher or equal priority value (less valued) is incremented by one before this AI is inserted. Thus it comes before an old AI with same priority value */ 
   private static void insertAI(EntityAnimal cow, int priority, EntityAIBase aitask) {
     // System.out.println("Rewriting the animal: "+cow);    
     // First increment the priority of every taskEntry that has same-or-higher priority as the new one

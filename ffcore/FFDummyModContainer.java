@@ -20,7 +20,7 @@ public class FFDummyModContainer extends DummyModContainer {
     ModMetadata meta = getMetadata();
     meta.modId = "FFCore";
     meta.name = "FFCore";
-    meta.version = "0.4";
+    meta.version = "0.5";
     meta.credits = "Mathias Broxvall";
     meta.authorList = Arrays.asList("Mathias Broxvall");
     meta.description = "";

@@ -82,7 +82,7 @@ import com.google.common.base.Objects;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 
-@Mod(modid = "FysiksFun", name = "FysiksFun", version = "0.5.5", dependencies="")
+@Mod(modid = "FysiksFun", name = "FysiksFun", version = "0.5.6", dependencies="")
 @NetworkMod(clientSideRequired = true, serverSideRequired = false)
 public class FysiksFun {
   // Singleton instance of mod class instansiated by Forge
@@ -108,7 +108,7 @@ public class FysiksFun {
   public static Random                       rand;
 
   public static Settings                     settings               = new Settings();
-  public static ExecutorService              executor               = Executors.newFixedThreadPool(20);
+  public static ExecutorService              executor;
 
   public static boolean                      hasBuildcraft          = false;
 
@@ -131,6 +131,7 @@ public class FysiksFun {
     config.load();
     settings.loadFromConfig(config);
     if (config.hasChanged()) config.save();
+    executor = Executors.newFixedThreadPool(settings.threadPoolSize);
     
     String physRulesName = event.getSuggestedConfigurationFile().toString().replace(".cfg", "-rules.cfg");
     physicsRuleConfig = new Configuration(new File(physRulesName));

@@ -142,4 +142,16 @@ v0.5.5
     
 v0.5.6
     * Added option "leaves-are-soft", disable if you want vanilla leaf behaviours. 
-        
+    * Modified growth of big trees in worldGenerator to guarantee branches are connected to trunk
+    * Evaporation releases gas higher up in atmosphere
+    * Changes to how often all liquids/gases are updated
+    * Added option for #threads used in thread pool
+    * Modified AI behaviour to herd when not feeding
+    * Small amount of water should no longer destroy plants
+    * Open doors should now allow water through
+    * Changed rule for water condensation to happen only in larger clouds
+    * Halved default rain amount from vanilla weather
+    
+ v0.5.7
+    
+    

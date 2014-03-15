@@ -3,6 +3,7 @@ package mbrx.ff.ecology;
 import mbrx.ff.FysiksFun;
 import mbrx.ff.fluids.BlockFFFluid;
 import mbrx.ff.fluids.Fluids;
+import mbrx.ff.fluids.Gases;
 import mbrx.ff.util.ChunkCache;
 import mbrx.ff.util.Counters;
 import mbrx.ff.util.Util;
@@ -53,6 +54,7 @@ public class Evaporation {
           lavaContent = Math.min(BlockFFFluid.maximumContent, Fluids.stillLava.getBlockContent(w, x + dx, y, z + dz));
           heat = (lavaContent * 3) / BlockFFFluid.maximumContent + 1;
         }
+        // Effectively not called when heat=0 (ie. nothing that is heating)
         for (int range = 0; range < heat; range++) {
           for (int tries = 0; tries < 10; tries++) {
             int ddx = FysiksFun.rand.nextInt(range * 2 + 1) - range;
@@ -131,7 +133,9 @@ public class Evaporation {
           // steam or not
           // Fluids.stillWater.consume(w, c, x + dx, y, z + dz,
           // evaporationStepsize);
-          Fluids.stillWater.evaporate(w, c, x + dx, y, z + dz, evaporationStepsize, false); //FysiksFun.rand.nextInt(20) == 0);
+          Fluids.stillWater.evaporate(w, c, x + dx, y, z + dz, evaporationStepsize, false); // FysiksFun.rand.nextInt(20)
+                                                                                            // ==
+                                                                                            // 0);
           Counters.worldHeatEvaporation++;
         }
         return;
@@ -204,7 +208,7 @@ public class Evaporation {
           // int id2 = w.getBlockId(x1 + dx2, y1 + dy2, z1 + dz2);
           int id2 = chunk1.getBlockID((x1 + dx2) & 15, y1 + dy2, (z1 + dz2) & 15);
           if (id2 == Block.dirt.blockID || id2 == Block.gravel.blockID || id2 == Block.cobblestone.blockID) {
-            if(id2 == Block.cobblestone.blockID && FysiksFun.rand.nextInt(2) != 0) continue;
+            if (id2 == Block.cobblestone.blockID && FysiksFun.rand.nextInt(2) != 0) continue;
             Fluids.flowingWater.setBlockContent(w, x1, y1, z1, evaporationStepsize);
             Counters.humidification++;
             break;
@@ -232,22 +236,25 @@ public class Evaporation {
         if (i < biome.getFloatTemperature() * biome.getFloatTemperature() * FysiksFun.settings.waterEvaporationRate * 0.5) {
           for (int y2 = 255; y2 > 1; y2--) {
             int id = w.getBlockId(x + dx, y2, z + dz);
-            if (id != 0) {
-              if (id == Fluids.stillWater.blockID || id == Fluids.flowingWater.blockID) {
-                try {
-                  BlockFFFluid.preventSetBlockLiquidFlowover = true;
-                  int waterAmount = Fluids.flowingWater.getBlockContent(w, x + dx, y2, z + dz);
-                  // Tweak to make large bodies of water not evaporate as quick
-                  // - should promote larger pools of liquids rather than small
-                  // pools
-                  int idBelow = w.getBlockId(x + dx, y2 - 1, z + dz);
-                  if ((waterAmount >= BlockFFFluid.maximumContent / 2 || idBelow == Fluids.stillWater.blockID || idBelow == Fluids.flowingWater.blockID)
-                      && FysiksFun.rand.nextInt(5) != 0) continue;
-                  Fluids.flowingWater.evaporate(w, chunk, x + dx, y2, z + dz, evaporationStepsize, FysiksFun.rand.nextInt(10) == 0);
-                  Counters.directEvaporation++;
-                } finally {
-                  BlockFFFluid.preventSetBlockLiquidFlowover = false;
-                }
+            if (id == 0) continue;
+
+            if (id == Fluids.stillWater.blockID || id == Fluids.flowingWater.blockID) {
+              try {
+                BlockFFFluid.preventSetBlockLiquidFlowover = true;
+                int waterAmount = Fluids.flowingWater.getBlockContent(w, x + dx, y2, z + dz);
+                // Tweak to make large bodies of water not evaporate as quick
+                // - should promote larger pools of liquids rather than small
+                // pools
+                int idBelow = w.getBlockId(x + dx, y2 - 1, z + dz);
+                if ((waterAmount >= BlockFFFluid.maximumContent / 2 || idBelow == Fluids.stillWater.blockID || idBelow == Fluids.flowingWater.blockID)
+                    && FysiksFun.rand.nextInt(5) != 0) continue;
+                Fluids.flowingWater.evaporate(w, chunk, x + dx, y2, z + dz, evaporationStepsize, false);
+                if(FysiksFun.rand.nextInt(10) == 0)
+                  Gases.steam.setBlockContent(w, chunk, x + dx, Math.max(100, y2 + 1), z + dz, 1);
+                // FysiksFun.rand.nextInt(10) == 0);
+                Counters.directEvaporation++;
+              } finally {
+                BlockFFFluid.preventSetBlockLiquidFlowover = false;
               }
               break;
             }

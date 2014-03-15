@@ -156,9 +156,9 @@ public class BlockFFGas extends Block {
     Chunk origChunk = ChunkCache.getChunk(w, chunkX, chunkZ, false);
     if (y <= 0) return;
     Counters.gasTicks++;
-    if(FysiksFun.rand.nextInt(4) != 0) return;
+    if (FysiksFun.rand.nextInt(4) != 0) return;
     int worldYOffset = FysiksFun.settings.worldYOffset;
-      
+
     try {
       preventSetBlockGasFlowover = true;
       BlockFFFluid.preventSetBlockLiquidFlowover = true;
@@ -173,18 +173,29 @@ public class BlockFFGas extends Block {
         return;
       }
 
-      int chanceToCondense = 1;
-      if (y >= 64 + worldYOffset) chanceToCondense += (int) (w.rainingStrength * 100.0);
-      if (y >= 100 + worldYOffset) chanceToCondense += 5 * (y - 100 - worldYOffset);
-      if (FysiksFun.rand.nextInt(2123) < chanceToCondense) {
-        // if (y >= 120+worldYOffset && (FysiksFun.rand.nextDoubl * 10.0 <
-        // w.rainingStrength || FysiksFun.rand.nextInt(250) == 0)) {
-        /* Block condensate into water */
-        setBlockContent(w, x, y, z, 0);
-        // Removes 25% of water from ecology
-        if (FysiksFun.rand.nextInt(4) == 0) return;
-        condenseFromAltitude(w, x, y, z, origChunk, newContent);
-        return;
+      int chanceToCondense = 0;
+      chanceToCondense = (int)((10 * (y - 100 - worldYOffset) + 10) * w.rainingStrength);
+      //if (y >= 64 + worldYOffset) chanceToCondense += (int) (w.rainingStrength * 100.0);
+      //if (y >= 100 + worldYOffset) chanceToCondense += 5 * (y - 100 - worldYOffset);
+      if (FysiksFun.rand.nextInt(523) < chanceToCondense) {
+        /* To force larger clouds to grow, only allow condensation if there is atleast X gas clouds within radius R */
+        int nGases = 0;
+        for (int dx = -2; dx <= 2; dx++)
+          for (int dz = -2; dz <= 2; dz++)
+            for (int dy = -1; dy <= 1; dy++) {
+              int xN = x + dx;
+              int zN = z + dz;
+              Chunk c = ChunkCache.getChunk(w, xN >> 4, zN >> 4, false);
+              if (c.getBlockID(xN & 15, y + dy, zN & 15) == blockID) nGases++;
+            }
+        if (nGases >= 40) {
+          /* Block condensate into water */
+          setBlockContent(w, x, y, z, 0);
+          // Removes 25% of water from ecology
+          if (FysiksFun.rand.nextInt(4) == 0) return;
+          else condenseFromAltitude(w, x, y, z, origChunk, newContent);
+          return;
+        }
       }
 
       /* First, move gas in direction of wind with a given probability */
@@ -247,7 +258,8 @@ public class BlockFFGas extends Block {
        */
       if (74 + FysiksFun.rand.nextInt(148 - 74) + worldYOffset < y) return;
 
-      int blockIdAbove = w.getBlockId(x, y + 1, z);
+      int blockIdAbove = origChunk.getBlockID(x & 15, y + 1, z & 15);
+      // WAS w.getBlockId(x, y + 1, z);
       if (blockIdAbove > 0 && blockIdAbove < 4096 && Fluids.isLiquid[blockIdAbove]) {
         /* There's a fluid above this block - exchange their positions */
         BlockFFFluid fluid = Fluids.fluid[blockIdAbove];
@@ -313,20 +325,22 @@ public class BlockFFGas extends Block {
           setBlockContent(w, x2, y2, z2, newContent);
           return;
         } else if ((blockIdNN == blockID || blockIdNN == 0) && blockContentNN < newContent) {
-          //if (blockContentNN < newContent) { // || FysiksFun.rand.nextInt(10) == 0) {
-            int toMove = (newContent - blockContentNN) / 2;
-            // Random chance to move sideways even if it doesn't equalize pressures (ie. a random walk)
-            if(toMove == 0 && dir0 == -1) toMove=1;
-            else if (toMove == 0 && FysiksFun.rand.nextInt(5) == 0 && dy == 0) toMove = 1;
-            newContent -= toMove;
-            blockContentNN += toMove;
-            if (blockContentNN >= 16) {
-              newContent += blockContentNN - 15;
-              blockContentNN = 15;
-            }
-            setBlockContent(w, x2, y2, z2, blockContentNN);
-            // FysiksFun.scheduleBlockTick(w, this, x2, y2, z2, updateRate);
-          //}
+          // if (blockContentNN < newContent) { // || FysiksFun.rand.nextInt(10)
+          // == 0) {
+          int toMove = (newContent - blockContentNN) / 2;
+          // Random chance to move sideways even if it doesn't equalize
+          // pressures (ie. a random walk)
+          if (toMove == 0 && dir0 == -1) toMove = 1;
+          else if (toMove == 0 && FysiksFun.rand.nextInt(5) == 0 && dy == 0) toMove = 1;
+          newContent -= toMove;
+          blockContentNN += toMove;
+          if (blockContentNN >= 16) {
+            newContent += blockContentNN - 15;
+            blockContentNN = 15;
+          }
+          setBlockContent(w, x2, y2, z2, blockContentNN);
+          // FysiksFun.scheduleBlockTick(w, this, x2, y2, z2, updateRate);
+          // }
         }
 
       }

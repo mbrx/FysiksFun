@@ -14,10 +14,10 @@ public class Wind {
   } 
   
   public static void doTick(World world) {
-    if(FysiksFun.rand.nextInt(400) == 0) {
-      windX = windX * 0.99f + 0.15f*(FysiksFun.rand.nextDouble()-0.5);
-      windZ = windZ * 0.99f + 0.15f*(FysiksFun.rand.nextDouble()-0.5);
-      //System.out.println("Change of wind: "+windX+" "+windZ);
+    if(FysiksFun.rand.nextInt(1000) == 0) {
+      windX = windX * 0.9f + 0.25f*(FysiksFun.rand.nextDouble()+FysiksFun.rand.nextDouble()-1.0+1.0);
+      windZ = windZ * 0.9f + 0.25f*(FysiksFun.rand.nextDouble()+FysiksFun.rand.nextDouble()-1.0);
+      System.out.println("Change of wind: "+windX+" "+windZ);
     }
   }
 }

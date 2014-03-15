@@ -219,7 +219,7 @@ public class Trees {
 
   public static void doTrees(World w, int cx, int cz) {
     
-    for (int tries = 0; tries < 16; tries++) {
+    for (int tries = 0; tries < 10; tries++) {
       int dx = (FysiksFun.rand.nextInt(16) + tries) % 16;
       int dz = (FysiksFun.rand.nextInt(16) + Counters.tick) % 16;
       int x = cx + dx, z = cz + dz;
@@ -242,8 +242,8 @@ public class Trees {
 
     boolean foundTree = false;
     int treeYStart;
+    Chunk c = ChunkCache.getChunk(w, x >> 4, z >> 4, false);
     for (treeYStart = 128; treeYStart > 20; treeYStart--) {
-      Chunk c = ChunkCache.getChunk(w, x >> 4, z >> 4, false);
       if (c == null) continue;
       int id = c.getBlockID(x & 15, treeYStart, z & 15);
       //if (id == Block.wood.blockID) logCount++;
@@ -272,8 +272,8 @@ public class Trees {
      */
     int woodX = x, woodY = treeYStart, woodZ = z;
     woodDown = 0;
-    for (steps = 0, y = treeYStart; y > 0 && steps < 500; steps++) {
-      Chunk c = ChunkCache.getChunk(w, x >> 4, z >> 4, false);
+    c = ChunkCache.getChunk(w, x >> 4, z >> 4, false);
+    for (steps = 0, y = treeYStart; y > 0 && steps < 250; steps++) {
       if (c == null) continue;
       int id = c.getBlockID(x & 15, y - 1, z & 15);
       if(treeCategory[id] == TreeCategory.TRUNK_PART) {
@@ -301,6 +301,7 @@ public class Trees {
         if(treeCategory[id] != TreeCategory.NOT_TREE) {
           x += dx2;
           z += dz2;
+          c=c2;
         }
       }
     }

@@ -22,6 +22,7 @@ public class BlockFFWater extends BlockFFFluid {
   }*/
 
   public void expensiveTick(World world, Chunk chunk0, ChunkTempData tempData0, int x0, int y0, int z0, Random r) {
+    if(y0 == 0) return;
     int idBelow = chunk0.getBlockID(x0&15, y0-1, z0&15);
     /* Turn adjacent snow into ice (consuming the water) */
     if(idBelow == Block.blockSnow.blockID) {
