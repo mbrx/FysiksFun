@@ -34,7 +34,7 @@ public class BlockFFStone extends BlockStone {
   public void shatterStone(World w, int x, int y, int z, int oldId, int oldMetaData) {
     
     if(overrideShatter) return;
-    if(Util.smear(Counters.tick/600)%4173+y < 64) return;
+    if((Util.smear((Counters.tick/600)*17)%3173)+y > 74) return;
     if(maxShatterDepth <= 0) return;
     --maxShatterDepth;
     

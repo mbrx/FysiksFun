@@ -6,6 +6,7 @@ import mbrx.ff.fluids.Fluids;
 import mbrx.ff.fluids.Gases;
 import mbrx.ff.util.ChunkCache;
 import mbrx.ff.util.Counters;
+import mbrx.ff.util.Settings;
 import mbrx.ff.util.Util;
 import net.minecraft.block.Block;
 import net.minecraft.world.World;
@@ -146,7 +147,7 @@ public class Evaporation {
 
   /**
    * Evaporates water liquid at a slow rate everywhere in a world. Note this is
-   * VERY slow... and maybe not even useful!
+   * VERY slow... and maybe not even be useful!
    */
   private static void doIndirectEvaporation(World w, int x, int z) {
     if (FysiksFun.rand.nextInt(921) != 0) return;
@@ -226,7 +227,7 @@ public class Evaporation {
 
     // Gives the current time of the day, so we only evaporate during daylight
     long timeNow = w.getWorldInfo().getWorldTime();
-    if (w.rainingStrength == 0.0 && FysiksFun.rand.nextInt(100) == 0) {
+    if (w.rainingStrength == 0.0 && FysiksFun.rand.nextInt(20) == 0) {
       double sunIntensity = Math.cos(((double) (timeNow - 5000)) / 6000.0 * 1.57);
       if (sunIntensity < 0.0) return;
       for (int i = 0; i < 20; i++) {
@@ -249,7 +250,7 @@ public class Evaporation {
                 if ((waterAmount >= BlockFFFluid.maximumContent / 2 || idBelow == Fluids.stillWater.blockID || idBelow == Fluids.flowingWater.blockID)
                     && FysiksFun.rand.nextInt(5) != 0) continue;
                 Fluids.flowingWater.evaporate(w, chunk, x + dx, y2, z + dz, evaporationStepsize, false);
-                if(FysiksFun.rand.nextInt(10) == 0)
+                if(FysiksFun.settings.waterEvaporationMakesClouds && FysiksFun.rand.nextInt(10) == 0)
                   Gases.steam.setBlockContent(w, chunk, x + dx, Math.max(100, y2 + 1), z + dz, 1);
                 // FysiksFun.rand.nextInt(10) == 0);
                 Counters.directEvaporation++;

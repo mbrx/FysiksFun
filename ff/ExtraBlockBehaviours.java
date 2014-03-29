@@ -16,7 +16,7 @@ import net.minecraft.world.chunk.Chunk;
  */
 public class ExtraBlockBehaviours {
 
-  public static void postInit() {
+  public static void postInit(boolean isServer) {
     if (FysiksFun.settings.leavesAreSoft) {
       for (int leavesId = 0; leavesId < 4096; leavesId++) {
         if (!(Block.blocksList[leavesId] instanceof BlockLeaves)) continue;
@@ -36,6 +36,28 @@ public class ExtraBlockBehaviours {
       ffstone.setHardness(1.5F).setResistance(10.0F).setStepSound(Block.soundStoneFootstep).setUnlocalizedName("stone").setTextureName("stone");
       Block.blocksList[stone.blockID] = ffstone;
       GameRegistry.registerBlock(ffstone, "modified-stone");
+    }
+    
+    if(FysiksFun.settings.doImprovedPistons) {
+      /* Install alternative piston logic */
+      Block.blocksList[Block.pistonBase.blockID] = null;
+      BlockFFPistonBase pistonBase = new BlockFFPistonBase(Block.pistonBase.blockID,false);
+      pistonBase.setUnlocalizedName("pistonBase");
+      Block.blocksList[Block.pistonBase.blockID] = pistonBase;
+      GameRegistry.registerBlock(pistonBase, "modified-pistonBase");
+
+      Block.blocksList[Block.pistonStickyBase.blockID] = null;
+      BlockFFPistonBase pistonStickyBase = new BlockFFPistonBase(Block.pistonStickyBase.blockID,true);
+      pistonStickyBase.setUnlocalizedName("pistonStickyBase");
+      Block.blocksList[Block.pistonStickyBase.blockID] = pistonStickyBase;
+      GameRegistry.registerBlock(pistonStickyBase, "modified-pistonStickyBase");
+      
+      Block.blocksList[Block.pistonExtension.blockID] = null;
+      BlockFFPistonExtension pistonExtension = new BlockFFPistonExtension(Block.pistonExtension.blockID);
+      pistonExtension.setUnlocalizedName("pistonExtension");
+      Block.blocksList[Block.pistonExtension.blockID] = pistonExtension;
+      GameRegistry.registerBlock(pistonExtension, "modified-pistonExtension");
+
     }
   }
 

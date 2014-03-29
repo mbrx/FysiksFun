@@ -63,10 +63,13 @@ import mbrx.ff.util.ChunkMarkUpdater;
 import mbrx.ff.util.Counters;
 import mbrx.ff.util.ObjectPool;
 import mbrx.ff.util.Settings;
+import mbrx.ff.util.Util;
 import net.minecraft.block.Block;
+import net.minecraft.block.ITileEntityProvider;
 import net.minecraft.block.material.Material;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.passive.EntitySquid;
+import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.DamageSource;
 import net.minecraft.world.ChunkCoordIntPair;
 import net.minecraft.world.World;
@@ -82,7 +85,7 @@ import com.google.common.base.Objects;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 
-@Mod(modid = "FysiksFun", name = "FysiksFun", version = "0.5.6", dependencies="")
+@Mod(modid = "FysiksFun", name = "FysiksFun", version = "0.5.8", dependencies="")
 @NetworkMod(clientSideRequired = true, serverSideRequired = false)
 public class FysiksFun {
   // Singleton instance of mod class instansiated by Forge
@@ -184,13 +187,16 @@ public class FysiksFun {
     if (settings.doFluids) Fluids.postInit();
     if (settings.doGases) Gases.postInit();
     if (settings.doExtraFire) ExtraFire.postInit();
-    physicsRuleConfig.load();
-    WorkerPhysicsSweep.postInit(physicsRuleConfig);
-    if (physicsRuleConfig.hasChanged()) physicsRuleConfig.save();
-    ExtraBlockBehaviours.postInit();
+
     if(hasBuildcraft)
       BlockTurbine.init();
     BlockFFSensor.init();
+    BlockFFBlockDispenser.init();
+
+    physicsRuleConfig.load();
+    WorkerPhysicsSweep.postInit(physicsRuleConfig);
+    if (physicsRuleConfig.hasChanged()) physicsRuleConfig.save();
+    ExtraBlockBehaviours.postInit(event.getSide().isServer());
     // Must be after all other blocks (that may be related to trees) have been created
     Trees.initTreePartClassification();
   }
@@ -372,7 +378,8 @@ public class FysiksFun {
 
   /**
    * A thread safe mechanism for (a) assigning the ID and meta to a block, and
-   * (b) to schedule a block mark update.
+   * (b) to schedule a block mark update. If delayedBlockMarkSet is given then the updates are scheduled for later, 
+   * otherwise they are done _now_ but in another thread safe way. 
    */
   public static void setBlockIDandMetadata(World w, Chunk c, int x, int y, int z, int id, int meta, int oldId, int oldMeta,
       HashSet<ChunkMarkUpdateTask> delayedBlockMarkSet) {
@@ -412,6 +419,42 @@ public class FysiksFun {
       if (dist < minDist) minDist = dist;
     }
     return minDist;    
+  }
+
+  public static boolean isCurrentlyMovingABlock=false;
+  
+  public static void moveBlock(World w, int xD, int yD, int zD, int xS, int yS, int zS, boolean scheduleUpdate, boolean clearSource) {
+    isCurrentlyMovingABlock=true;
+    Chunk cD = ChunkCache.getChunk(w, xD>>4, zD>>4, true);
+    Chunk cS = ChunkCache.getChunk(w, xS>>4, zS>>4, true);
+    //System.out.println("Moving block from: "+Util.xyzString(xS,yS,zS)+" to "+Util.xyzString(xD,yD,zD));
+    
+    int idS = cS.getBlockID(xS&15, yS, zS&15);
+    int metaS = cS.getBlockMetadata(xS&15, yS, zS&15);
+    
+    int idD = cD.getBlockID(xD&15, yD, zD&15);
+    int metaD = cD.getBlockMetadata(xD&15, yS, zD&15);
+    Block blockS = Block.blocksList[idS];
+           
+    cD.setBlockIDWithMetadata(xD&15, yD, zD&15, idS, metaS);
+    if(scheduleUpdate)
+    ChunkMarkUpdater.scheduleBlockMark(w, xD, yD, zD, idD, metaD);
+    
+    if(blockS instanceof ITileEntityProvider) {
+      TileEntity entity = cS.getChunkBlockTileEntity(xS & 15, yS, zS & 15);
+      cS.removeChunkBlockTileEntity(xS & 15, yS, zS & 15);
+      entity.xCoord = xD;
+      entity.yCoord = yD;
+      entity.zCoord = zD;
+      entity.validate();
+      cD.addTileEntity(entity);        
+    }
+    if(clearSource) {
+      cS.setBlockIDWithMetadata(xS&15, yS, zS&15, 0, 0);
+      if(scheduleUpdate)
+        ChunkMarkUpdater.scheduleBlockMark(w, xS, yS, zS, idD, metaD);
+    }
+    isCurrentlyMovingABlock=false;
   }
 
 }

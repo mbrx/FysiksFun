@@ -10,6 +10,8 @@ public class Settings {
 
   public double  waterEvaporationRate;
   public double  waterRainRate;
+  public boolean waterEvaporationMakesClouds;
+
   public int     erosionRate;
   // public int erosionThreshold;
   // public boolean rainInOceans;
@@ -50,6 +52,7 @@ public class Settings {
   public int blockIronSensorDefaultID;
   public int blockGoldSensorDefaultID;
   public int blockDiamondSensorDefaultID;
+  public int blockBlockDispenserDefaultID;
 
   private String categoryModules    = "modules";
   private String categoryGeneric    = "generic";
@@ -60,6 +63,7 @@ public class Settings {
   private String categoryVolcanoes  = "volcanoes";
   private String categoryPhysics    = "physics";
 
+  public boolean doImprovedPistons;
   public boolean doVolcanoes;
   public boolean doDynamicPlants;
   public boolean doTreeFalling;
@@ -81,6 +85,10 @@ public class Settings {
   public boolean leavesAreSoft;
 
   public int threadPoolSize;
+
+  public boolean mycelliumGrowth;
+
+
 
 
   public void loadFromConfig(Configuration config) {
@@ -110,6 +118,8 @@ public class Settings {
     doPhysics = config.get(categoryModules, "enable-physics", "true", "Enables physics of all solid blocks. ").getBoolean(true);
     doEnergy = config.get(categoryModules, "enable-energy", "true",
         "Allows construction of energy producing machines (turbines) based on liquids&gases. Requires buildcraft.").getBoolean(true);
+    doImprovedPistons = config.get(categoryModules, "enable-improved-pistons", "true",
+        "Allows pistons to push ANY block (up to 256 steps), and sticky pistons to pull any blocks up 256 steps.").getBoolean(true);
     
     maxUpdatesPerTick = config
         .get(
@@ -121,6 +131,8 @@ public class Settings {
 
     waterEvaporationRate = config.get(categoryFluids, "water-evaporation", "10.0",
         "Maximum rate for water evaporation, default 10, higher is more evaporation", Property.Type.DOUBLE).getDouble(10.0);
+    waterEvaporationMakesClouds = config.get(categoryFluids, "water-evaporation-makes-clouds", "true",
+        "Water that evaporates from sun-light creates rain clouds (steam at high altitude)", Property.Type.BOOLEAN).getBoolean(true);
     waterRainRate = config.get(categoryFluids, "water-rain", "10.0", "Maximum intensity of rain, default 10, higher is more rain", Property.Type.DOUBLE)
         .getDouble(10.0);
     flowingLiquidOil = config.get(categoryFluids, "flowing-oil", "true", "Let buildcraft oil (if found) be treated as a flowing liquid", Property.Type.BOOLEAN)
@@ -175,6 +187,9 @@ public class Settings {
         Property.Type.BOOLEAN).getBoolean(true);
     plantGrowth = config.get(categoryEcology, "plant-activity", "10", "Overall speed at which plants will grow", Property.Type.INTEGER).getInt(10);
 
+    mycelliumGrowth = config.get(categoryEcology, "mycellium-growth", "true", "Allows mycellium to spread througout the world", Property.Type.BOOLEAN).getBoolean(true);
+
+    
     blockSteamDefaultID = config.getBlock("steam-id", 2250, "ID for steam blocks").getInt();
     blockPyroclasticDefaultID = config.getBlock("pyroclastic-id", 2251, "ID for pyroclastic cloud blocks").getInt();
     blockWoodTurbineDefaultID = config.getBlock("wood-turbine-id", 2252, "ID for water turbine blocks").getInt();
@@ -188,6 +203,7 @@ public class Settings {
     blockIronSensorDefaultID = config.getBlock("iron-sensor-id", 2258, "ID for liquid sensor blocks").getInt();
     blockGoldSensorDefaultID = config.getBlock("gold-sensor-id", 2259, "ID for liquid sensor blocks").getInt();
     blockDiamondSensorDefaultID = config.getBlock("diamond-sensor-id", 2260, "ID for liquid sensor blocks").getInt();
+    blockBlockDispenserDefaultID = config.getBlock("block-dispenser-id", 2261, "ID for block dispenser blocks").getInt();
 
     
     worldYOffset = config.get(categoryGases, "y-offset", "0",

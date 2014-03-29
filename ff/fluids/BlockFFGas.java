@@ -188,7 +188,7 @@ public class BlockFFGas extends Block {
               Chunk c = ChunkCache.getChunk(w, xN >> 4, zN >> 4, false);
               if (c.getBlockID(xN & 15, y + dy, zN & 15) == blockID) nGases++;
             }
-        if (nGases >= 40) {
+        if (nGases >= 20) {
           /* Block condensate into water */
           setBlockContent(w, x, y, z, 0);
           // Removes 25% of water from ecology

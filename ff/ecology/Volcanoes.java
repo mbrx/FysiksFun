@@ -339,9 +339,10 @@ public class Volcanoes {
               /* Chance to create new ores */
               if (idE == Block.stone.blockID && radSq < (int) ((explodeStrength + 2) * (explodeStrength + 2))) {
                 int newId = 0;
-                int v = FysiksFun.rand.nextInt(5000) + (y2 / 32);
+                int v = FysiksFun.rand.nextInt(2000) + (y2 / 20);
                 if (v == 0) newId = Block.oreDiamond.blockID;
-                else if (v <= 2) newId = Block.oreEmerald.blockID;
+                else if (v <= 1) newId = Block.oreEmerald.blockID;
+                else if (v <= 2) newId = Block.oreRedstone.blockID;
                 else if (v <= 5) newId = Block.oreIron.blockID;
                 if (newId != 0) {
                   FysiksFun.setBlockWithMetadataAndPriority(w, x2, y2, z2, newId, 0, 0);

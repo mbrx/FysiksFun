@@ -153,5 +153,14 @@ v0.5.6
     * Halved default rain amount from vanilla weather
     
  v0.5.7
+    * Pistons can now push ANY blocks including TileEntities, sticky pistons pull many blocks in row. Some bugs for multi-block entities.
+    * Fixes to erosion algorithm
+    * Slight increase of ore generation within volcanoes
+    * Fixed bug with shattering stone happening too often (probabilities where switched)
+    * Fixed bug where crops couldn't grow
+    * Fixed border-condition problem with chunk physics. Stable houses should stay stable when coming in/out of processed area.
     
-    
+  v0.5.8
+    * Plants (non-crops) that are growing in wrong lighting situations will be elliminated
+    * Added option to let mycellium spread over grass (but needs nearby water to do so)
+    * Added first version of blockDispenser similar to BTW, but not exactly same behaviour 

@@ -20,7 +20,7 @@ public class AnimalAIRewriter {
     
      List allEntities = w.loadedEntityList;
      for(Object o : allEntities) {
-       if(o instanceof EntityCow || o instanceof EntitySheep || o instanceof EntityPig || o instanceof EntityChicken || o instanceof EntityHorse) {
+       if(o instanceof EntityCow || o instanceof EntitySheep || o instanceof EntityPig || o instanceof EntityChicken) {
          EntityAnimal animal = (EntityAnimal) o;
          boolean hasFeedingAI=false;
          for(Object o2 : animal.tasks.taskEntries) {
@@ -43,16 +43,16 @@ public class AnimalAIRewriter {
   }
 
   /** All AI's with higher or equal priority value (less valued) is incremented by one before this AI is inserted. Thus it comes before an old AI with same priority value */ 
-  private static void insertAI(EntityAnimal cow, int priority, EntityAIBase aitask) {
+  private static void insertAI(EntityAnimal animal, int priority, EntityAIBase aitask) {
     // System.out.println("Rewriting the animal: "+cow);    
     // First increment the priority of every taskEntry that has same-or-higher priority as the new one
-    for(Object o2 : cow.tasks.taskEntries) {
+    for(Object o2 : animal.tasks.taskEntries) {
       EntityAITaskEntry taskEntry = (EntityAITaskEntry) o2;
       if(taskEntry.priority >= priority) {
         taskEntry.priority++;              
       }      
     }
-    cow.tasks.addTask(priority, aitask);
+    animal.tasks.addTask(priority, aitask);
   }
 
 }

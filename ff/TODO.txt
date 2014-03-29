@@ -1,3 +1,5 @@
+Snow biomes get messed up by rain...
+
 debug erosion
 debug behaviour of plants
 higher resolution of maps?
@@ -5,6 +7,10 @@ Fix breeding problem with horses?
 Buckets...
 Make animals flee from fire etc.
 
+creeper detector (beeps, frequency by distance)
+
+Animals should get thirsty?
+Make plants check for sunlight, otherwise die?
 
 Configuration for changing water flowing speed, check if the overall flow can be increased without CPU cost. Check if we can do it more often in oceans without getting to slow.
 Note that gas above oceans that are far away is updated very slowly. Only every 90 ticks!!

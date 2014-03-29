@@ -464,11 +464,6 @@ public class BlockFFFluid extends BlockFlowing {
 
         Chunk chunk1 = ChunkCache.getChunk(world, x1 >> 4, z1 >> 4, false);
         if (chunk1 == null) continue;
-        /*
-         * if ((x1 >> 4) == chunkX0 && (z1 >> 4) == chunkZ0) chunk1 = chunk0;
-         * else if (chunkProvider.chunkExists(x1 >> 4, z1 >> 4)) chunk1 =
-         * chunkProvider.provideChunk(x1 >> 4, z1 >> 4); else continue;
-         */
 
         int id1 = chunk1.getBlockID(x1 & 15, y1, z1 & 15);
         int content1 = 0;
@@ -508,9 +503,6 @@ public class BlockFFFluid extends BlockFlowing {
 
         // Get new tempData and get the content of this neighbour
         ChunkTempData tempData1 = ChunkCache.getTempData(world, x1 >> 4, z1 >> 4);
-        // if ((x1 >> 4) == (x0 >> 4) && (z1 >> 4) == (z0 >> 4)) tempData1 =
-        // tempData0;
-        // else tempData1 = ChunkTempData.getChunk(world, x1, y1, z1);
         if (id1 != 0) {
           content1 = getBlockContent(chunk1, tempData1, x1, y1, z1);
         }
@@ -564,22 +556,23 @@ public class BlockFFFluid extends BlockFlowing {
                 if (content1b < maximumContent - content0) {
                   content1b += content0;
                   content0 = 0;
-                  // System.out.println("Flowing diagonally down... checking for erosion");
+                  //System.out.println("Flowing diagonally down... checking for erosion");
                   setBlockContent(world, chunk1, tempData1, x1, y1 - 1, z1, content1b, "[Flowing diagonally down]", delayedBlockMarkSet);
                   // Possibly trigger an erosion event
                   // DEBUG
                   int erodeChance = FysiksFun.settings.erosionRate * erodeMultiplier;
-                  if (r.nextInt(500000) < erodeChance) {
+                  if (r.nextInt(500) < erodeChance) {
                     int id0b = chunk0.getBlockID(x0 & 15, y0 - 1, z0 & 15);
                     if (canErodeBlock(id0b)) {
                       int cnt = 0;
                       for (int dx0 = -1; dx0 <= 1; dx0++)
                         for (int dz0 = -1; dz0 <= 1; dz0++) {
-                          int sideId = world.getBlockId(x0 + dx0, y0, z0 + dz0);
+                          int sideId = world.getBlockId(x0 + dx0, y0-1, z0 + dz0);
                           if (sideId != 0 && !Fluids.isLiquid[sideId]) cnt++;
                         }
-                      if (cnt <= 2) {
-                        // System.out.println("Erosion A: "+x0+" "+(y0-1)+" "+z0);
+                      /* If two or more blocks are missing at the layer below us, then cause erosion */
+                      if (cnt <= 7) {
+                        //System.out.println("Erosion A: "+x0+" "+(y0-1)+" "+z0);
                         erodeBlock(world, x0, y0 - 1, z0);
 
                         /*
@@ -606,8 +599,8 @@ public class BlockFFFluid extends BlockFlowing {
         /* Higher chance toerode so we get rid or diagonal movements */
         // if (dY == 0 && dZ != 0 && dX != 0) erodeChance *= 2;
 
-        // DEBUG
         if (content0 != prevContent0 && dY == 0 && r.nextInt(1000000) < erodeChance) {
+          //System.out.println("Erode B");
           int idSideA = world.getBlockId(x0 + dZ, y0, z0 + dX);
           if (canErodeBlock(idSideA)) erodeBlock(world, x0 + dZ, y0, z0 + dX);
           int idSideB = world.getBlockId(x0 - dZ, y0, z0 - dX);
@@ -755,6 +748,7 @@ public class BlockFFFluid extends BlockFlowing {
           Block b = Block.blocksList[id1];
           Material m1 = b == null ? null : b.blockMaterial;
           if (id1 != 0 && (m1 != null && m1.blocksMovement())) break;
+          if(y1-1 < 0) continue;
           int id1b = c.getBlockID(x1 & 15, y1 - 1, z1 & 15);
 
           int content1b = 0;
@@ -907,6 +901,7 @@ public class BlockFFFluid extends BlockFlowing {
   }
 
   private void doErode(World w, int x, int y, int z, int x2, int y2, int z2) {
+    System.out.println("doing erode...");
     boolean oldPreventSetBlockLiquidFlowover = preventSetBlockLiquidFlowover;
     int idHere = w.getBlockId(x, y, z);
     int metaHere = w.getBlockMetadata(x, y, z);

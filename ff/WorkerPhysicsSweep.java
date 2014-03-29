@@ -105,10 +105,10 @@ public class WorkerPhysicsSweep implements Runnable {
    */
 
   public static int                          maxChunkDist            = 48;
-  private static final int                   countdownToAction       = 20;
+  private static final int                   countdownToAction       = 80;
   private static final int                   fallForce               = 20;
   // private static final int numSweeps = 4;
-  private static int                         elasticStrengthConstant = 80;               // 240;
+  private static int                         elasticStrengthConstant = 120;               // 240;
 
   public static void postInit(Configuration physicsRuleConfig) {
 
@@ -202,11 +202,11 @@ public class WorkerPhysicsSweep implements Runnable {
         blockDoPhysics[i] = true;
         blockIsFragile[i] = true;
       } else if (b instanceof BlockLog || i == rubWood) {
-        blockStrength[i] = 120; // 30 times weight
+        blockStrength[i] = 120; // 30 times weight, needed to avoid trees from breaking!
         blockWeight[i] = 4;
       } else if (b instanceof BlockWood) { // Poor name in vanilla, this is the
                                            // planks!!
-        blockStrength[i] = 80; // 40 times weight
+        blockStrength[i] = 50; // 25 times weight
         blockWeight[i] = 2;
       }
       if (b instanceof BlockBreakable) blockIsFragile[i] = true;
@@ -239,7 +239,7 @@ public class WorkerPhysicsSweep implements Runnable {
     blockWeight[Block.dirt.blockID] = 1;
 
     blockStrength[Block.sand.blockID] = 4;
-    blockStrength[Block.cobblestone.blockID] = 120; // 15 times weight
+    blockStrength[Block.cobblestone.blockID] = 80; // 10 times weight
     blockWeight[Block.cobblestone.blockID] = 8;
 
     blockStrength[Block.stone.blockID] = 200; // 50 times weight
@@ -530,17 +530,16 @@ public class WorkerPhysicsSweep implements Runnable {
     /***** debug *****/
     if (Counters.tick % 50 == 0) {
       if (id == Block.hardenedClay.blockID) debugMe = true;
+      //if (id == Block.planks.blockID) debugMe = true;
     }
     // if(x+dx == -676 && z+dz == 541) debugMe=true;
 
     if (debugMe) {
       System.out.println("id:" + id + "@" + Util.xyzString(x + dx, y, z + dz) + " origPressure: " + origPressure + " prevClock: " + curClock + " prevBreak: "
-          + curBreak);
+          + curBreak+" breakThreshold: "+breakThreshold);
     }
 
     // Propagate forces
-    // TODO: introduce multiple levels of breaking, that moves gradually more
-    // and more power. Need more bits!
     totalMoved = propagateForces(c, tempData, blockStorage, x, y, z, dx, dz, id, timeNow, restartPhysics, origPressure, isFalling, simplifiedPhysics,
         breakThreshold, debugMe);
     // Make blocks at y=1 as well as all bedrock blocks act as sinks/supports
@@ -574,6 +573,10 @@ public class WorkerPhysicsSweep implements Runnable {
      */
     if (tempData.solidBlockPhysicsCountdownToAction > 0) {
       if (debugMe) System.out.println("No action due to countdown: " + tempData.solidBlockPhysicsCountdownToAction);
+      if(curBreak == breakAtCounter) {
+        curBreak=breakAtCounter-1;
+        System.out.println("Would have broken, preventing it due to countdown");
+      }
       doBreak = false;
       doFall = false;
     }
@@ -723,7 +726,9 @@ public class WorkerPhysicsSweep implements Runnable {
 
         toMove = (nnPressure - curPressure - elasticPressure) / 2;
 
-        if ((id == Block.planks.blockID || id == Block.wood.blockID) && (nnId == Block.stone.blockID || nnId == Block.cobblestone.blockID)) {
+        if ((id == Block.planks.blockID || id == Block.wood.blockID) && (nnId == Block.stone.blockID)) {
+          //|| nnId == Block.cobblestone.blockID)) {
+        
           /*
            * Planks and wood are stronger when supporting original stone. To be
            * used as support in mines.
