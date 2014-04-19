@@ -57,7 +57,10 @@ public class ExtraBlockBehaviours {
       pistonExtension.setUnlocalizedName("pistonExtension");
       Block.blocksList[Block.pistonExtension.blockID] = pistonExtension;
       GameRegistry.registerBlock(pistonExtension, "modified-pistonExtension");
-
+    }
+    /* Make setting for new bottle behaviour */
+    if(true) {
+      
     }
   }
 

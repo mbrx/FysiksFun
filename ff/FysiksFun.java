@@ -60,6 +60,7 @@ import mbrx.ff.util.BlockUpdateState;
 import mbrx.ff.util.ChunkCache;
 import mbrx.ff.util.ChunkMarkUpdateTask;
 import mbrx.ff.util.ChunkMarkUpdater;
+import mbrx.ff.util.ChunkTempData;
 import mbrx.ff.util.Counters;
 import mbrx.ff.util.ObjectPool;
 import mbrx.ff.util.Settings;
@@ -119,10 +120,11 @@ public class FysiksFun {
     public World w;
     public double posX, posY, posZ;
   };
-
+  
   public static ArrayList<WorldObserver> observers                = new ArrayList<WorldObserver>();
 
-  public static Semaphore                globalWorldChangingMutex = new Semaphore(1);
+  /** Mutex for locking the threads whenever a vanilla function is called. */
+  public static Object                vanillaMutex = new Object();
 
   //@PreInit
   @EventHandler
@@ -262,6 +264,8 @@ public class FysiksFun {
    * the scheduling of all block updates and mark TO client calls
    */
   public static void tickServer() {
+    //System.out.println("Start of tickServer");
+    
     /* Update world tick and print statistics */
     Counters.tick++;
     if (Counters.tick % 50 == 0) {
@@ -315,6 +319,8 @@ public class FysiksFun {
      * repopulated before next tick anyway
      */
     observers.clear();
+    
+    //System.out.println("End of tickServer");
 
   }
 
@@ -324,6 +330,10 @@ public class FysiksFun {
    */
   public static void doWorldTick(World w) {
 
+    //System.out.println("Start of world tick");
+    
+    ChunkTempData.cleanup(w);
+    
     // Fast forward the time until rain stops/starts
     int rainTime = w.getWorldInfo().getRainTime();
     if (rainTime > settings.weatherSpeed - 1) w.getWorldInfo().setRainTime(rainTime + 1 - settings.weatherSpeed);
@@ -359,7 +369,7 @@ public class FysiksFun {
     ExtraEntityBehaviours.doTick(w);
 
     // System.out.println("Active chunks: "+w.activeChunkSet.size());
-
+    //System.out.println("End of world tick");
   }
 
   /**

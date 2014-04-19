@@ -139,7 +139,7 @@ public class BlockFFGas extends Block {
   }
 
   public void setBlockContent(World w, int x, int y, int z, int quantity) {
-    Chunk c = w.getChunkFromChunkCoords(x >> 4, z >> 4);
+    Chunk c = ChunkCache.getChunk(w, x>>4, z>>4, true); 
     setBlockContent(w, c, x, y, z, quantity);
   }
 
@@ -174,7 +174,7 @@ public class BlockFFGas extends Block {
       }
 
       int chanceToCondense = 0;
-      chanceToCondense = (int)((10 * (y - 100 - worldYOffset) + 10) * w.rainingStrength);
+      chanceToCondense = (int)((10 * (y - 100 - worldYOffset) + 10) * Math.max(w.rainingStrength,0.1));
       //if (y >= 64 + worldYOffset) chanceToCondense += (int) (w.rainingStrength * 100.0);
       //if (y >= 100 + worldYOffset) chanceToCondense += 5 * (y - 100 - worldYOffset);
       if (FysiksFun.rand.nextInt(523) < chanceToCondense) {
@@ -201,10 +201,15 @@ public class BlockFFGas extends Block {
       /* First, move gas in direction of wind with a given probability */
       float windX = Wind.getWindX(w, x, y, z);
       float windZ = Wind.getWindZ(w, x, y, z);
+      boolean doLoadChunks=FysiksFun.rand.nextInt(10) == 0;
       for (int tries = 0; tries < 3; tries++) {
         if (windX > 0.f && r.nextFloat() < windX) {
-          Chunk c1 = ChunkCache.getChunk(w, (x + 1) >> 4, z >> 4, false);
-          if (c1 == null) continue;
+          Chunk c1 = ChunkCache.getChunk(w, (x + 1) >> 4, z >> 4, doLoadChunks);
+          if (c1 == null) {
+            // Ugly fix to avoid some border cases with steam clouds
+            if(this == Gases.steam && y>=100) newContent=0;
+            continue;
+          }
           int id1 = c1.getBlockID((x + 1) & 15, y, z & 15);
           if (id1 == 0) {
             setBlockContent(w, x, y, z, 0);
@@ -213,7 +218,7 @@ public class BlockFFGas extends Block {
             setBlockContent(w, x, y, z, newContent);
           }
         } else if (windX < 0.f && r.nextFloat() < -windX) {
-          Chunk c1 = ChunkCache.getChunk(w, (x - 1) >> 4, z >> 4, false);
+          Chunk c1 = ChunkCache.getChunk(w, (x - 1) >> 4, z >> 4, doLoadChunks);
           if (c1 == null) continue;
           int id1 = c1.getBlockID((x - 1) & 15, y, z & 15);
           if (id1 == 0) {
@@ -224,7 +229,7 @@ public class BlockFFGas extends Block {
           }
         }
         if (windZ > 0.f && r.nextFloat() < windZ) {
-          Chunk c1 = ChunkCache.getChunk(w, x >> 4, (z + 1) >> 4, false);
+          Chunk c1 = ChunkCache.getChunk(w, x >> 4, (z + 1) >> 4, doLoadChunks);
           if (c1 == null) continue;
           int id1 = c1.getBlockID(x & 15, y, (z + 1) & 15);
           if (id1 == 0) {
@@ -234,19 +239,19 @@ public class BlockFFGas extends Block {
             setBlockContent(w, x, y, z, newContent);
           }
         } else if (windZ < 0.f && r.nextFloat() < -windZ) {
-          Chunk c1 = ChunkCache.getChunk(w, x >> 4, (z - 1) >> 4, false);
+          Chunk c1 = ChunkCache.getChunk(w, x >> 4, (z - 1) >> 4, doLoadChunks);
           if (c1 == null) continue;
           int id1 = c1.getBlockID(x & 15, y, (z - 1) & 15);
           if (id1 == 0) {
             setBlockContent(w, x, y, z, 0);
             y = y + computeUpdraft(w, y, x, z, x, z - 1);
-            z = z - 1;
+            z = z - 1;            
             setBlockContent(w, x, y, z, newContent);
           }
         }
         chunkX = x >> 4;
         chunkZ = z >> 4;
-        origChunk = ChunkCache.getChunk(w, chunkX, chunkZ, false);
+        origChunk = ChunkCache.getChunk(w, chunkX, chunkZ, doLoadChunks);
         if (origChunk == null) return;
       }
 

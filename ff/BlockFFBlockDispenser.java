@@ -32,6 +32,8 @@ public class BlockFFBlockDispenser extends BlockDispenser {
 
   public static BlockFFBlockDispenser blockBlockDispenser;
   public String                       iconName;
+  private Icon sideIcon;
+  private Icon headIcon;
 
   public static void init() {
 
@@ -45,13 +47,32 @@ public class BlockFFBlockDispenser extends BlockDispenser {
     GameRegistry.registerBlock(blockBlockDispenser, "blockDispenser");
     LanguageRegistry.addName(blockBlockDispenserStack, "blockDispenser");
 
+    GameRegistry.registerTileEntity(mbrx.ff.TileEntityFFBlockDispenser.class, "TileEntityFFBlockDispenser");
   }
 
   public BlockFFBlockDispenser(int par1) {
     super(par1);
   }
 
+  public Icon getIcon(int side, int metaData)
+  {
+      int k = metaData & 7;
+      return side == k ? this.headIcon : this.sideIcon;
+  }
+
+  public void registerIcons(IconRegister par1IconRegister)
+  {
+      this.sideIcon = par1IconRegister.registerIcon("fysiksfun:blockDispenserSide");
+      this.headIcon = par1IconRegister.registerIcon("fysiksfun:blockDispenserHead");
+  }
+  
+  @Override
+  public TileEntity createNewTileEntity(World world) {
+      return (TileEntity) new TileEntityFFBlockDispenser();
+  }
+  
   /*
+   * 
   @Override
   public TileEntity createNewTileEntity(World world) {
     return null;
@@ -91,15 +112,21 @@ public class BlockFFBlockDispenser extends BlockDispenser {
   protected void dispense(World w, int x, int y, int z) {}
 
   protected void doDispense(World w, int x, int y, int z) {
-    TileEntityDispenser tileentitydispenser = (TileEntityDispenser) w.getBlockTileEntity(x, y, z);
+    TileEntityFFBlockDispenser tileentitydispenser = (TileEntityFFBlockDispenser) w.getBlockTileEntity(x, y, z);
 
     Chunk c = ChunkCache.getChunk(w, x >> 4, z >> 4, true);
     int direction = c.getBlockMetadata(x & 15, y, z & 15);
 
-    if (tileentitydispenser != null) {
-      int l = tileentitydispenser.getRandomStackFromInventory();
-
-      if (l < 0) {
+    if (tileentitydispenser != null) {      
+      //int l = tileentitydispenser.getRandomStackFromInventory();
+      int l = tileentitydispenser.nextPosition;
+      int tries;
+      for(tries=0;tries<9;tries++) {
+        if(tileentitydispenser.getStackInSlot(l) != null) break;
+        tileentitydispenser.nextPosition = (tileentitydispenser.nextPosition+1)%9;
+        l = tileentitydispenser.nextPosition;
+      }
+      if (tries == 9) {
         w.playAuxSFX(1001, x, y, z, 0);
       } else {
         ItemStack itemstack = tileentitydispenser.getStackInSlot(l);
@@ -130,7 +157,7 @@ public class BlockFFBlockDispenser extends BlockDispenser {
   protected void undoDispense(World w, int x, int y, int z) {
     System.out.println("Undoing dispense");
 
-    TileEntityDispenser tileentitydispenser = (TileEntityDispenser) w.getBlockTileEntity(x, y, z);
+    TileEntityFFBlockDispenser tileentitydispenser = (TileEntityFFBlockDispenser) w.getBlockTileEntity(x, y, z);
     Chunk c = ChunkCache.getChunk(w, x >> 4, z >> 4, true);
     int direction = c.getBlockMetadata(x & 15, y, z & 15);
     EnumFacing dir = getFacing(direction & 7);
@@ -154,33 +181,30 @@ public class BlockFFBlockDispenser extends BlockDispenser {
     ItemStack itemstack = null;
     boolean blockConsumed = false;
 
-    for (int i = 0; i < 9; i++) {
-      itemstack = tileentitydispenser.getStackInSlot(i);
-      if (itemstack == null) continue;
-      if (itemstack.getItem().itemID != id) continue;
-      if (itemstack.getItemDamage() != meta) continue;
-      if (itemstack.stackSize >= itemstack.getMaxStackSize() - 1) {
-        itemstack = null;
-        continue;
-      }
-      itemstack.stackSize = itemstack.stackSize + 1;
-      blockConsumed = true;
-      break;
-    }
-    if (!blockConsumed) {
-      itemstack = new ItemStack(id, 1, meta);
+    int tries;
+    for(tries=0;tries<9;tries++) {      
       int i;
-      for (i = 0; i < 9; i++) {
-        if (tileentitydispenser.getStackInSlot(i) == null) break;
-      }
-      if (i < 9) {
+      i=tileentitydispenser.nextPosition;
+      itemstack = tileentitydispenser.getStackInSlot(i);
+      if(itemstack == null) {
+        /* Found an empty slot to place block in */
+        itemstack = new ItemStack(id, 1, meta);
         tileentitydispenser.setInventorySlotContents(i, itemstack);
-        blockConsumed = true;
+        blockConsumed=true;
+        break;
       }
-    }
+      if(itemstack.getItem().itemID == id && itemstack.getItemDamage() == meta && itemstack.stackSize <= itemstack.getMaxStackSize() - 1) {
+        itemstack.stackSize = itemstack.stackSize + 1;
+        blockConsumed = true;
+        break;        
+      }
+      tileentitydispenser.nextPosition = (tileentitydispenser.nextPosition+1)%9;
+    }    
     if (blockConsumed) {
       Block.blocksList[id].breakBlock(w, x1, y1, z1, id, meta);
       FysiksFun.setBlockIDandMetadata(w, c1, x1, y1, z1, 0, 0, id, meta, null);
+    } else {
+      w.playAuxSFX(1001, x, y, z, 0);
     }
   }
 

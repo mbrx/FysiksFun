@@ -164,3 +164,6 @@ v0.5.6
     * Plants (non-crops) that are growing in wrong lighting situations will be elliminated
     * Added option to let mycellium spread over grass (but needs nearby water to do so)
     * Added first version of blockDispenser similar to BTW, but not exactly same behaviour 
+    * Made textures for the liquid sensors and turbines
+    * Added a longer-range sweep of water/gas physics done at intervals to even out effects of disappearing oceans etc. 
+    * Some improvements to concurrency code for stability.

@@ -319,7 +319,7 @@ public class Trees {
   public static void tickTree(World w, int x, int y, int z) {
     boolean killTree = false;
     int blockBelowId = w.getBlockId(x, y - 1, z);
-    IChunkProvider chunkProvider = w.getChunkProvider();
+   // IChunkProvider chunkProvider = w.getChunkProvider();
 
     // Trees hanging in the air should fall in a semi-realistic manner.
     if (blockBelowId == 0 || (Block.blocksList[blockBelowId] != null && !Block.blocksList[blockBelowId].isOpaqueCube())) {
@@ -344,7 +344,7 @@ public class Trees {
     for (dx = -4; dx <= 4; dx++)
       for (dz = -4; dz <= 4; dz++)
         for (dy = 2; dy >= -4; dy--) {
-          Chunk c = chunkProvider.provideChunk((x + dx) >> 4, (z + dz) >> 4);
+          Chunk c = ChunkCache.getChunk(w, (x+dx)>>4, (z+dz)>>4, true);
           int id = c.getBlockID((x + dx) & 15, y + dy, (z + dz) & 15);
           if (id == Fluids.stillWater.blockID || id == Fluids.flowingWater.blockID) {
             surroundingWater++;

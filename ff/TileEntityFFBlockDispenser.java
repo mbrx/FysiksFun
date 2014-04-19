@@ -3,83 +3,34 @@ package mbrx.ff;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.NBTTagList;
 import net.minecraft.tileentity.TileEntity;
+import net.minecraft.tileentity.TileEntityDispenser;
 
-public class TileEntityFFBlockDispenser extends TileEntity implements IInventory {
+public class TileEntityFFBlockDispenser extends TileEntityDispenser {
 
+  public int nextPosition;
+  
   public TileEntityFFBlockDispenser() {
-    // TODO Auto-generated constructor stub
+    super();
+    nextPosition=0;
   }
 
-  @Override
-  public int getSizeInventory() {
-    return 9;
+  public void readFromNBT(NBTTagCompound par1NBTTagCompound)
+  {
+      super.readFromNBT(par1NBTTagCompound);
+      nextPosition = par1NBTTagCompound.getByte("nextBlockDispense");
+      if(nextPosition<=0 || nextPosition>9) nextPosition=0;
   }
 
-  @Override
-  public ItemStack getStackInSlot(int i) {
-    // TODO Auto-generated method stub
-    return null;
-  }
-
-  @Override
-  public ItemStack decrStackSize(int i, int j) {
-    // TODO Auto-generated method stub
-    return null;
-  }
-
-  @Override
-  public ItemStack getStackInSlotOnClosing(int i) {
-    // TODO Auto-generated method stub
-    return null;
-  }
-
-  @Override
-  public void setInventorySlotContents(int i, ItemStack itemstack) {
-    // TODO Auto-generated method stub
-
-  }
-
-  @Override
-  public String getInvName() {
-    // TODO Auto-generated method stub
-    return null;
-  }
-
-  @Override
-  public boolean isInvNameLocalized() {
-    // TODO Auto-generated method stub
-    return false;
-  }
-
-  @Override
-  public int getInventoryStackLimit() {
-    // TODO Auto-generated method stub
-    return 0;
-  }
-
-  @Override
-  public boolean isUseableByPlayer(EntityPlayer entityplayer) {
-    // TODO Auto-generated method stub
-    return false;
-  }
-
-  @Override
-  public void openChest() {
-    // TODO Auto-generated method stub
-
-  }
-
-  @Override
-  public void closeChest() {
-    // TODO Auto-generated method stub
-
-  }
-
-  @Override
-  public boolean isItemValidForSlot(int i, ItemStack itemstack) {
-    // TODO Auto-generated method stub
-    return false;
+  /**
+   * Writes a tile entity to NBT.
+   */
+  public void writeToNBT(NBTTagCompound par1NBTTagCompound)
+  {
+      super.writeToNBT(par1NBTTagCompound);
+      par1NBTTagCompound.setByte("nextBlockDispense", (byte) nextPosition);
   }
 
 }

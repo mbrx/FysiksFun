@@ -6,12 +6,14 @@ import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Future;
 
 import mbrx.ff.util.ChunkCache;
 import mbrx.ff.util.ChunkMarkUpdateTask;
 import mbrx.ff.util.ChunkMarkUpdater;
 import mbrx.ff.util.ChunkTempData;
+import mbrx.ff.util.Counters;
 import mbrx.ff.util.ObjectPool;
 import net.minecraft.world.ChunkCoordIntPair;
 import net.minecraft.world.World;
@@ -43,6 +45,7 @@ public class MPWorldTicker {
 
     // A thread dependent 'safe' set for scheduling delayed block mark requests
     Map<Integer, HashSet<ChunkMarkUpdateTask>> delayedBlockMarkSets = Collections.synchronizedMap(new Hashtable<Integer, HashSet<ChunkMarkUpdateTask>>());
+    Set alreadyScheduled = new HashSet();
 
     // Schedule jobs, first the odd coordinates, then the even coordinates
     for (int oddeven = 0; oddeven < 2; oddeven++) {
@@ -50,12 +53,30 @@ public class MPWorldTicker {
       for (Object o : w.activeChunkSet) {
         ChunkCoordIntPair xz = (ChunkCoordIntPair) o;
         if (((xz.chunkXPos + xz.chunkZPos) & 1) == oddeven) {
-          // {
           Chunk chunk = ChunkCache.getChunk(w, xz.chunkXPos, xz.chunkZPos, true);
           ChunkTempData tempData = ChunkCache.getTempData(w, xz.chunkXPos, xz.chunkZPos);
           Runnable worker = new WorkerUpdateChunks(w, chunk, xz, delayedBlockMarkSets);
           Future f = FysiksFun.executor.submit(worker);
           toWaitFor.add(f);
+          alreadyScheduled.add(xz);
+        }
+      }
+      /* Make a sweep around every observer and process a few more chunks in those directions to allow water etc. to flow */
+      for (FysiksFun.WorldObserver observer : FysiksFun.observers) {
+        double angle = ((double) (Counters.tick / 200)) * Math.PI * 2.0 / 100.0;
+        for (int dist = 0; dist < 1024; dist += 8) {
+          int x = (int) (observer.posX + dist * Math.sin(angle));
+          int z = (int) (observer.posZ + dist * Math.cos(angle));
+          if(((x+z)&1) == oddeven) {
+            ChunkCoordIntPair xz = new ChunkCoordIntPair(x>>4,z>>4);
+            if(!alreadyScheduled.contains(xz)) {
+              Chunk chunk = ChunkCache.getChunk(w, xz.chunkXPos, xz.chunkZPos, true);
+              Runnable worker = new WorkerUpdateChunks(w, chunk, xz, delayedBlockMarkSets);
+              Future f = FysiksFun.executor.submit(worker);
+              toWaitFor.add(f);
+              alreadyScheduled.add(xz);
+            }
+          }
         }
       }
       for (Future f : toWaitFor) {
@@ -111,6 +132,8 @@ public class MPWorldTicker {
     // A thread dependent 'safe' set for scheduling delayed block mark requests
     Map<Integer, HashSet<ChunkMarkUpdateTask>> delayedBlockMarkSets = Collections.synchronizedMap(new Hashtable<Integer, HashSet<ChunkMarkUpdateTask>>());
 
+    Set alreadyScheduled = new HashSet();
+
     // Schedule jobs, first the odd coordinates, then the even coordinates
     for (int oddeven = 0; oddeven < 2; oddeven++) {
       List<Future> toWaitFor = new ArrayList<Future>();
@@ -120,6 +143,25 @@ public class MPWorldTicker {
           Runnable physicsWorker = new WorkerPhysicsSweep(w, wstate, xz, delayedBlockMarkSets);
           Future f = FysiksFun.executor.submit(physicsWorker);
           toWaitFor.add(f);
+          alreadyScheduled.add(xz);
+        }
+      }
+      /* Make a sweep around every observer and process a few more chunks in those directions to allow water etc. to flow */
+      for (FysiksFun.WorldObserver observer : FysiksFun.observers) {
+        double angle = ((double) (Counters.tick / 200)) * Math.PI * 2.0 / 100.0;
+        for (int dist = 0; dist < 1024; dist += 8) {
+          int x = (int) (observer.posX + dist * Math.sin(angle));
+          int z = (int) (observer.posZ + dist * Math.cos(angle));
+          if(((x+z)&1) == oddeven) {
+            ChunkCoordIntPair xz = new ChunkCoordIntPair(x>>4,z>>4);
+            if(!alreadyScheduled.contains(xz)) {
+              Chunk chunk = ChunkCache.getChunk(w, xz.chunkXPos, xz.chunkZPos, true);
+              Runnable worker = new WorkerUpdateChunks(w, chunk, xz, delayedBlockMarkSets);
+              Future f = FysiksFun.executor.submit(worker);
+              toWaitFor.add(f);
+              alreadyScheduled.add(xz);
+            }
+          }
         }
       }
       for (Future f : toWaitFor) {

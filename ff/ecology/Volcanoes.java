@@ -96,8 +96,10 @@ public class Volcanoes {
     solidifySurfaceLava(w, xz, chunk0, tempData0, startX, startZ, radius);
 
     if (hasVolcano) {
-      //if (Counters.tick % 20 == 0) System.out.println("Active volcano at: " + startX + " " + startZ + " Activity: " + activity);
-      //retractLavaSource(w, volcanoFillY, chunk0, startX, startZ, radius, activity);
+      // if (Counters.tick % 20 == 0) System.out.println("Active volcano at: " +
+      // startX + " " + startZ + " Activity: " + activity);
+      // retractLavaSource(w, volcanoFillY, chunk0, startX, startZ, radius,
+      // activity);
       if (FysiksFun.settings.visualizeVolcanoes) visualizeVolcano(chunk0, startX, startZ, radius);
       feedVolcano(w, volcanoFillY, startX, startZ, radius, activity);
     }
@@ -304,9 +306,9 @@ public class Volcanoes {
       // float explodeStrength = 1.5f;
       if (FysiksFun.rand.nextInt(10) == 0) {
         FysiksFun.setBlockWithMetadataAndPriority(w, x0, y0, z0, 0, 0, 0);
-        FysiksFun.globalWorldChangingMutex.acquireUninterruptibly();
-        w.newExplosion(null, x0, y0 + offsetY, z0, explodeStrength, true, true);
-        FysiksFun.globalWorldChangingMutex.release();
+        synchronized (FysiksFun.vanillaMutex) {
+          w.newExplosion(null, x0, y0 + offsetY, z0, explodeStrength, true, true);
+        }
       }
       int explodeRadius = ((int) explodeStrength) + 4;
       fillExplodedAreaWithLava(w, x0, z0, y0, offsetY, explodeStrength, explodeRadius);
@@ -448,7 +450,6 @@ public class Volcanoes {
                 }
               }
 
-  
               if (targetPressure < BlockFFFluid.maximumContent) {
                 for (int dy2 = +1; dy2 >= -1; dy2--)
                   for (int dz2 = -1; dz2 <= 1; dz2++)
