@@ -222,8 +222,7 @@ public class Evaporation {
   /** Evaporates water liquids that are in direct sunlight */
   public static void doSunlightEvaporation(World w, int x, int z) {
 
-    IChunkProvider chunkProvider = w.getChunkProvider();
-    Chunk chunk = chunkProvider.provideChunk(x >> 4, z >> 4);
+    Chunk chunk = ChunkCache.getChunk(w, x>>4, z>>4, true);
 
     // Gives the current time of the day, so we only evaporate during daylight
     long timeNow = w.getWorldInfo().getWorldTime();

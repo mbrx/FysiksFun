@@ -535,10 +535,11 @@ public class WorkerPhysicsSweep implements Runnable {
     boolean debugMe = false;
 
     /***** debug *****/
-    if (Counters.tick % 50 == 0) {
+    //if (Counters.tick % 2 == 0) {
       if (id == Block.hardenedClay.blockID) debugMe = true;
       // if (id == Block.planks.blockID) debugMe = true;
-    }
+    //}
+      
     // if(x+dx == -676 && z+dz == 541) debugMe=true;
 
     if (debugMe) {
@@ -560,20 +561,29 @@ public class WorkerPhysicsSweep implements Runnable {
     boolean doFall = curBreak == counterIsFalling;
     boolean fallDueToClock = false;
     int timeCheck = (timeNow - timeToFall + clockModulo) % clockModulo;
-
-    // Compute if we should start falling due no support from ground (no clock)
+    if(debugMe) System.out.println("timecheck: "+timeCheck);
+    // Compute if we should start falling due to no support from ground (no clock)
     if (curClock < timeCheck) {
       fallDueToClock = (timeCheck - curClock) < (clockModulo * 4) / 5;
     } else if (curClock > timeCheck) {
       fallDueToClock = (curClock - timeCheck) > clockModulo / 5;
     }
+    if(debugMe) System.out.println("Fall due to clock: "+fallDueToClock);
     if (origClock != curClock) fallDueToClock = false;
-    doFall = doFall || fallDueToClock;
+    if(fallDueToClock) {
+      curBreak=counterIsFalling;
+      doFall=true;
+    }
 
     // Compute if we should INITIATE a BREAK
     boolean doBreak = totalMoved >= breakThreshold;
     if (simplifiedPhysics > 0) doBreak = false;
 
+    /*if(isFalling) {
+       System.out.println("@"+Util.xyzString(x,y,z)+" was falling, new doFall: "+doFall+" cur break: "+curBreak);
+       debugMe=true;
+    }*/
+    
     /*
      * Prevent all action if the chunk based "counter since start" haven't
      * reached zero
@@ -603,7 +613,7 @@ public class WorkerPhysicsSweep implements Runnable {
         System.out.println("time to increase break? curBreak: " + curBreak + " totalMoved: " + totalMoved + " breakThreshold: " + breakThreshold);
       }
       if (totalMoved >= breakThreshold + 2 * (curBreak - breakAtCounter)) curBreak = Math.min(curBreak + 1, counterIsFalling - 1);
-      else if (totalMoved < breakThreshold + 2 * (curBreak - breakAtCounter) - 2) curBreak--;
+      else if (isFalling == false && totalMoved < breakThreshold + 2 * (curBreak - breakAtCounter) - 2) curBreak--;
       if (curBreak < 0) System.out.println("wtf?");
     }
 
@@ -611,13 +621,13 @@ public class WorkerPhysicsSweep implements Runnable {
      * Wait with falling if sufficient time haven't passed since the last fall
      */
     if (doFall && !fallDueToClock) {
-      if (debugMe) System.out.println("Wait with the fallling");
+      if (debugMe) System.out.println("Wait with the fallling, curBreak is: "+curBreak);
       doFall = false;
     }
 
     if (debugMe) {
       System.out.println("  curclock: " + curClock + " origclock: " + origClock + " time: " + timeNow + " fall: " + doFall);
-      System.out.println("  totalMoved: " + totalMoved + " breakCounter: " + curBreak + " doBreak:" + doBreak + " curPressure:" + curPressure);
+      System.out.println("  totalMoved: " + totalMoved + " curBreak: " + curBreak + " doBreak:" + doBreak + " curPressure:" + curPressure);
     }
 
     if ((doFall || doBreak) && fallOrBreak(c, x0, y0, z0, id, weight, timeNow, doBreak, delayedBlockMarkSet, tempData, debugMe)) {

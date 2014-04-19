@@ -161,9 +161,10 @@ v0.5.6
     * Fixed border-condition problem with chunk physics. Stable houses should stay stable when coming in/out of processed area.
     
   v0.5.8
-    * Plants (non-crops) that are growing in wrong lighting situations will be elliminated
+    * Plants (non-crops) that are growing in wrong lighting situations will be eliminated
     * Added option to let mycellium spread over grass (but needs nearby water to do so)
     * Added first version of blockDispenser similar to BTW, but not exactly same behaviour 
     * Made textures for the liquid sensors and turbines
     * Added a longer-range sweep of water/gas physics done at intervals to even out effects of disappearing oceans etc. 
     * Some improvements to concurrency code for stability.
+    * Fixed problem with falling blocks sticking to the side of objects they are falling next to. 

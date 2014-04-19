@@ -82,14 +82,8 @@ public class BlockFFFluid extends BlockFlowing {
 
   public static boolean       preventSetBlockLiquidFlowover = false;
   public Block                superWrapper;
-  public Block                replacedBlock;                                                               // Only
-                                                                                                            // registerIcons
-                                                                                                            // function
-                                                                                                            // is
-                                                                                                            // wrapped
-                                                                                                            // to
-                                                                                                            // this
-                                                                                                            // block
+  // Only the registerIcons function is wrapped to this block
+  public Block                replacedBlock;                 
   public boolean              canSeepThrough;
   public boolean              canCauseErosion;
 
@@ -216,13 +210,12 @@ public class BlockFFFluid extends BlockFlowing {
   }
 
   public int getBlockContent(World w, int x, int y, int z) {
-    IChunkProvider chunkProvider = w.getChunkProvider();
-    return getBlockContent(chunkProvider.provideChunk(x >> 4, z >> 4), ChunkTempData.getChunk(w, x, y, z), x, y, z);
+    Chunk c=ChunkCache.getChunk(w, x>>4, z>>4, true);
+    return getBlockContent(c, ChunkTempData.getChunk(w, x, y, z), x, y, z);
   }
 
   public int getBlockContent(World w, int x, int y, int z, int oldMetaData) {
-    IChunkProvider chunkProvider = w.getChunkProvider();
-    Chunk c = chunkProvider.provideChunk(x >> 4, z >> 4);
+    Chunk c=ChunkCache.getChunk(w, x>>4, z>>4, true);
     ChunkTempData tempData = ChunkTempData.getChunk(w, x, y, z);
     return tempData.getTempData16(x, y, z);
   }
@@ -329,7 +322,8 @@ public class BlockFFFluid extends BlockFlowing {
     IChunkProvider chunkProvider = w.getChunkProvider();
     if (!chunkProvider.chunkExists(x >> 4, z >> 4)) return;
     ChunkTempData tempData0 = ChunkTempData.getChunk(w, x, y, z);
-    updateTickSafe(w, chunkProvider.provideChunk(x >> 4, z >> 4), tempData0, x, y, z, r, 0, null);
+    Chunk c=ChunkCache.getChunk(w, x>>4, z>>4, true);
+    updateTickSafe(w, c, tempData0, x, y, z, r, 0, null);
   }
 
   /** Called only when we KNOW that the original chunk is loaded */

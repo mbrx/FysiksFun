@@ -53,7 +53,8 @@ public class ChunkTempData {
   /** Removes old chunkTempData for chunks that are no longer loaded. */
   public static void cleanup(World w) {
     foo = true;
-    // System.out.println(Thread.currentThread().getName() + " Start of chunkTempData cleanup");
+    // System.out.println(Thread.currentThread().getName() +
+    // " Start of chunkTempData cleanup");
     // System.out.println("Total tempDataSize: "+(chunks.size()*16*16*256*4)/(1024*1024)+" mb");
 
     synchronized (chunks) {
@@ -78,7 +79,8 @@ public class ChunkTempData {
       }
     }
     // System.out.println("done: "+(chunks.size()*16*16*256*4)/(1024*1024)+" mb");
-    // System.out.println(Thread.currentThread().getName() + " finished cleanup");
+    // System.out.println(Thread.currentThread().getName() +
+    // " finished cleanup");
     foo = false;
   }
 
@@ -124,12 +126,8 @@ public class ChunkTempData {
     int y = coordinate.getY();
     int z = coordinate.getZ();
 
-    IChunkProvider chunkProvider = w.getChunkProvider();
-    Chunk chunk;
-    if (chunkProvider.chunkExists(x >> 4, z >> 4)) chunk = chunkProvider.provideChunk(x >> 4, z >> 4);
-    else {
-      return;
-    }
+    Chunk chunk = ChunkCache.getChunk(w, x>>4, z>>4, false);
+    if(chunk == null) return;
     histogramsInitialized = true;
 
     for (int y1 = 0; y1 < 256; y1++) {
