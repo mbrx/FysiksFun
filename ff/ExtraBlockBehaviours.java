@@ -37,6 +37,7 @@ public class ExtraBlockBehaviours {
       Block.blocksList[stone.blockID] = ffstone;
       GameRegistry.registerBlock(ffstone, "modified-stone");
     }
+   
     
     if(FysiksFun.settings.doImprovedPistons) {
       /* Install alternative piston logic */

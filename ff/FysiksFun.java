@@ -140,7 +140,7 @@ public class FysiksFun {
     settings.loadFromConfig(config);
     if (config.hasChanged()) config.save();
     executor = Executors.newFixedThreadPool(settings.threadPoolSize);
-    
+        
     String physRulesName = event.getSuggestedConfigurationFile().toString().replace(".cfg", "-rules.cfg");
     physicsRuleConfig = new Configuration(new File(physRulesName));
   }
@@ -172,6 +172,14 @@ public class FysiksFun {
     for (int i = 0; i < 300; i++) {
       blockTickQueueRing[i] = (Object) new HashSet<BlockUpdateState>();
     }
+    
+    BlockWorldSupport.init();
+    settings.worldSupportBlockID = Util.findBlockIdFromName(settings.worldSupportBlockString);
+    if(settings.worldSupportBlockID == 0) {
+      FysiksFun.logger.log(Level.SEVERE,"[FF] Cannot find block named '"+settings.worldSupportBlockString+"' as the world-support block");
+    } else 
+      FysiksFun.logger.log(Level.SEVERE,"[FF] Found block named'"+settings.worldSupportBlockString+"' as the world-support block, ID:"+settings.worldSupportBlockID);
+
   }
 
   //@PostInit
@@ -192,7 +200,7 @@ public class FysiksFun {
     if (settings.doFluids) Fluids.postInit();
     if (settings.doGases) Gases.postInit();
     if (settings.doExtraFire) ExtraFire.postInit();
-
+    
     if(hasBuildcraft)
       BlockTurbine.init();
     BlockFFSensor.init();

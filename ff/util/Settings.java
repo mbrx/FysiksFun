@@ -1,5 +1,8 @@
 package mbrx.ff.util;
 
+import java.util.logging.Level;
+
+import mbrx.ff.FysiksFun;
 import net.minecraftforge.common.Configuration;
 import net.minecraftforge.common.Property;
 
@@ -88,6 +91,10 @@ public class Settings {
 
   public boolean mycelliumGrowth;
 
+  public int worldSupportBlockID;
+  public int blockSupportBlockDefaultID;
+  public String worldSupportBlockString;
+
 
 
 
@@ -120,6 +127,8 @@ public class Settings {
         "Allows construction of energy producing machines (turbines) based on liquids&gases. Requires buildcraft.").getBoolean(true);
     doImprovedPistons = config.get(categoryModules, "enable-improved-pistons", "true",
         "Allows pistons to push ANY block (up to 256 steps), and sticky pistons to pull any blocks up 256 steps.").getBoolean(true);
+    
+    
     
     maxUpdatesPerTick = config
         .get(
@@ -189,6 +198,7 @@ public class Settings {
 
     mycelliumGrowth = config.get(categoryEcology, "mycellium-growth", "true", "Allows mycellium to spread througout the world", Property.Type.BOOLEAN).getBoolean(true);
 
+    worldSupportBlockString = config.get(categoryPhysics,"world-support-block", "worldSupport", "The unlocalized Block Name of blocks that should be generated as world support. If invalid name is given then no world supports will be generated", Property.Type.STRING).getString();
     
     blockSteamDefaultID = config.getBlock("steam-id", 2250, "ID for steam blocks").getInt();
     blockPyroclasticDefaultID = config.getBlock("pyroclastic-id", 2251, "ID for pyroclastic cloud blocks").getInt();
@@ -204,6 +214,7 @@ public class Settings {
     blockGoldSensorDefaultID = config.getBlock("gold-sensor-id", 2259, "ID for liquid sensor blocks").getInt();
     blockDiamondSensorDefaultID = config.getBlock("diamond-sensor-id", 2260, "ID for liquid sensor blocks").getInt();
     blockBlockDispenserDefaultID = config.getBlock("block-dispenser-id", 2261, "ID for block dispenser blocks").getInt();
+    blockSupportBlockDefaultID = config.getBlock("support-block-id", 2262, "ID for world sink/support block").getInt();
 
     
     worldYOffset = config.get(categoryGases, "y-offset", "0",
@@ -231,5 +242,6 @@ public class Settings {
         .getInt(17);
     
   }
+
 
 }

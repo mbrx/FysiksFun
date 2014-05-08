@@ -166,6 +166,7 @@ public class WorkerPhysicsSweep implements Runnable {
         blockIsSink[i] = physicsRuleConfig.get(cat, name + "-is-sink", blockIsSink[i] ? "true" : "false", null, Property.Type.BOOLEAN).getBoolean(blockDoPhysics[i]);
       }
     }
+    blockIsSink[FysiksFun.settings.blockSupportBlockDefaultID]=true;
   }
 
   private static void setupDefaultPhysicsRules() {
@@ -406,7 +407,7 @@ public class WorkerPhysicsSweep implements Runnable {
 
       boolean restartPhysics = false;
       if (doDetailedPhysics) {
-        if (tempData.solidBlockPhysicsLastTick < Counters.tick - ticksPerUpdate) {
+        if (tempData.solidBlockPhysicsLastTick < Counters.tick - ticksPerUpdate*5) {
           tempData.solidBlockPhysicsCountdownToAction = countdownToAction;
           restartPhysics = true;
         } else {
@@ -556,7 +557,7 @@ public class WorkerPhysicsSweep implements Runnable {
     // Propagate forces
     totalMoved = propagateForces(c, tempData, blockStorage, x, y, z, dx, dz, id, timeNow, restartPhysics, origPressure, isFalling, simplifiedPhysics,
         breakThreshold, debugMe);
-    // Make blocks at y=1 as well as all bedrock blocks act as sinks/supports
+    // Make blocks at y=1 as well as all sink blocks act as sinks/supports for the forces
     if (y <= 1 || blockIsSink[id]) {
       curPressure = 0;
       curClock = timeNow;
