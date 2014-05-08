@@ -77,6 +77,7 @@ public class WorkerPhysicsSweep implements Runnable {
    */
   public static int                          blockDoSimplePhysics[]  = new int[4096];
   public static boolean                      blockIsFragile[]        = new boolean[4096];
+  public static boolean                      blockIsSink[]           = new boolean[4096];
 
   private static final int                   ticksPerUpdate          = 1;
   private static final int                   timeToFall              = 4;
@@ -141,6 +142,7 @@ public class WorkerPhysicsSweep implements Runnable {
     physicsRuleConfig.get(cat, "1-example-strength", "16",
         "Strength of block, must be less than elasticStrenghtConstant. Typical values 5 - 30 times the weight of the block.", Property.Type.INTEGER);
     physicsRuleConfig.get(cat, "1-example-weight", "4", "Weight of this block, typical values 1 - 16", Property.Type.INTEGER);
+    physicsRuleConfig.get(cat, "1-example-is-sink", "false", "Sinks for forces that prevents all connected blocks from falling", Property.Type.BOOLEAN);
 
     physicsRuleConfig.get(cat, "2-start-of-rules", "", "Here comes the rules for each block in the game", Property.Type.STRING);
 
@@ -161,6 +163,7 @@ public class WorkerPhysicsSweep implements Runnable {
             blockIsFragile[i]);
         blockStrength[i] = physicsRuleConfig.get(cat, name + "-strength", "" + blockStrength[i], null, Property.Type.INTEGER).getInt(blockStrength[i]);
         blockWeight[i] = physicsRuleConfig.get(cat, name + "-weight", "" + blockWeight[i], null, Property.Type.INTEGER).getInt(blockWeight[i]);
+        blockIsSink[i] = physicsRuleConfig.get(cat, name + "-is-sink", blockIsSink[i] ? "true" : "false", null, Property.Type.BOOLEAN).getBoolean(blockDoPhysics[i]);
       }
     }
   }
@@ -170,6 +173,7 @@ public class WorkerPhysicsSweep implements Runnable {
 
     for (int i = 1; i < 4096; i++) {
       Block b = Block.blocksList[i];
+      blockIsSink[i]=false;
       blockStrength[i] = 16;
       blockWeight[i] = 4;
       blockDoSimplePhysics[i] = 0;
@@ -177,7 +181,7 @@ public class WorkerPhysicsSweep implements Runnable {
       blockIsFragile[i] = false;
       if (b == null) continue;
       if (b.isOpaqueCube()) blockDoPhysics[i] = true;
-
+      
       /* Default value for all ores */
       if (b instanceof BlockOre) {
         blockStrength[i] = 40;
@@ -218,6 +222,7 @@ public class WorkerPhysicsSweep implements Runnable {
       // if (!blockDoPhysics[i]) continue;
     }
 
+    
     /*
      * blockDoPhysics[Block.leaves.blockID] = true;
      * blockStrength[Block.leaves.blockID] = 10; // 100 times weight!
@@ -226,6 +231,7 @@ public class WorkerPhysicsSweep implements Runnable {
 
     blockDoPhysics[Block.bedrock.blockID] = true;
     blockWeight[Block.bedrock.blockID] = 0;
+    blockIsSink[Block.bedrock.blockID]=true;
 
     blockDoPhysics[Block.leaves.blockID] = false;
     blockDoSimplePhysics[Block.leaves.blockID] = 1;
@@ -520,7 +526,7 @@ public class WorkerPhysicsSweep implements Runnable {
     curBreak = (origTempValue >> breakBitsStart);
     boolean isFalling = curBreak == counterIsFalling;
 
-    if (restartPhysics || origTempValue == 0 || y <= 1 || id == Block.bedrock.blockID) {
+    if (restartPhysics || origTempValue == 0 || y <= 1 || blockIsSink[id]) {
       curClock = timeNow;
       // curPressure = 0;
       curBreak = 0;
@@ -535,11 +541,11 @@ public class WorkerPhysicsSweep implements Runnable {
     boolean debugMe = false;
 
     /***** debug *****/
-    //if (Counters.tick % 2 == 0) {
-      if (id == Block.hardenedClay.blockID) debugMe = true;
-      // if (id == Block.planks.blockID) debugMe = true;
-    //}
-      
+    // if (Counters.tick % 2 == 0) {
+    if (id == Block.hardenedClay.blockID) debugMe = true;
+    // if (id == Block.planks.blockID) debugMe = true;
+    // }
+
     // if(x+dx == -676 && z+dz == 541) debugMe=true;
 
     if (debugMe) {
@@ -551,7 +557,7 @@ public class WorkerPhysicsSweep implements Runnable {
     totalMoved = propagateForces(c, tempData, blockStorage, x, y, z, dx, dz, id, timeNow, restartPhysics, origPressure, isFalling, simplifiedPhysics,
         breakThreshold, debugMe);
     // Make blocks at y=1 as well as all bedrock blocks act as sinks/supports
-    if (y <= 1 || id == Block.bedrock.blockID) {
+    if (y <= 1 || blockIsSink[id]) {
       curPressure = 0;
       curClock = timeNow;
       totalMoved = 0;
@@ -561,18 +567,19 @@ public class WorkerPhysicsSweep implements Runnable {
     boolean doFall = curBreak == counterIsFalling;
     boolean fallDueToClock = false;
     int timeCheck = (timeNow - timeToFall + clockModulo) % clockModulo;
-    if(debugMe) System.out.println("timecheck: "+timeCheck);
-    // Compute if we should start falling due to no support from ground (no clock)
+    if (debugMe) System.out.println("timecheck: " + timeCheck);
+    // Compute if we should start falling due to no support from ground (no
+    // clock)
     if (curClock < timeCheck) {
       fallDueToClock = (timeCheck - curClock) < (clockModulo * 4) / 5;
     } else if (curClock > timeCheck) {
       fallDueToClock = (curClock - timeCheck) > clockModulo / 5;
     }
-    if(debugMe) System.out.println("Fall due to clock: "+fallDueToClock);
+    if (debugMe) System.out.println("Fall due to clock: " + fallDueToClock);
     if (origClock != curClock) fallDueToClock = false;
-    if(fallDueToClock) {
-      curBreak=counterIsFalling;
-      doFall=true;
+    if (fallDueToClock) {
+      curBreak = counterIsFalling;
+      doFall = true;
     }
 
     // Compute if we should INITIATE a BREAK
@@ -583,7 +590,7 @@ public class WorkerPhysicsSweep implements Runnable {
        System.out.println("@"+Util.xyzString(x,y,z)+" was falling, new doFall: "+doFall+" cur break: "+curBreak);
        debugMe=true;
     }*/
-    
+
     /*
      * Prevent all action if the chunk based "counter since start" haven't
      * reached zero
@@ -592,7 +599,7 @@ public class WorkerPhysicsSweep implements Runnable {
       if (debugMe) System.out.println("No action due to countdown: " + tempData.solidBlockPhysicsCountdownToAction);
       if (curBreak == breakAtCounter) {
         curBreak = breakAtCounter - 1;
-        //System.out.println("Would have broken, preventing it due to countdown");
+        // System.out.println("Would have broken, preventing it due to countdown");
       }
       doBreak = false;
       doFall = false;
@@ -621,7 +628,7 @@ public class WorkerPhysicsSweep implements Runnable {
      * Wait with falling if sufficient time haven't passed since the last fall
      */
     if (doFall && !fallDueToClock) {
-      if (debugMe) System.out.println("Wait with the fallling, curBreak is: "+curBreak);
+      if (debugMe) System.out.println("Wait with the fallling, curBreak is: " + curBreak);
       doFall = false;
     }
 
@@ -727,7 +734,7 @@ public class WorkerPhysicsSweep implements Runnable {
         System.out.println("Checking neighbour.");
         System.out.println("myPressure: " + curPressure + " myBreak: " + curBreak + " nnPressure:" + nnPressure + " elastic: " + elasticPressure);
       }
-      if (origPressure == 0 && id != Block.bedrock.blockID && y > 1 && nnPressure > curPressure) {
+      if (origPressure == 0 && !blockIsSink[id] && y > 1 && nnPressure > curPressure) {
         /*
          * Special case: we have joined a new block with no previous pressure to
          * this area. Copy the pressure from a neighbour.
@@ -756,7 +763,7 @@ public class WorkerPhysicsSweep implements Runnable {
         } else {
           int maxMoved = breakThreshold + Math.max(0, (curBreak - breakAtCounter) * 2);
           if (debugMe) System.out.println("toMove before capping: " + toMove + " cap: " + maxMoved);
-          if (toMove > maxMoved && id != Block.bedrock.blockID && y > 1) toMove = maxMoved;
+          if (toMove > maxMoved && !blockIsSink[id] && y > 1) toMove = maxMoved;
 
           totalMoved += toMove;
           /*if (dir < 4) totalMoved += toMove * 2;
@@ -767,7 +774,7 @@ public class WorkerPhysicsSweep implements Runnable {
         }
 
         nnPressure -= toMove;
-        if (id != Block.bedrock.blockID) curPressure += toMove;
+        if (!blockIsSink[id]) curPressure += toMove;
         tempData2.setTempData(x2, y2, z2, nnPressure | (nnClock << clockBitsStart) | (nnBreak << breakBitsStart));
 
         if (debugMe) {
