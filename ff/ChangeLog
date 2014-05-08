@@ -167,4 +167,8 @@ v0.5.6
     * Made textures for the liquid sensors and turbines
     * Added a longer-range sweep of water/gas physics done at intervals to even out effects of disappearing oceans etc. 
     * Some improvements to concurrency code for stability.
-    * Fixed problem with falling blocks sticking to the side of objects they are falling next to. 
+    * Fixed problem with falling blocks sticking to the side of objects they are falling next to.
+    * Reduced default rain, increased default evaporation  (no more water-world?)
+     
+ v0.5.9
+    * Removed all old usage of aquiring Chunks from World objects directly in favour of using the ChunkCache to avoid concurrent-biome-decorations.

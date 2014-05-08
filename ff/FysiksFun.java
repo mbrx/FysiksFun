@@ -86,7 +86,7 @@ import com.google.common.base.Objects;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 
-@Mod(modid = "FysiksFun", name = "FysiksFun", version = "0.5.8", dependencies="")
+@Mod(modid = "FysiksFun", name = "FysiksFun", version = "0.5.9", dependencies="")
 @NetworkMod(clientSideRequired = true, serverSideRequired = false)
 public class FysiksFun {
   // Singleton instance of mod class instansiated by Forge
@@ -123,7 +123,10 @@ public class FysiksFun {
   
   public static ArrayList<WorldObserver> observers                = new ArrayList<WorldObserver>();
 
-  /** Mutex for locking the threads whenever a vanilla function is called. */
+  /** Mutex for locking the threads whenever a vanilla function is called. Get-only functions can be run
+   * non synchronously, modifications to ExtendedBlockStorages can also be run non-synchronosly. But every
+   * other modifying call should be wrapped. 
+   */
   public static Object                vanillaMutex = new Object();
 
   //@PreInit

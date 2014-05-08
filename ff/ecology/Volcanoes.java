@@ -33,6 +33,8 @@ public class Volcanoes {
   public static void doChunkTick(World w, ChunkCoordIntPair xz) {
     if (w.provider.dimensionId == -1) return; // No volcanos in hell
 
+    /* All get functions from vanilla MC are thread safe so no synchronized here */
+
     WorldInfo winfo = w.getWorldInfo();
     int seed = smear(Objects.hashCode((int) winfo.getSeed()) + Objects.hashCode(winfo.getWorldName()));
     int volcanoFillY = 3;
@@ -86,11 +88,6 @@ public class Volcanoes {
           activity += weight * inten * 1.5 * Math.sin(w.getTotalWorldTime() / 48000.0 * freq + phase);
         }
     }
-    // activity = +1.5;
-
-    // DEBUG
-    // activity += 1.0;
-    // radius=0;
     if (!hasVolcano) radius = -1;
 
     solidifySurfaceLava(w, xz, chunk0, tempData0, startX, startZ, radius);
@@ -131,7 +128,7 @@ public class Volcanoes {
              * make an explosion
              */
             Chunk chunk0 = ChunkCache.getChunk(w, x0 >> 4, z0 >> 4, false);
-            // If lava plume extends outside loaded area, stop feeding volcanoe
+            // If lava plume extends outside loaded area, stop feeding volcano
             // and wait until it is loaded
             if (chunk0 == null) return;
             ChunkCoordIntPair testXZ = new ChunkCoordIntPair(x0 >> 4, z0 >> 4);
@@ -147,14 +144,16 @@ public class Volcanoes {
                 canDoExpensiveSound = false;
                 float volume = (float) (4.0F + 4.0F * activity);
                 float pitch = (float) (1.4 - FysiksFun.rand.nextFloat() * 0.4 - activity * 0.2);
-                w.playSoundEffect(x0 + 0.5, y0 + 0.5, z0 + 0.5, "fysiksfun:earthquake", volume, pitch);
-                // System.out.println("Playing volcano @volume: "+volume+" pitch: "+pitch);
+                synchronized (FysiksFun.vanillaMutex) {
+                  w.playSoundEffect(x0 + 0.5, y0 + 0.5, z0 + 0.5, "fysiksfun:earthquake", volume, pitch);
+                }
               }
               if (FysiksFun.rand.nextInt(1000) == 0) {
                 float volume = (float) (activity * 1.0 + 1.0);
                 float pitch = (float) (1.4 - FysiksFun.rand.nextFloat() * 0.4 - activity * 0.3) * 0.2F;
-                w.playSoundEffect(x0 + 0.5, y0 + 0.5, z0 + 0.5, "random.explode", volume, pitch);
-                // System.out.println("Explode @volume: "+volume+" pitch: "+pitch);
+                synchronized (FysiksFun.vanillaMutex) {
+                  w.playSoundEffect(x0 + 0.5, y0 + 0.5, z0 + 0.5, "random.explode", volume, pitch);
+                }
               }
 
               int r0 = smear(seed + (cnt / 5) * 4711);
@@ -230,6 +229,7 @@ public class Volcanoes {
                 int content0 = Fluids.stillLava.getBlockContent(chunk0, tempData0, x0, y0, z0);
                 if (content0 >= BlockFFFluid.maximumContent) continue;
                 else {
+                  /* Lava was not maximum content, fill up and stop propagating */
                   Fluids.stillLava.setBlockContent(w, chunk0, tempData0, x0, y0, z0, BlockFFFluid.maximumContent, "[Lava feed]", null);
                   break;
                 }
@@ -241,7 +241,9 @@ public class Volcanoes {
               } else {
 
                 if (FysiksFun.rand.nextInt(40) == 0) doVolcanoExplosion(w, radius, x0, z0, y0);
-                else Fluids.stillLava.setBlockContent(w, chunk0, tempData0, x0, y0, z0, BlockFFFluid.maximumContent, "[Lava feed]", null);
+                else {
+                  Fluids.stillLava.setBlockContent(w, chunk0, tempData0, x0, y0, z0, BlockFFFluid.maximumContent, "[Lava feed]", null);
+                }
                 break;
 
                 // Lower chance to explode at higher altitudes (to reduce the
@@ -262,24 +264,7 @@ public class Volcanoes {
                 // break;
               }
             }
-            /*
-             * Turn any water above this ending point into stone, as long as we
-             * are underground. Stop when we encounter a non-liquid block
-             */
-            /*
-             * chunk0 = ChunkCache.getChunk(w, x0 >> 4, z0 >> 4, false); if
-             * (chunk0 == null) continue; for (int dx2 = -1; dx2 <= 1; dx2++)
-             * for (int dz2 = -1; dz2 <= 1; dz2++) { int maxStones =
-             * 3-dx2*dx2-dz2*dz2; Chunk c = ChunkCache.getChunk(w, (x0+dx2)>>4,
-             * (z0+dz2)>>4, false); if(c == null) continue; for (y0 += 2; y0 <
-             * 66 && maxStones > 0; y0++) { int id = c.getBlockID((x0+dx2) & 15,
-             * y0, (z0+dz2) & 15); if (id == 0 || Block.blocksList[id] == null)
-             * continue; if (Fluids.stillLava.isSameLiquid(id)) continue; if
-             * (Fluids.stillWater.isSameLiquid(id)) {
-             * Fluids.stillWater.setBlockContent(w, x0+dx2, y0, z0+dz2, 0);
-             * FysiksFun.setBlockWithMetadataAndPriority(w, x0+dx2, y0, z0+dz2,
-             * Block.stone.blockID, 0, 0); maxStones--; continue; } break; } }
-             */
+
           }
         }
       }
@@ -365,6 +350,7 @@ public class Volcanoes {
         }
   }
 
+  /* TODO - delete this function, it is not used */
   private static void feedVolcanoOld(World w, int volcanoFillY, int startX, int startZ, int radius) {
     for (int dx = -radius; dx <= radius; dx++) {
       for (int dz = -radius; dz <= radius; dz++) {
@@ -539,7 +525,9 @@ public class Volcanoes {
           // Debugging - visualizes where the volcanoes are
           if (FysiksFun.settings.visualizeVolcanoes) {
             for (int y0 = 100 + FysiksFun.settings.worldYOffset; y0 < 255; y0++) {
-              chunk0.setBlockIDWithMetadata(x0 & 15, y0, z0 & 15, Block.glass.blockID, 0);
+              synchronized (FysiksFun.vanillaMutex) {
+                chunk0.setBlockIDWithMetadata(x0 & 15, y0, z0 & 15, Block.glass.blockID, 0);
+              }
             }
           }
         }

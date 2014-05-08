@@ -39,7 +39,9 @@ public class Evaporation {
     // if (FysiksFun.rand.nextInt(4) != 0) return;
 
     int y = (int) FysiksFun.rand.nextInt(160) + 2;
-    Chunk c = w.getChunkFromChunkCoords(x >> 4, z >> 4);
+    Chunk c = ChunkCache.getChunk(w, x>>4, z>>4, false);
+    if(c == null) return;
+
     for (int dx = 0; dx < 16; dx++) {
       for (int dz = 0; dz < 16; dz++) {
         int id = c.getBlockID(dx, y, dz);
@@ -121,7 +123,9 @@ public class Evaporation {
     // if (FysiksFun.rand.nextInt(71) != 0) return;
 
     int y = (int) Math.round(Math.sqrt(1.0 * FysiksFun.rand.nextInt(24 * 24))) + 1;
-    Chunk c = w.getChunkFromChunkCoords(x >> 4, z >> 4);
+    Chunk c = ChunkCache.getChunk(w, x>>4, z>>4, false);
+    if(c == null) return;
+
     int tries;
     for (tries = 0; tries < 16; tries++) {
       int dx = FysiksFun.rand.nextInt(16);
@@ -151,7 +155,8 @@ public class Evaporation {
    */
   private static void doIndirectEvaporation(World w, int x, int z) {
     if (FysiksFun.rand.nextInt(921) != 0) return;
-    Chunk c = w.getChunkFromChunkCoords(x >> 4, z >> 4);
+    Chunk c = ChunkCache.getChunk(w, x>>4, z>>4, false);
+    if(c == null) return;
 
     for (int tries = 0; tries < 10; tries++) {
       int y = 30 + FysiksFun.rand.nextInt(128);
@@ -189,8 +194,9 @@ public class Evaporation {
 
     // TODO - let the biome effect the underground humidification.
 
-    Chunk c = w.getChunkFromChunkCoords(x >> 4, z >> 4);
-
+    Chunk c = ChunkCache.getChunk(w, x>>4, z>>4, false);
+    if(c == null) return;
+    
     for (int tries = 0; tries < 1; tries++) {
       int dx = FysiksFun.rand.nextInt(16);
       int dz = FysiksFun.rand.nextInt(16);
@@ -226,7 +232,7 @@ public class Evaporation {
 
     // Gives the current time of the day, so we only evaporate during daylight
     long timeNow = w.getWorldInfo().getWorldTime();
-    if (w.rainingStrength == 0.0 && FysiksFun.rand.nextInt(20) == 0) {
+    if (w.rainingStrength == 0.0 && FysiksFun.rand.nextInt(10) == 0) {
       double sunIntensity = Math.cos(((double) (timeNow - 5000)) / 6000.0 * 1.57);
       if (sunIntensity < 0.0) return;
       for (int i = 0; i < 20; i++) {

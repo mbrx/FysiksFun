@@ -18,8 +18,6 @@ The flood gate will only emit ONE block of liquid and then stop, to make it work
 It's possible to get infinite energy by pumping water up using BC, and drive generators to get back the energy.
   - How can this be fixed?
     
-(Todo: make tanks fragile?)
-
 
 Volcanoes
 ---------

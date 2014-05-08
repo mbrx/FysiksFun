@@ -1,3 +1,8 @@
+Different viscocity for different fluids that affect the minimum amount of fluid that can be in a block and still flow to it's neighbours. 
+Different weights for different fluids to let oil/gas float on top of water. (Gas on top of oil)
+There is a bug that can replicate oil/fuel infinitly when it mixes with water!!!
+
+
 Random chance to force loading when moving gases? Could fix some problems...
 
 Snow biomes get messed up by rain...
@@ -89,11 +94,8 @@ Cannot pump more than the first block of fuel/oil? Problem with meta value when 
 Tuning
 ------
 Stone weaker?
-When rain falls on existing water, we are currently adding TOO MUCH (it becomes an emergent phenomena!)
 Lava (or other heat sources) that boils water have a chance to turn into cobblestone
-
 (Speed of grass growing, now halved)
-
 Length of volacano activity
 
 Optimisation
@@ -105,10 +107,7 @@ Move WorkerLiquidSweep and WorkerPhysicsSweep into one single worker, reduces nu
 
 Features
 --------
-Block for sensing liquid pressures, output in variable redstone power 
-Block for sensing gas pressures, output in variable redstone power
 Fuel/Oil flammability (explode?)
-Create streams of falling lava in the nether
 Water should add pressure (weight) to objects
 
 Stone that breaks should become cobblestone?

@@ -5,6 +5,7 @@ import java.util.Random;
 
 import mbrx.ff.fluids.BlockFFFluid;
 import mbrx.ff.fluids.Fluids;
+import mbrx.ff.util.ChunkCache;
 import mbrx.ff.util.ChunkTempData;
 import mbrx.ff.util.CoordinateWXZ;
 import net.minecraft.block.Block;
@@ -51,7 +52,9 @@ public class OceanRepairGenerator implements IWorldGenerator {
 	public static void doRepair(World world, int chunkX, int chunkZ) {
 		int x, y, z;
 		int repairCnt = 0;
-		Chunk c = world.getChunkFromChunkCoords(chunkX, chunkZ);
+	    Chunk c = ChunkCache.getChunk(world, chunkX, chunkZ, false);
+	    if(c == null) return;
+
 		for (x = 0; x < 16; x++)
 			for (z = 0; z < 16; z++) {
 				int waterCnt = 0;

@@ -3,6 +3,7 @@ package mbrx.ff.ecology;
 import mbrx.ff.FysiksFun;
 import mbrx.ff.fluids.BlockFFFluid;
 import mbrx.ff.fluids.Fluids;
+import mbrx.ff.util.ChunkCache;
 import mbrx.ff.util.Counters;
 import net.minecraft.block.Block;
 import net.minecraft.world.World;
@@ -14,7 +15,8 @@ public class Rain {
   /** Precipation from rain on the chunk with center XZ */
   public static void doPrecipation(World w, int x, int z) {
 
-    Chunk c = w.getChunkFromChunkCoords(x >> 4, z >> 4);
+    Chunk c = ChunkCache.getChunk(w, x>>4, z>>4, false);
+    if(c == null) return;
 
     if (FysiksFun.settings.alwaysRaining || w.rainingStrength > 0.0) {
       int dx = (FysiksFun.rand.nextInt(117) + 7 * Counters.tick) % 16;
@@ -25,7 +27,7 @@ public class Rain {
       //if (!FysiksFun.settings.rainInOceans && (biome == BiomeGenBase.ocean || biome == BiomeGenBase.frozenOcean)) {
       //  // do nothing
       //} else 
-      if (biome.rainfall > 0.0 && FysiksFun.settings.waterRainRate > 0 && FysiksFun.rand.nextInt(8123) < rainChance) {
+      if (biome.rainfall > 0.0 && FysiksFun.settings.waterRainRate > 0 && FysiksFun.rand.nextInt(18123) < rainChance) {
         for (int y2 = 255; y2 > 1; y2--) {
           int id = c.getBlockID(dx, y2, dz);
           if (id != 0) {

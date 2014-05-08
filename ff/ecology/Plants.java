@@ -76,7 +76,9 @@ public class Plants {
   }
 
   private static void doOtherPlants(World w, int x, int z) {
-    Chunk c = w.getChunkFromChunkCoords(x >> 4, z >> 4);
+    Chunk c = ChunkCache.getChunk(w, x>>4, z>>4, false);
+    if(c == null) return;
+
     if (FysiksFun.rand.nextInt(10) > 5) return;
     boolean isDay = w.isDaytime();
 
@@ -202,22 +204,20 @@ public class Plants {
     }
   }
 
+  /** Checks if there is any water within the given radius in XZ direction and within the yMin,yMax (given as deltas) vertical range. Returns true if water has 
+   * been found and consumes 1/16 of a block if found. Will check water in non-existant chunks. */ 
   private static boolean checkForWater(World w, int x2, int y2, int z2, int drinkRange, int yMin, int yMax, int attempts, boolean consumeWater) {
     IChunkProvider chunkProvider = w.getChunkProvider();
-    int chunkX = x2 >> 4;
-    int chunkZ = z2 >> 4;
-    Chunk c = w.getChunkFromChunkCoords(chunkX, chunkZ);
 
     for (int drinkChance = 0; drinkChance < attempts; drinkChance++) {
       int dx2 = FysiksFun.rand.nextInt(drinkRange) + FysiksFun.rand.nextInt(drinkRange + 1) - drinkRange;
       int dz2 = FysiksFun.rand.nextInt(drinkRange) + FysiksFun.rand.nextInt(drinkRange + 1) - drinkRange;
       int x3 = x2 + dx2, z3 = z2 + dz2;
-      if (x3 >> 4 != chunkX || z3 >> 4 != chunkZ) {
-        if (!chunkProvider.chunkExists(chunkX, chunkZ)) continue;
-        chunkX = x3 >> 4;
-        chunkZ = z3 >> 4;
-        c = w.getChunkFromChunkCoords(chunkX, chunkZ);
-      }
+      int chunkX = x3 >> 4;
+      int chunkZ = z3 >> 4;
+      Chunk c = ChunkCache.getChunk(w, chunkX, chunkZ, false);
+      if(c == null) continue;
+
       for (int dy2 = yMin; dy2 <= yMax; dy2++) {
         if (y2 + dy2 < 0) continue;
         int id2 = c.getBlockID(x3 & 15, y2 + dy2, z3 & 15);
@@ -239,7 +239,8 @@ public class Plants {
   }
 
   private static void doCrops(World w, int x, int z) {
-    Chunk c = w.getChunkFromChunkCoords(x >> 4, z >> 4);
+    Chunk c = ChunkCache.getChunk(w, x>>4, z>>4, false);
+    if(c == null) return; // This should not realy happen, but in case someone adds extra calls refuse to check non-loaded chunks
     if (FysiksFun.rand.nextInt(10) >= 2) return;
     for (int tries = 0; tries < FysiksFun.settings.cropsThirst; tries++) {
       int dx = FysiksFun.rand.nextInt(16);

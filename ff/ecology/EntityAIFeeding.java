@@ -154,7 +154,7 @@ public class EntityAIFeeding extends EntityAIBase {
         // We are now close enough to eat and finish this task
         FysiksFun.setBlockWithMetadataAndPriority(theWorld, destX, destY, destZ, 0, 0, 0);
         //theWorld.setBlock(destX, destY, destZ, 0, 0, 0x01 + 0x02);
-        foodLevel = foodLevel + 0.75F; //0.5F;
+        foodLevel = foodLevel + 1.0F; //0.75F; //0.5F;
         eatingTime = 0;
         //System.out.println(" "+theAnimal+" finished eating at "+destX+", "+destZ);
         if(foodLevel >= 9.0) { 
