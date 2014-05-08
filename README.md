@@ -12,3 +12,10 @@ The mod aims to be compatible with most other Forge mods.
 
 For further details please see the Minecraft Forum thread here:
 http://www.minecraftforum.net/topic/1734363-164-fysiks-fun-sspsmp-forge-9111/page__hl__%20fysiksfun
+
+Compiling
+=========
+
+You need forge version 965 (for MC 1.6.4) installed. Drop this repository archive into <path>/forge/mcp/src/minecraft/mbrx
+where <path> is the root of your forge installation. Ie. the following file should exist: <path>/forge/mcp/src/minecraft/mbrx/ff
+
