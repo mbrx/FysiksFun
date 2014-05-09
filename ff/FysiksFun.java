@@ -407,8 +407,12 @@ public class FysiksFun {
 
     ExtendedBlockStorage blockStorage[] = c.getBlockStorageArray();
     ExtendedBlockStorage ebs = blockStorage[y >> 4];
+    ebs=null;
     if (ebs == null) c.setBlockIDWithMetadata(x & 15, y, z & 15, id, meta);
     else {
+      if(y > c.heightMap[(x&15)+(z&15)*16]) c.generateSkylightMap();
+      c.updateSkylightColumns[(x&15)+(z&15)* 16] = true;
+
       ebs.setExtBlockID(x & 15, y & 15, z & 15, id);
       ebs.setExtBlockMetadata(x & 15, y & 15, z & 15, meta);
     }

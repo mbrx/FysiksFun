@@ -89,7 +89,8 @@ public class BlockFFFluid extends BlockFlowing {
 
   public int                  liquidUpdateRate;
   public int                  erodeMultiplier;
-
+  /** Relative weight of this fluid as compared to water. Water has value 0, heavier fluids positive values. Lighter fluids negative values. */
+  public int                  relativeWeight; 
   /**
    * Liquids content/pressure are modelled in TWO places. In the metaData we
    * store the values 0 - 8 (or 0-16) as a representation of the content. In the
@@ -133,6 +134,7 @@ public class BlockFFFluid extends BlockFlowing {
     this.canSeepThrough = false;
     this.canCauseErosion = false;
     this.setTickRandomly(false);
+    relativeWeight=0;
     setUnlocalizedName(n);
   }
 
@@ -147,6 +149,7 @@ public class BlockFFFluid extends BlockFlowing {
     this.canCauseErosion = false;
     this.name = n;
     this.replacedBlock = replacedBlock;
+    relativeWeight=0;
     setUnlocalizedName(n);
   }
 
@@ -275,8 +278,13 @@ public class BlockFFFluid extends BlockFlowing {
 
     Counters.fluidSetContent++;
     if (newId != oldId || newMetaData != oldMetaData) {
+      ebs=null;
       if (ebs != null) {
-        // TODO: potential bug if we overwrite an existing block since it's TileEntity might not be cleaned up 
+       
+        //if(y > c.heightMap[(x&15)+(z&15)*16]) c.generateSkylightMap();
+        //c.updateSkylightColumns[(x&15)+(z&15)* 16] = true;
+        
+        // TODO: potential bug if we overwrite an existing block since it's TileEntity might not be cleaned up        
         ebs.setExtBlockID(x & 15, y & 15, z & 15, newId);
         ebs.setExtBlockMetadata(x & 15, y & 15, z & 15, newMetaData);
       } else {
@@ -510,6 +518,41 @@ public class BlockFFFluid extends BlockFlowing {
           // pressurized
           if (Fluids.liquidCanInteract(movingID, id1) && (dY < 1 || content0 > maximumContent)) {
             content0 = Fluids.liquidInteract(world, x1, y1, z1, movingID, content0, id1, content1);
+          } else {            
+            if(content1 >= maximumContent && dY == -1) {
+              /* The liquid block below us is a full block. So we either swap positions or do nothing */
+              if(Fluids.asFluid[id1].relativeWeight < this.relativeWeight) {
+                Fluids.asFluid[id1].setBlockContent(world, chunk0, tempData0, x0, y0, z0, content1, "swapping fluids", delayedBlockMarkSet);
+                this.setBlockContent(world, chunk1, tempData1, x1, y1, z1, content0, "swapping fluids", delayedBlockMarkSet);
+                return;
+              }
+            } 
+            /* not giving good results... maybe later
+            else if(content1 < maximumContent && content0 > content1 + maximumContent/4) {
+              int toMove = (content0 - content1)/2;
+              content0 = content0 - toMove;
+              // See if the target cell becomes one of our types of fluids... 
+              int tot=toMove + content1;
+              if(FysiksFun.rand.nextInt(tot+tot/4) < toMove) {
+                this.setBlockContent(world, chunk1, tempData1, x1, y1, z1, content1+toMove, "converting fluids", delayedBlockMarkSet);                 
+              } else {
+                Fluids.asFluid[id1].setBlockContent(world, chunk1, tempData1, x1, y1, z1, content1+toMove, "converting fluids", delayedBlockMarkSet);
+              }
+              continue;
+            } else if(content0 < maximumContent && content1 > content0 + maximumContent/4) {
+              int toMove = (content1 - content0)/2;
+              // See if we will become of the target cells type 
+              int tot=toMove + content1;
+              if(FysiksFun.rand.nextInt(tot+tot/4) < toMove) {
+                Fluids.asFluid[id1].setBlockContent(world, chunk1, tempData1, x1, y1, z1, content1-toMove, "converting fluids", delayedBlockMarkSet);                 
+                Fluids.asFluid[id1].setBlockContent(world, chunk0, tempData0, x0, y0, z0, content0+toMove, "converting fluids", delayedBlockMarkSet);
+              } else {
+                Fluids.asFluid[id1].setBlockContent(world, chunk1, tempData1, x1, y1, z1, content1-toMove, "converting fluids", delayedBlockMarkSet);                 
+                this.setBlockContent(world, chunk0, tempData0, x0, y0, z0, content0+toMove, "converting fluids", delayedBlockMarkSet);
+              }
+              return;              
+            }            
+            */
           }
           continue;
         }

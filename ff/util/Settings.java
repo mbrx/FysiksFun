@@ -140,8 +140,8 @@ public class Settings {
 
     waterEvaporationRate = config.get(categoryFluids, "water-evaporation", "10.0",
         "Maximum rate for water evaporation, default 10, higher is more evaporation", Property.Type.DOUBLE).getDouble(10.0);
-    waterEvaporationMakesClouds = config.get(categoryFluids, "water-evaporation-makes-clouds", "true",
-        "Water that evaporates from sun-light creates rain clouds (steam at high altitude)", Property.Type.BOOLEAN).getBoolean(true);
+    waterEvaporationMakesClouds = config.get(categoryFluids, "water-evaporation-makes-clouds", "false",
+        "Water that evaporates from sun-light creates rain clouds (steam at high altitude)", Property.Type.BOOLEAN).getBoolean(false);
     waterRainRate = config.get(categoryFluids, "water-rain", "10.0", "Maximum intensity of rain, default 10, higher is more rain", Property.Type.DOUBLE)
         .getDouble(10.0);
     flowingLiquidOil = config.get(categoryFluids, "flowing-oil", "true", "Let buildcraft oil (if found) be treated as a flowing liquid", Property.Type.BOOLEAN)

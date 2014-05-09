@@ -104,6 +104,9 @@ public class Fluids {
     GameRegistry.registerBlock(flowingLava, "lavaFlowing");
     GameRegistry.registerBlock(stillLava, "lavaStill");
 
+    stillLava.relativeWeight=+10;
+    flowingLava.relativeWeight=+10;
+    
     registerLiquidBlock(stillWater);
     registerLiquidBlock(flowingWater);
     registerLiquidBlock(stillLava);

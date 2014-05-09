@@ -40,18 +40,21 @@ public class BlockFFBCLiquids extends BlockBuildcraftFluid {
       BlockBuildcraftFluid origOil = (BlockBuildcraftFluid) BuildCraftEnergy.blockOil;
       Block.blocksList[origOil.blockID] = null;
       oilFFWrapped = new BlockFFFluid(origOil.blockID, origOil.blockMaterial, origOil.blockID, origOil.blockID, "blockOil",origOil);
+      oilFFWrapped.relativeWeight=-5;
       Fluids.registerLiquidBlock(oilFFWrapped);
       Block.blocksList[origOil.blockID] = null;
       oil = new BlockFFBCLiquids(origOil.blockID, origOil.getFluid(), origOil.blockMaterial, oilFFWrapped, origOil);
       // oil.setFlammable(canOilBurn).setFlammability(0);
       oil.setUnlocalizedName("blockOil");
       GameRegistry.registerBlock(oil, "blockOil");
+      
     }
 
     {
       BlockBuildcraftFluid origFuel = (BlockBuildcraftFluid) BuildCraftEnergy.blockFuel;
       Block.blocksList[origFuel.blockID] = null;
       fuelFFWrapped = new BlockFFFluid(origFuel.blockID, origFuel.blockMaterial, origFuel.blockID, origFuel.blockID, "blockFuel",origFuel);
+      fuelFFWrapped.relativeWeight = -10;
       Fluids.registerLiquidBlock(fuelFFWrapped);
       Block.blocksList[origFuel.blockID] = null;
       fuel = new BlockFFBCLiquids(origFuel.blockID, origFuel.getFluid(), origFuel.blockMaterial, fuelFFWrapped, origFuel);
