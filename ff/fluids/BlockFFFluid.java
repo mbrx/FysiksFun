@@ -270,32 +270,22 @@ public class BlockFFFluid extends BlockFlowing {
    */
   @Override
   public boolean isBlockSolidOnSide(World world, int x, int y, int z, ForgeDirection side) {
-    // System.out.println("*******  FFFluid: isBlockSolidOnSide was called... "+canBurn);
-    // Util.printStackTrace();
+    /* We inspect the stack to see if we have been called indirectly by any of the fire handling routines. If so pretend to have a solid top surface so that the fire can stay on this block.
+     * Note the special circumstances that forces us to do this stack based hack, it would make most software engineers cry - but works well for our purpose (not modifying any base-classes).  
+     */
     if (!canBurn) return false;
     StackTraceElement[] stackTraceElements = Thread.currentThread().getStackTrace();
     if (stackTraceElements.length < 7) return false;
     StackTraceElement caller = stackTraceElements[6];
-    // System.out.println("  " + caller.getClassName());
-    // System.out.println("Name of fire is: "+Block.fire.getClass().getName());
     if (caller.getClassName().equals(Block.fire.getClass().getName())) {
-      //System.out.println("Pretending to be solid on top 1...");
       return true;
     }
 
     if (stackTraceElements.length < 7) return false;
     StackTraceElement caller8 = stackTraceElements[8];
-    // System.out.println(" slot8:  " + caller8.getClassName());
-    // System.out.println("Name of fire is: "+Block.fire.getClass().getName());
     if (caller8.getClassName().equals(Block.fire.getClass().getName())) {
-      // System.out.println("Pretending to be solid on top 2...");
       return true;
     }
-
-    /*if(caller.getClass() == Block.fire.getClass()) {
-      caller.
-      System.out.println("caller.getClass is the fire class... is this right???");
-    }*/
     return false;
 
   }
