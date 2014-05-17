@@ -38,7 +38,7 @@ public class ChunkMarkUpdater {
   }
 
   public CoordinateWXZ                                      coordinate;
-  private static Semaphore                                  mutex                  = new Semaphore(1);
+  //private static Semaphore                                  mutex                  = new Semaphore(1);
 
   private HashMap<CoordinateWXYZ, MarkOriginalValue>        markList;
   private static CoordinateWXZ                              tmpCoordinateWXZ       = new CoordinateWXZ(null, -1, -1);
@@ -92,22 +92,26 @@ public class ChunkMarkUpdater {
   /**
    * Schedule a block to be marked (sent to client) at some non-determined point in the future
    */
-  public static synchronized void scheduleBlockMark(World w, int x, int y, int z) {
+  public static void scheduleBlockMark(World w, int x, int y, int z) {
     scheduleBlockMark(w, x, y, z, -1, -1);
   }
 
-  public static synchronized void scheduleBlockMark(World w, int x, int y, int z, int originalId, int originalMeta) {
+  public static void scheduleBlockMark(World w, int x, int y, int z, int originalId, int originalMeta) {
     //scheduleBlockMarkSafe(w, x, y, z, originalId, originalMeta);
     
+    synchronized(FysiksFun.vanillaMutex) {
+      scheduleBlockMarkSafe(w, x, y, z, originalId, originalMeta);
+    }
+    /*
     try {
       mutex.acquire();
-      scheduleBlockMarkSafe(w, x, y, z, originalId, originalMeta);
+      
     } catch (InterruptedException e) {
       e.printStackTrace();
       return;
     } finally {
       mutex.release();
-    }
+    }*/
   }
 
   public static void scheduleBlockMarkSafe(World w, int x, int y, int z, int originalId, int originalMeta) {
@@ -176,16 +180,9 @@ public class ChunkMarkUpdater {
     if (Counters.tick % 5 != 0) return;
     ticksLeft += FysiksFun.settings.maxUpdatesPerTick;
 
+    synchronized(FysiksFun.vanillaMutex) {
     //System.out.println("markChunkFreePool: "+markChunkFreePool.size()+"ht: "+markChunkHashtable.size()+" q: "+markChunkQueue.size());
     
-    try {
-      mutex.acquire();
-    } catch (InterruptedException e) {
-      e.printStackTrace();
-      return;
-    }
-    try {
-
       /*
        * First mark a number of chunks are observed at close range (< 1 chunk away) by some observer
        */
@@ -243,8 +240,6 @@ public class ChunkMarkUpdater {
         ticksLeft -= s.markChunk();
         s.releaseChunk();
       }
-    } finally {
-      mutex.release();
     }
 
   }

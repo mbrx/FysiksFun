@@ -14,7 +14,7 @@ public class Rain {
 
   /** Precipation from rain on the chunk with center XZ */
   public static void doPrecipation(World w, int x, int z) {
-
+    
     Chunk c = ChunkCache.getChunk(w, x>>4, z>>4, false);
     if(c == null) return;
 

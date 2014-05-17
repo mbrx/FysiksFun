@@ -1,4 +1,11 @@
+  Interaction between Lava and Fuel/Oil gives incorrect results (it converts Fuel to water!)
+  /*
+   * TODO Leak through dirt cavities roof
+   */
 
+Make farm animals want to sleep at night (preferably on straw...)
+
+Make milk a real liquid that can flow? What should it do? Fertilize, neutralize hydrochloric acid?
 
 Different viscocity for different fluids that affect the minimum amount of fluid that can be in a block and still flow to it's neighbours. 
 Different weights for different fluids to let oil/gas float on top of water. (Gas on top of oil)

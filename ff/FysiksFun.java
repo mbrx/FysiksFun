@@ -86,7 +86,7 @@ import com.google.common.base.Objects;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 
-@Mod(modid = "FysiksFun", name = "FysiksFun", version = "0.5.9", dependencies="")
+@Mod(modid = "FysiksFun", name = "FysiksFun", version = "0.5.9", dependencies = "")
 @NetworkMod(clientSideRequired = true, serverSideRequired = false)
 public class FysiksFun {
   // Singleton instance of mod class instansiated by Forge
@@ -120,32 +120,34 @@ public class FysiksFun {
     public World w;
     public double posX, posY, posZ;
   };
-  
-  public static ArrayList<WorldObserver> observers                = new ArrayList<WorldObserver>();
 
-  /** Mutex for locking the threads whenever a vanilla function is called. Get-only functions can be run
-   * non synchronously, modifications to ExtendedBlockStorages can also be run non-synchronosly. But every
-   * other modifying call should be wrapped. 
+  public static ArrayList<WorldObserver> observers    = new ArrayList<WorldObserver>();
+
+  /**
+   * Mutex for locking the threads whenever a vanilla function is called.
+   * Get-only functions can be run non synchronously, modifications to
+   * ExtendedBlockStorages can also be run non-synchronosly. But every other
+   * modifying call should be wrapped.
    */
-  public static Object                vanillaMutex = new Object();
+  public static Object                   vanillaMutex = new Object();
 
-  //@PreInit
+  // @PreInit
   @EventHandler
   public void preInit(FMLPreInitializationEvent event) {
     ObjectPool.init();
-    
+
     logger = event.getModLog();
     config = new Configuration(event.getSuggestedConfigurationFile());
     config.load();
     settings.loadFromConfig(config);
     if (config.hasChanged()) config.save();
     executor = Executors.newFixedThreadPool(settings.threadPoolSize);
-        
+
     String physRulesName = event.getSuggestedConfigurationFile().toString().replace(".cfg", "-rules.cfg");
     physicsRuleConfig = new Configuration(new File(physRulesName));
   }
 
-  //@Init
+  // @Init
   @EventHandler
   public void load(FMLInitializationEvent event) {
     System.out.println("[FF] FysiksFun, by M. Broxvall ");
@@ -153,7 +155,7 @@ public class FysiksFun {
 
     proxy.registerRenderers();
     proxy.registerSounds();
-    
+
     eventListener = new EventListener();
     MinecraftForge.EVENT_BUS.register(eventListener);
 
@@ -172,17 +174,17 @@ public class FysiksFun {
     for (int i = 0; i < 300; i++) {
       blockTickQueueRing[i] = (Object) new HashSet<BlockUpdateState>();
     }
-    
+
     BlockWorldSupport.init();
     settings.worldSupportBlockID = Util.findBlockIdFromName(settings.worldSupportBlockString);
-    if(settings.worldSupportBlockID == 0) {
-      FysiksFun.logger.log(Level.SEVERE,"[FF] Cannot find block named '"+settings.worldSupportBlockString+"' as the world-support block");
-    } else 
-      FysiksFun.logger.log(Level.SEVERE,"[FF] Found block named'"+settings.worldSupportBlockString+"' as the world-support block, ID:"+settings.worldSupportBlockID);
+    if (settings.worldSupportBlockID == 0) {
+      FysiksFun.logger.log(Level.SEVERE, "[FF] Cannot find block named '" + settings.worldSupportBlockString + "' as the world-support block");
+    } else FysiksFun.logger.log(Level.SEVERE, "[FF] Found block named'" + settings.worldSupportBlockString + "' as the world-support block, ID:"
+        + settings.worldSupportBlockID);
 
   }
 
-  //@PostInit
+  // @PostInit
   @EventHandler
   public void postInit(FMLPostInitializationEvent event) {
     // Add our water repair generator AFTER the other generators
@@ -200,9 +202,8 @@ public class FysiksFun {
     if (settings.doFluids) Fluids.postInit();
     if (settings.doGases) Gases.postInit();
     if (settings.doExtraFire) ExtraFire.postInit();
-    
-    if(hasBuildcraft)
-      BlockTurbine.init();
+
+    if (hasBuildcraft) BlockTurbine.init();
     BlockFFSensor.init();
     BlockFFBlockDispenser.init();
 
@@ -210,7 +211,8 @@ public class FysiksFun {
     WorkerPhysicsSweep.postInit(physicsRuleConfig);
     if (physicsRuleConfig.hasChanged()) physicsRuleConfig.save();
     ExtraBlockBehaviours.postInit(event.getSide().isServer());
-    // Must be after all other blocks (that may be related to trees) have been created
+    // Must be after all other blocks (that may be related to trees) have been
+    // created
     Trees.initTreePartClassification();
   }
 
@@ -275,14 +277,14 @@ public class FysiksFun {
    * the scheduling of all block updates and mark TO client calls
    */
   public static void tickServer() {
-    //System.out.println("Start of tickServer");
-    
+    // System.out.println("Start of tickServer");
+
     /* Update world tick and print statistics */
     Counters.tick++;
     if (Counters.tick % 50 == 0) {
       Counters.printStatistics();
     }
-    if(settings.doFluids) Fluids.checkBlockOverwritten();
+    if (settings.doFluids) Fluids.checkBlockOverwritten();
 
     /*
      * if (Counters.tick == 500) {
@@ -330,8 +332,8 @@ public class FysiksFun {
      * repopulated before next tick anyway
      */
     observers.clear();
-    
-    //System.out.println("End of tickServer");
+
+    // System.out.println("End of tickServer");
 
   }
 
@@ -341,10 +343,16 @@ public class FysiksFun {
    */
   public static void doWorldTick(World w) {
 
-    //System.out.println("Start of world tick");
+    // System.out.println("Start of world tick");
+
+
+    /*if(!w.isRemote && w.provider.dimensionId == 0) {
+      int id = w.getBlockId(239, 74, 61);
+      System.out.println("w: "+w+" ID@239,74,61: "+id);
+    }*/
     
     ChunkTempData.cleanup(w);
-    
+
     // Fast forward the time until rain stops/starts
     int rainTime = w.getWorldInfo().getRainTime();
     if (rainTime > settings.weatherSpeed - 1) w.getWorldInfo().setRainTime(rainTime + 1 - settings.weatherSpeed);
@@ -380,7 +388,7 @@ public class FysiksFun {
     ExtraEntityBehaviours.doTick(w);
 
     // System.out.println("Active chunks: "+w.activeChunkSet.size());
-    //System.out.println("End of world tick");
+    // System.out.println("End of world tick");
   }
 
   /**
@@ -391,7 +399,9 @@ public class FysiksFun {
 
     Chunk c = ChunkCache.getChunk(w, x >> 4, z >> 4, false);
     if (c == null) return;
-    c.setBlockIDWithMetadata(x & 15, y, z & 15, id, meta);
+    synchronized (FysiksFun.vanillaMutex) {
+      c.setBlockIDWithMetadata(x & 15, y, z & 15, id, meta);
+    }
     ChunkMarkUpdater.scheduleBlockMark(w, x, y, z);
   }
 
@@ -399,19 +409,23 @@ public class FysiksFun {
 
   /**
    * A thread safe mechanism for (a) assigning the ID and meta to a block, and
-   * (b) to schedule a block mark update. If delayedBlockMarkSet is given then the updates are scheduled for later, 
-   * otherwise they are done _now_ but in another thread safe way. 
+   * (b) to schedule a block mark update. If delayedBlockMarkSet is given then
+   * the updates are scheduled for later, otherwise they are done _now_ but in
+   * another thread safe way.
    */
   public static void setBlockIDandMetadata(World w, Chunk c, int x, int y, int z, int id, int meta, int oldId, int oldMeta,
-      HashSet<ChunkMarkUpdateTask> delayedBlockMarkSet) {
+      Set<ChunkMarkUpdateTask> delayedBlockMarkSet) {
 
     ExtendedBlockStorage blockStorage[] = c.getBlockStorageArray();
     ExtendedBlockStorage ebs = blockStorage[y >> 4];
-    ebs=null;
-    if (ebs == null) c.setBlockIDWithMetadata(x & 15, y, z & 15, id, meta);
-    else {
-      if(y > c.heightMap[(x&15)+(z&15)*16]) c.generateSkylightMap();
-      c.updateSkylightColumns[(x&15)+(z&15)* 16] = true;
+    ebs = null;
+    if (ebs == null) {
+      synchronized (FysiksFun.vanillaMutex) {
+        c.setBlockIDWithMetadata(x & 15, y, z & 15, id, meta);
+      }
+    } else {
+      if (y > c.heightMap[(x & 15) + (z & 15) * 16]) c.generateSkylightMap();
+      c.updateSkylightColumns[(x & 15) + (z & 15) * 16] = true;
 
       ebs.setExtBlockID(x & 15, y & 15, z & 15, id);
       ebs.setExtBlockMetadata(x & 15, y & 15, z & 15, meta);
@@ -419,67 +433,68 @@ public class FysiksFun {
 
     if (delayedBlockMarkSet == null) ChunkMarkUpdater.scheduleBlockMark(w, x, y, z, oldId, oldMeta);
     else {
-      ChunkMarkUpdateTask task=ObjectPool.poolChunkMarkUpdateTask.getObject();
+      ChunkMarkUpdateTask task = ObjectPool.poolChunkMarkUpdateTask.getObject();
       task.set(w, x, y, z, oldId, oldMeta);
       delayedBlockMarkSet.add(task);
-      //delayedBlockMarkSet.add(new ChunkMarkUpdateTask(w, x, y, z, oldId, oldMeta));
+      // delayedBlockMarkSet.add(new ChunkMarkUpdateTask(w, x, y, z, oldId,
+      // oldMeta));
     }
-  }
-  
-  public static float minXZDistSqToObserver(World w,float x,float z) {
-    float minDist = 1e6F;
-    for (FysiksFun.WorldObserver wo : FysiksFun.observers) {
-      if(wo.w != w) continue;
-      float dist = (float)((wo.posX - x) * (wo.posX - x) + (wo.posZ - z) * (wo.posZ - z));
-      if (dist < minDist) minDist = dist;
-    }
-    return minDist;    
-  }
-  
-  public static float minDistSqToObserver(World w,float x,float y,float z) {
-    float minDist = 1e6F;
-    for (FysiksFun.WorldObserver wo : FysiksFun.observers) {
-      if(wo.w != w) continue;
-      float dist = (float)((wo.posX - x) * (wo.posX - x) + (wo.posY - y) * (wo.posY - y) + (wo.posZ - z) * (wo.posZ - z));
-      if (dist < minDist) minDist = dist;
-    }
-    return minDist;    
   }
 
-  public static boolean isCurrentlyMovingABlock=false;
-  
+  public static float minXZDistSqToObserver(World w, float x, float z) {
+    float minDist = 1e6F;
+    for (FysiksFun.WorldObserver wo : FysiksFun.observers) {
+      if (wo.w != w) continue;
+      float dist = (float) ((wo.posX - x) * (wo.posX - x) + (wo.posZ - z) * (wo.posZ - z));
+      if (dist < minDist) minDist = dist;
+    }
+    return minDist;
+  }
+
+  public static float minDistSqToObserver(World w, float x, float y, float z) {
+    float minDist = 1e6F;
+    for (FysiksFun.WorldObserver wo : FysiksFun.observers) {
+      if (wo.w != w) continue;
+      float dist = (float) ((wo.posX - x) * (wo.posX - x) + (wo.posY - y) * (wo.posY - y) + (wo.posZ - z) * (wo.posZ - z));
+      if (dist < minDist) minDist = dist;
+    }
+    return minDist;
+  }
+
+  public static boolean isCurrentlyMovingABlock = false;
+
   public static void moveBlock(World w, int xD, int yD, int zD, int xS, int yS, int zS, boolean scheduleUpdate, boolean clearSource) {
-    isCurrentlyMovingABlock=true;
-    Chunk cD = ChunkCache.getChunk(w, xD>>4, zD>>4, true);
-    Chunk cS = ChunkCache.getChunk(w, xS>>4, zS>>4, true);
-    //System.out.println("Moving block from: "+Util.xyzString(xS,yS,zS)+" to "+Util.xyzString(xD,yD,zD));
-    
-    int idS = cS.getBlockID(xS&15, yS, zS&15);
-    int metaS = cS.getBlockMetadata(xS&15, yS, zS&15);
-    
-    int idD = cD.getBlockID(xD&15, yD, zD&15);
-    int metaD = cD.getBlockMetadata(xD&15, yS, zD&15);
+    isCurrentlyMovingABlock = true;
+    Chunk cD = ChunkCache.getChunk(w, xD >> 4, zD >> 4, true);
+    Chunk cS = ChunkCache.getChunk(w, xS >> 4, zS >> 4, true);
+    // System.out.println("Moving block from: "+Util.xyzString(xS,yS,zS)+" to "+Util.xyzString(xD,yD,zD));
+
+    int idS = cS.getBlockID(xS & 15, yS, zS & 15);
+    int metaS = cS.getBlockMetadata(xS & 15, yS, zS & 15);
+
+    int idD = cD.getBlockID(xD & 15, yD, zD & 15);
+    int metaD = cD.getBlockMetadata(xD & 15, yS, zD & 15);
     Block blockS = Block.blocksList[idS];
-           
-    cD.setBlockIDWithMetadata(xD&15, yD, zD&15, idS, metaS);
-    if(scheduleUpdate)
-    ChunkMarkUpdater.scheduleBlockMark(w, xD, yD, zD, idD, metaD);
-    
-    if(blockS instanceof ITileEntityProvider) {
+
+    synchronized (FysiksFun.vanillaMutex) {
+      cD.setBlockIDWithMetadata(xD & 15, yD, zD & 15, idS, metaS);
+    }
+    if (scheduleUpdate) ChunkMarkUpdater.scheduleBlockMark(w, xD, yD, zD, idD, metaD);
+
+    if (blockS instanceof ITileEntityProvider) {
       TileEntity entity = cS.getChunkBlockTileEntity(xS & 15, yS, zS & 15);
       cS.removeChunkBlockTileEntity(xS & 15, yS, zS & 15);
       entity.xCoord = xD;
       entity.yCoord = yD;
       entity.zCoord = zD;
       entity.validate();
-      cD.addTileEntity(entity);        
+      cD.addTileEntity(entity);
     }
-    if(clearSource) {
-      cS.setBlockIDWithMetadata(xS&15, yS, zS&15, 0, 0);
-      if(scheduleUpdate)
-        ChunkMarkUpdater.scheduleBlockMark(w, xS, yS, zS, idD, metaD);
+    if (clearSource) {
+      cS.setBlockIDWithMetadata(xS & 15, yS, zS & 15, 0, 0);
+      if (scheduleUpdate) ChunkMarkUpdater.scheduleBlockMark(w, xS, yS, zS, idD, metaD);
     }
-    isCurrentlyMovingABlock=false;
+    isCurrentlyMovingABlock = false;
   }
 
 }

@@ -79,7 +79,7 @@ public class Plants {
     Chunk c = ChunkCache.getChunk(w, x>>4, z>>4, false);
     if(c == null) return;
 
-    if (FysiksFun.rand.nextInt(10) > 5) return;
+    //if (FysiksFun.rand.nextInt(10) > 5) return;
     boolean isDay = w.isDaytime();
 
     for (int tries = 0; tries < FysiksFun.settings.plantsThirst; tries++) {
@@ -126,7 +126,7 @@ public class Plants {
             yMax = +2;
             drinkQuantityInv = 8;
             // Spreads faster than flowers, but not as far in one go
-            spreadFailures = 2;
+            spreadFailures = 1;
             spreadRange = 3;
             plantDensity = 8;
             droughtDeath = 16;

@@ -36,7 +36,7 @@ public class Fluids {
 
   public static BlockFFFluid asFluid[]      = new BlockFFFluid[4096];
   public static BlockFFFluid fluid[]        = new BlockFFFluid[4096];
-
+  
   public static void registerLiquidBlock(BlockFFFluid block) {
     liquidIDs[nLiquids++] = block.blockID;
     isLiquid[block.blockID] = true;
@@ -49,7 +49,7 @@ public class Fluids {
       isLiquid[i] = false;
       fluid[i] = null;
       asFluid[i] = null;
-      canFlowThrough[i] = false;
+      canFlowThrough[i] = false; 
     }
 
   }
@@ -106,6 +106,8 @@ public class Fluids {
 
     stillLava.relativeWeight=+10;
     flowingLava.relativeWeight=+10;
+    stillLava.viscosity = BlockFFFluid.maximumContent / 4;
+    flowingLava.viscosity = BlockFFFluid.maximumContent / 4;
     
     registerLiquidBlock(stillWater);
     registerLiquidBlock(flowingWater);

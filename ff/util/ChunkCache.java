@@ -30,16 +30,20 @@ public class ChunkCache {
     }
   };
 
-  private static WorldCache lastWorld = null;
+  private static Object     lastWorldSync = new Object();
+  private static WorldCache lastWorld     = null;
 
   /** Returns the the chunk with the given CHUNK coordinates */
   public static Chunk getChunk(World w, int chunkX, int chunkZ, boolean forceLoad) {
     WorldCache wc;
-    if (lastWorld == null || lastWorld.w != w) lastWorld = new WorldCache(w);
+    // synchronized (lastWorldSync) {
+    if (lastWorld == null || lastWorld.w != w) synchronized(lastWorldSync) { lastWorld = new WorldCache(w); }
     wc = lastWorld;
+    // }
     int x = chunkX & cacheMask;
     int z = chunkZ & cacheMask;
-    if (wc.chunkCache[x][z] == null) {
+    Chunk c = wc.chunkCache[x][z];
+    if (c == null || c.xPosition != chunkX || c.zPosition != chunkZ) {
       IChunkProvider provider = w.getChunkProvider();
       if (!provider.chunkExists(chunkX, chunkZ)) {
         if (forceLoad == false) return null;
@@ -49,13 +53,11 @@ public class ChunkCache {
       // "getChunk aquire: "+FysiksFun.vanillaMutex.availablePermits());
 
       synchronized (FysiksFun.vanillaMutex) {
-        wc.chunkCache[x][z] = provider.provideChunk(chunkX, chunkZ);
+        c = provider.provideChunk(chunkX, chunkZ);
+        wc.chunkCache[x][z] = c;
       }
-
-      // System.out.println(Thread.currentThread().getName() +
-      // "getChunk release: "+FysiksFun.vanillaMutex.availablePermits());
     }
-    return wc.chunkCache[x][z];
+    return c;
   }
 
   /**
@@ -64,8 +66,10 @@ public class ChunkCache {
    */
   public static ChunkMarkUpdater getCML(World w, int chunkX, int chunkZ) {
     WorldCache wc;
-    if (lastWorld == null || lastWorld.w != w) lastWorld = new WorldCache(w);
+    // synchronized (lastWorldSync) {
+    if (lastWorld == null || lastWorld.w != w) synchronized(lastWorldSync) { lastWorld = new WorldCache(w); }
     wc = lastWorld;
+    // }
     int x = chunkX & cacheMask;
     int z = chunkZ & cacheMask;
     if (wc.cmlCache[x][z] == null) {
@@ -77,8 +81,10 @@ public class ChunkCache {
   /** Removes the CML (if found) in the chunk with the given CHUNK coordinates */
   public static void removeCMLfromCache(World w, int chunkX, int chunkZ) {
     WorldCache wc;
-    if (lastWorld.w != w) return;
+    // synchronized (lastWorldSync) {
+    if (lastWorld == null || lastWorld.w != w) return;
     wc = lastWorld;
+    // }
     int x = chunkX & cacheMask;
     int z = chunkZ & cacheMask;
     wc.cmlCache[x][z] = null;
@@ -90,13 +96,17 @@ public class ChunkCache {
    */
   public static ChunkTempData getTempData(World w, int chunkX, int chunkZ) {
     WorldCache wc;
-    if (lastWorld == null || lastWorld.w != w) lastWorld = new WorldCache(w);
+    // synchronized (lastWorldSync) {
+    if (lastWorld == null || lastWorld.w != w) synchronized(lastWorldSync) { lastWorld = new WorldCache(w); }
     wc = lastWorld;
+    // }
     int x = chunkX & cacheMask;
     int z = chunkZ & cacheMask;
-    if (wc.tempDataCache[x][z] == null) {
-      wc.tempDataCache[x][z] = ChunkTempData.getChunk(w, chunkX << 4, chunkZ << 4);
+    ChunkTempData tempData = wc.tempDataCache[x][z];
+    if (tempData == null || tempData.coordinate.getX() != chunkX || tempData.coordinate.getZ() != chunkZ) {
+      tempData = ChunkTempData.getChunk(w, chunkX << 4, chunkZ << 4);
+      wc.tempDataCache[x][z] = tempData;
     }
-    return wc.tempDataCache[x][z];
+    return tempData;
   }
 }

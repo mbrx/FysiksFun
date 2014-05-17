@@ -56,4 +56,14 @@ public class Util {
     }
     return 0;
   }
+
+  public static void printStackTrace() {
+    StackTraceElement[] stackTraceElements = Thread.currentThread().getStackTrace();
+    // Cnt 2 avoids two steps from the stack trace (the getStackTrace itself and the call to this function itself)
+    int cnt=2;
+    for (StackTraceElement element : stackTraceElements) {
+      if(cnt-- <= 0)
+        System.out.println("  " + element.getClassName() + "." + element.getMethodName() + " (" + element.getFileName() + ":" + element.getLineNumber() + ")");
+    }
+  }
 }

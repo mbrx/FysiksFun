@@ -21,6 +21,8 @@ public class CoordinateWXZ {
     return z;
   }
 
+  public String toString() { return ""+x+","+z; }
+
   /**
    * Doesn't initialize private fields - you must use the 'set' function after
    * creating objects.

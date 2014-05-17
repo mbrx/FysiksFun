@@ -23,25 +23,26 @@ public class Evaporation {
    * chunk center XZ
    */
   public static void doEvaporation(World w, int x, int z) {
-
+    
+    /*
     if (FysiksFun.settings.undergroundWater) {
       doUndergroundEvaporation(w, x, z);
       doHumidification(w, x, z);
     }
     doIndirectEvaporation(w, x, z);
     doSunlightEvaporation(w, x, z);
-
     doDirectHeatEvaporation(w, x, z);
+    */
   }
 
   /** Looks for heat sources (fire, lava) and evaporates any nearby water */
   private static void doDirectHeatEvaporation(World w, int x, int z) {
-    // if (FysiksFun.rand.nextInt(4) != 0) return;
+    if (FysiksFun.rand.nextInt(2) != 0) return;
 
     int y = (int) FysiksFun.rand.nextInt(160) + 2;
     Chunk c = ChunkCache.getChunk(w, x>>4, z>>4, false);
     if(c == null) return;
-
+    
     for (int dx = 0; dx < 16; dx++) {
       for (int dz = 0; dz < 16; dz++) {
         int id = c.getBlockID(dx, y, dz);
@@ -59,7 +60,7 @@ public class Evaporation {
         }
         // Effectively not called when heat=0 (ie. nothing that is heating)
         for (int range = 0; range < heat; range++) {
-          for (int tries = 0; tries < 10; tries++) {
+          for (int tries = 0; tries < 20; tries++) {
             int ddx = FysiksFun.rand.nextInt(range * 2 + 1) - range;
             int ddz = FysiksFun.rand.nextInt(range * 2 + 1) - range;
             int x2 = x + dx + ddx;
@@ -123,13 +124,15 @@ public class Evaporation {
     // if (FysiksFun.rand.nextInt(71) != 0) return;
 
     int y = (int) Math.round(Math.sqrt(1.0 * FysiksFun.rand.nextInt(24 * 24))) + 1;
-    Chunk c = ChunkCache.getChunk(w, x>>4, z>>4, false);
+    Chunk c = ChunkCache.getChunk(w, x>>4, z>>4, false);   
     if(c == null) return;
 
     int tries;
     for (tries = 0; tries < 16; tries++) {
       int dx = FysiksFun.rand.nextInt(16);
       int dz = FysiksFun.rand.nextInt(16);
+      // TODO - use BlockFFFluid.isOceanic instead
+      if(c.getBiomeGenForWorldCoords(dx, dz, w.provider.worldChunkMgr) == BiomeGenBase.ocean) continue;
       int id = c.getBlockID(dx, y, dz);
       if (id == Fluids.stillWater.blockID || id == Fluids.flowingWater.blockID) {
         int amount = Fluids.stillWater.getBlockContent(w, x + dx, y, z + dz);

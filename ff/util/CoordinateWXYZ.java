@@ -31,6 +31,7 @@ public class CoordinateWXYZ {
     this.z = copy.z;
     recomputeHash();
   }    
+  public String toString() { return Util.xyzString(x, y, z); }
   public void set(World w, int x, int y, int z) {
     this.w = w;
     this.x = x;
