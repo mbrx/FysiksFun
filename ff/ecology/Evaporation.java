@@ -37,7 +37,7 @@ public class Evaporation {
   /** Looks for heat sources (fire, lava) and evaporates any nearby water */
   private static void doDirectHeatEvaporation(World w, int x, int z) {
     //if (FysiksFun.rand.nextInt(2) != 0) return;
-
+    
     int y = (int) FysiksFun.rand.nextInt(160) + 2;
     Chunk c = ChunkCache.getChunk(w, x>>4, z>>4, false);
     if(c == null) return;
@@ -52,6 +52,7 @@ public class Evaporation {
         if (id == Block.fire.blockID) {
           isDirectFire = true;
           heat = 1;
+          System.out.println("doDirectHead - found flame");
         } else if (id == Fluids.stillLava.blockID || id == Fluids.flowingLava.blockID) {
           isLavaHeat = true;
           lavaContent = Math.min(BlockFFFluid.maximumContent, Fluids.stillLava.getBlockContent(w, x + dx, y, z + dz));
@@ -87,7 +88,6 @@ public class Evaporation {
                   Fluids.stillLava.setBlockContent(w, x + dx, y, z + dz, lavaContent);
                   // System.out.println("New lava content @"+Util.xyzString(x+dx,y,z+dz)+" is "+lavaContent);
                 } else if (isDirectFire) {
-                  FysiksFun.setBlockWithMetadataAndPriority(w, x + dx, y, z + dz, 0, 0, 0);
                   int burnedId = c.getBlockID(dx, y - 1, dz);
                   if (burnedId == Block.grass.blockID) {
                     FysiksFun.setBlockWithMetadataAndPriority(w, x + dx, y - 1, z + dz, Block.dirt.blockID, 0, 0);
