@@ -1384,9 +1384,9 @@ public class BlockFFFluid extends BlockFlowing {
       if (nfires > burnNeighboursForExplosion) {
         synchronized (FysiksFun.vanillaMutex) {
           setBlockContent(world, x0, y0, z0, 0);
-          float radius = (float) (0.5f + (2.5 * newContent) / (float) BlockFFFluid.maximumContent);
+          float radius = (float) (0.5f + (4.5 * newContent) / (float) BlockFFFluid.maximumContent);
           world.newExplosion(null, x0, y0, z0, radius, true, true);
-          world.playSoundEffect(x0 + 0.5, y0 + 0.5, z0 + 0.5, "random.explode", radius / 3.f, 1.0f);
+          world.playSoundEffect(x0 + 0.5, y0 + 0.5, z0 + 0.5, "random.explode", radius / 4.f, 1.0f);
         }
       }
     }

@@ -24,20 +24,19 @@ public class Evaporation {
    */
   public static void doEvaporation(World w, int x, int z) {
     
-    /*
+    
     if (FysiksFun.settings.undergroundWater) {
       doUndergroundEvaporation(w, x, z);
       doHumidification(w, x, z);
     }
     doIndirectEvaporation(w, x, z);
     doSunlightEvaporation(w, x, z);
-    doDirectHeatEvaporation(w, x, z);
-    */
+    doDirectHeatEvaporation(w, x, z);    
   }
 
   /** Looks for heat sources (fire, lava) and evaporates any nearby water */
   private static void doDirectHeatEvaporation(World w, int x, int z) {
-    if (FysiksFun.rand.nextInt(2) != 0) return;
+    //if (FysiksFun.rand.nextInt(2) != 0) return;
 
     int y = (int) FysiksFun.rand.nextInt(160) + 2;
     Chunk c = ChunkCache.getChunk(w, x>>4, z>>4, false);
@@ -93,8 +92,9 @@ public class Evaporation {
                   if (burnedId == Block.grass.blockID) {
                     FysiksFun.setBlockWithMetadataAndPriority(w, x + dx, y - 1, z + dz, Block.dirt.blockID, 0, 0);
                   } else {
-                    /* Remove whatever it is that is burning... */
-                    if (FysiksFun.rand.nextInt(16) == 7) FysiksFun.setBlockWithMetadataAndPriority(w, x + dx, y - 1, z + dz, 0, 0, 0);
+                    // Remove whatever it is that is burning... 
+                    // Ignore this for now, vanilla MC does consume most burnable things, and burning fluids are already handled by the burning routine
+                    //if (FysiksFun.rand.nextInt(16) == 7) FysiksFun.setBlockWithMetadataAndPriority(w, x + dx, y - 1, z + dz, 0, 0, 0);
                   }
                 }
                 break;

@@ -333,6 +333,10 @@ public class FysiksFun {
      */
     observers.clear();
 
+    /* Reset the cache regularly to make sure we get rid of old (swapped out) chunks and tempData objects. */
+    if((Counters.tick % 413) == 0) 
+      ChunkCache.resetCache();
+    
     // System.out.println("End of tickServer");
 
   }
