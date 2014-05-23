@@ -102,7 +102,6 @@ public class EntityAICoward extends EntityAIBase {
 
   @Override
   public void resetTask() {
-    System.out.println("A coward animal: "+theAnimal+" is trying to flee");
     for (int tries = 0; tries < 50; tries++) {
       int radius = 2 + tries/2;
       destX = (int) (theAnimal.posX + 0.5f + (FysiksFun.rand.nextFloat() - 0.5) * 2. * radius);

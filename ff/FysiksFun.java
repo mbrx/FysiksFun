@@ -209,7 +209,7 @@ public class FysiksFun {
     BlockFFBlockDispenser.init();
 
     physicsRuleConfig.load();
-    WorkerPhysicsSweep.postInit(physicsRuleConfig);
+    SolidBlockPhysicsRules.postInit(physicsRuleConfig);
     if (physicsRuleConfig.hasChanged()) physicsRuleConfig.save();
     ExtraBlockBehaviours.postInit(event.getSide().isServer());
     // Must be after all other blocks (that may be related to trees) have been

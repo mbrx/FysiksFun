@@ -404,11 +404,11 @@ public class BlockFFFluid extends BlockFlowing {
     if (!chunkProvider.chunkExists(x >> 4, z >> 4)) return;
     ChunkTempData tempData0 = ChunkTempData.getChunk(w, x, y, z);
     Chunk c = ChunkCache.getChunk(w, x >> 4, z >> 4, true);
-    updateTickSafe(w, c, tempData0, x, y, z, r, 0, null);
+    updateTickSafe(w, c, tempData0, x, y, z, r, null);
   }
 
   /** Called only when we KNOW that the original chunk is loaded */
-  public void updateTickSafe(World world, Chunk chunk0, ChunkTempData tempData0, int x0, int y0, int z0, Random r, int sweep,
+  public void updateTickSafe(World world, Chunk chunk0, ChunkTempData tempData0, int x0, int y0, int z0, Random r, 
       Set<ChunkMarkUpdateTask> delayedBlockMarkSet) {
     Counters.fluidUpdates++;
     // if (sweep % liquidUpdateRate != 0) return;

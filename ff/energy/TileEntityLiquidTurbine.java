@@ -23,8 +23,8 @@ public abstract class TileEntityLiquidTurbine extends TileEntityTurbineBase {
        * pressure is updated correctly.
        */
       if (fluid.isSameLiquid(c.getBlockID(xCoord & 15, yCoord + 2, zCoord & 15)))
-        fluid.updateTickSafe(worldObj, c, tempData, xCoord, yCoord + 2, zCoord, FysiksFun.rand, 0, null);
-      fluid.updateTickSafe(worldObj, c, tempData, xCoord, yCoord + 1, zCoord, FysiksFun.rand, 0, null);
+        fluid.updateTickSafe(worldObj, c, tempData, xCoord, yCoord + 2, zCoord, FysiksFun.rand, null);
+      fluid.updateTickSafe(worldObj, c, tempData, xCoord, yCoord + 1, zCoord, FysiksFun.rand, null);
       int contentAbove = fluid.getBlockContent(c, tempData, xCoord, yCoord + 1, zCoord);
 
       int idBelow = c.getBlockID(xCoord & 15, yCoord - 1, zCoord & 15);

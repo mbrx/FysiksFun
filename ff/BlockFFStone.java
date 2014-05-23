@@ -52,7 +52,8 @@ public class BlockFFStone extends BlockStone {
         FysiksFun.setBlockWithMetadataAndPriority(w, x1, y1, z1, Block.cobblestone.blockID, 0, 0);
         shatterStone(w,x1,y1,z1,blockID,-1);
 
-        WorkerPhysicsSweep.addPressure(w,x1,y1,z1,10000);
+        /** This may or may not work depending on threading issues and if we are crossing a chunk boundary. In worst case nothing realy happens. */ 
+        SolidBlockPhysics.addPressure(w,x1,y1,z1,10000);
         float volume = 0.75F + FysiksFun.rand.nextFloat()*0.5F;
         float pitch = 1.0F;    
         w.playSoundEffect(x1 + 0.5, y1 + 0.5, z1 + 0.5, "fysiksfun:rubble", volume, pitch);

@@ -25,18 +25,6 @@ import net.minecraft.world.chunk.Chunk;
  */
 public class MPWorldTicker {
 
-  static class WorldUpdateState {
-    /**
-     * Counts the number of steps that subdivides what parts of the world is
-     * investigated
-     */
-    int sweepStepCounter;
-    /** Counts the total number of sweeps done on the world */
-    int sweepCounter;
-  };
-
-  private static Hashtable<World, WorldUpdateState> worldUpdateState = new Hashtable<World, WorldUpdateState>();
-
   /**
    * Performs multithreaded calls to all update functions for all modules of FF,
    * for every loaded chunk in the given world.
@@ -105,21 +93,11 @@ public class MPWorldTicker {
    */
   public static void doBlockSweeps(World w) {
 
-    WorldUpdateState wstate = worldUpdateState.get(w);
-    if (wstate == null) {
-      wstate = new WorldUpdateState();
-      worldUpdateState.put(w, wstate);
-    }
-    int mi, ma;
-    wstate.sweepStepCounter++;
-
     int nStepsPerSweep = 6;
-    int sweep = wstate.sweepStepCounter % nStepsPerSweep;
+    //int sweep = wstate.sweepStepCounter % nStepsPerSweep;
     int yPerStep = 256 / nStepsPerSweep;
-    mi = sweep * yPerStep;
-    ma = Math.min(255, (sweep + 1) * yPerStep);
-    if (sweep == 0) wstate.sweepCounter++;
-
+  
+    
     // Make sure all chunks/tempData are loaded... if this is not done first we
     // may have problems since the loading
     // functions are not thread safe
@@ -140,7 +118,7 @@ public class MPWorldTicker {
       for (Object o : w.activeChunkSet) {
         ChunkCoordIntPair xz = (ChunkCoordIntPair) o;
         if (((xz.chunkXPos + xz.chunkZPos) & 1) == oddeven) {
-          Runnable physicsWorker = new WorkerPhysicsSweep(w, wstate, xz, delayedBlockMarkSets);
+          Runnable physicsWorker = new WorkerPhysicsSweep(w, xz, delayedBlockMarkSets);
           Future f = FysiksFun.executor.submit(physicsWorker);
           toWaitFor.add(f);
           alreadyScheduled.add(xz);
