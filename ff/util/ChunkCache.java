@@ -123,6 +123,7 @@ public class ChunkCache {
     int x = chunkX & cacheMask;
     int z = chunkZ & cacheMask;
     ChunkTempData tempData = wc.tempDataCache[x][z];
+    if(tempData == null) return;
     if(tempData.coordinate.getX() == chunkX && tempData.coordinate.getZ() == chunkZ) {
       wc.tempDataCache[x][z]=null;
     }

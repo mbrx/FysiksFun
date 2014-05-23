@@ -52,7 +52,6 @@ public class Evaporation {
         if (id == Block.fire.blockID) {
           isDirectFire = true;
           heat = 1;
-          System.out.println("doDirectHead - found flame");
         } else if (id == Fluids.stillLava.blockID || id == Fluids.flowingLava.blockID) {
           isLavaHeat = true;
           lavaContent = Math.min(BlockFFFluid.maximumContent, Fluids.stillLava.getBlockContent(w, x + dx, y, z + dz));

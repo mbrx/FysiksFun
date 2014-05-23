@@ -53,6 +53,7 @@ public class BlockFFBCLiquids extends BlockBuildcraftFluid {
       oilFFWrapped.canBurn=true;
       oilFFWrapped.burnNeighboursForExplosion = 8;
       oilFFWrapped.burnConsumeRate = 2; //BlockFFFluid.maximumContent / 16;
+      oilFFWrapped.explodeStrength = 2;
     }
 
     {
@@ -68,8 +69,9 @@ public class BlockFFBCLiquids extends BlockBuildcraftFluid {
       GameRegistry.registerBlock(fuel, "blockFuel");
       Block.setBurnProperties(fuel.blockID, 90, 120);
       fuelFFWrapped.canBurn=true;
-      fuelFFWrapped.burnNeighboursForExplosion = 5;
+      fuelFFWrapped.burnNeighboursForExplosion = 5;      
       fuelFFWrapped.burnConsumeRate = 1; //BlockFFFluid.maximumContent / 64;
+      fuelFFWrapped.explodeStrength = 3;
     }
 
     BuildCraftEnergy.blockFuel = fuel;

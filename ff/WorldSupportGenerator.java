@@ -19,7 +19,10 @@ public class WorldSupportGenerator implements IWorldGenerator {
 
   @Override
   public void generate(Random random, int chunkX, int chunkZ, World world, IChunkProvider chunkGenerator, IChunkProvider chunkProvider) {
-    Chunk c = chunkGenerator.provideChunk(chunkX, chunkZ);
+    Chunk c;
+    synchronized (FysiksFun.vanillaMutex) {
+      c = chunkGenerator.provideChunk(chunkX, chunkZ);
+    }
     switch (world.provider.dimensionId) {
     case 1:
       // No physics and no support pillars needed
@@ -40,7 +43,7 @@ public class WorldSupportGenerator implements IWorldGenerator {
 
   private void generatePillarSupports(World world, Chunk c, int x, int z) {
     if (FysiksFun.settings.worldSupportBlockID <= 0) {
-      //System.out.println("warning... worldSupportBlockID: "+FysiksFun.settings.worldSupportBlockID);
+      // System.out.println("warning... worldSupportBlockID: "+FysiksFun.settings.worldSupportBlockID);
       return;
     }
 

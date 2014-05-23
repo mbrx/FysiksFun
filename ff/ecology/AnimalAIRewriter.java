@@ -28,6 +28,13 @@ public class AnimalAIRewriter {
            if(taskEntry.action instanceof EntityAIFeeding) hasFeedingAI=true;              
          }
          if(!hasFeedingAI) {
+           EntityAICoward cowardAI = new EntityAICoward(animal, 1.5F);
+           insertAI(animal, 2, cowardAI); 
+
+           EntityAISleepAtNight sleepAI = new EntityAISleepAtNight(animal);
+           insertAI(animal, 3, sleepAI); 
+
+           
            EntityAIFeeding ai=new EntityAIFeeding(animal, 0.75f);
            ai.addFoodtype(Block.tallGrass.blockID);
            ai.addFoodtype(Block.crops.blockID);

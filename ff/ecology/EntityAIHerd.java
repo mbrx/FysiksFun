@@ -70,6 +70,8 @@ public class EntityAIHerd extends EntityAIBase {
             }
             //System.out.println("Target "+Util.xyzString(destX,destY,destZ)+" found air: "+foundAir);
             if (!foundAir) continue;
+            // Don't try to go to places that are not safe (avoids infinite loops trying to go to unsafe place, aborting and then starting over) 
+            if(!EntityAICoward.isPositionSafe(theAnimal.worldObj,destX,destY,destZ)) continue;
             if (theAnimal.getNavigator().tryMoveToXYZ(destX, destY, destZ, moveSpeed)) {
               //System.out.println("+0 Found path to " + Util.xyzString(destX, destY, destZ));
               return;

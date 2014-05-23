@@ -49,6 +49,7 @@ import cpw.mods.fml.common.DummyModContainer;
 import cpw.mods.fml.common.LoadController;
 import cpw.mods.fml.common.ModMetadata;
 import mbrx.ff.ecology.AnimalAIRewriter;
+import mbrx.ff.ecology.EntityAICoward;
 import mbrx.ff.ecology.ExtraFire;
 import mbrx.ff.ecology.Trees;
 import mbrx.ff.ecology.Wind;
@@ -286,6 +287,9 @@ public class FysiksFun {
     }
     if (settings.doFluids) Fluids.checkBlockOverwritten();
 
+    if (Counters.tick % 47 == 0) {
+      EntityAICoward.cleanup();
+    }
     /*
      * if (Counters.tick == 500) {
      * System.out.println("[FF] Dumping list of all blocks"); for (Block b :

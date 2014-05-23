@@ -5,6 +5,7 @@ import java.util.List;
 
 import mbrx.ff.FysiksFun;
 import mbrx.ff.util.ChunkCache;
+import mbrx.ff.util.Counters;
 import mbrx.ff.util.Util;
 import net.minecraft.block.Block;
 import net.minecraft.entity.ai.EntityAIBase;
@@ -26,9 +27,11 @@ public class EntityAIFeeding extends EntityAIBase {
   int                walkingTime;
   /** How many ticks have been spent eating. Starts at zero. Increases when in range of block */
   int                eatingTime;
+  int                lastEating;
   ArrayList<Integer> eatingList = new ArrayList<Integer>();
 
   private int        destX, destY, destZ;
+  private int minTimeBetweenEating;
 
   public EntityAIFeeding(EntityAnimal animal, float movementSpeed) {
     this.theAnimal = animal;
@@ -40,6 +43,8 @@ public class EntityAIFeeding extends EntityAIBase {
     attemptCounter = 0;
     walkingTime = 0;
     eatingTime = 0;
+    lastEating=0;
+    minTimeBetweenEating = 20 * 30; // Ideally there should be a pause of 30 seconds between different eating occassions (unless we are very hungry)
   }
 
   public void addFoodtype(int id) {
@@ -49,13 +54,11 @@ public class EntityAIFeeding extends EntityAIBase {
   @Override
   public boolean shouldExecute() {
 
-    //System.out.println("CheckExecute: "+theAnimal+"Food: "+foodLevel);
     foodLevel = foodLevel - 1 / 500.f;
     if (foodLevel < 0.0) {
       foodLevel = 0.0f;
       if (FysiksFun.rand.nextInt(200) == 0) {
-        //System.out.println("Animal is starving");
-        theAnimal.attackEntityFrom(DamageSource.generic, 1);
+        theAnimal.attackEntityFrom(DamageSource.starve, 1);
       }
     }
     
@@ -65,6 +68,7 @@ public class EntityAIFeeding extends EntityAIBase {
     }
     if(theAnimal.inLove > 0) return false;
     if (foodLevel >= 10.0) return false;
+    if(foodLevel > 1.0 && lastEating > Counters.tick - minTimeBetweenEating) return false;
     return true;
   }
 
@@ -91,6 +95,8 @@ public class EntityAIFeeding extends EntityAIBase {
         if(id == 0) continue;
         intObject=id;
         if (eatingList.contains(intObject)) { 
+          // Don't try to go to places that are not safe (avoids infinite loops trying to go to unsafe place, aborting and then starting over) 
+          if(!EntityAICoward.isPositionSafe(theAnimal.worldObj,x+dx,y+dy,z+dz)) continue;
           //if (id == Block.tallGrass.blockID || id == Block.crops.blockID) //             
           if (theAnimal.getNavigator().tryMoveToXYZ(x + dx, y + dy, z + dz, moveSpeed)) {
             destX = x + dx;
@@ -154,7 +160,8 @@ public class EntityAIFeeding extends EntityAIBase {
         // We are now close enough to eat and finish this task
         FysiksFun.setBlockWithMetadataAndPriority(theWorld, destX, destY, destZ, 0, 0, 0);
         //theWorld.setBlock(destX, destY, destZ, 0, 0, 0x01 + 0x02);
-        foodLevel = foodLevel + 1.0F; //0.75F; //0.5F;
+        foodLevel = foodLevel + 1.0F; 
+        lastEating = Counters.tick;
         eatingTime = 0;
         //System.out.println(" "+theAnimal+" finished eating at "+destX+", "+destZ);
         if(foodLevel >= 9.0) { 

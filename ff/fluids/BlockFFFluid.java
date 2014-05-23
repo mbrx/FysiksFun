@@ -90,6 +90,8 @@ public class BlockFFFluid extends BlockFlowing {
   public boolean              canCauseErosion;
   /** True for fluids that can sustain and spread a fire */
   public boolean              canBurn;
+  /** The strength of explosions when this fluid explodes. Set to zero if the block should not be able to explode. Non-burnable blocks can only explode if this value is true AND if they do a direct liquid interaction with Lava */
+  public float          explodeStrength;
   /**
    * If liquid is burnable and atleast this number of neighbours in a 5x5 area
    * above is fire, then it will explode
@@ -114,7 +116,7 @@ public class BlockFFFluid extends BlockFlowing {
    * BlockFFFluid.maximumContent
    */
   public int                  viscosity;
-
+  
   /**
    * Liquids content/pressure are modelled in TWO places. In the metaData we
    * store the values 0 - 8 (or 0-16) as a representation of the content. In the
@@ -163,6 +165,7 @@ public class BlockFFFluid extends BlockFlowing {
     this.canBurn = false;
     this.burnConsumeRate = 0;
     this.burnNeighboursForExplosion = 26;
+    this.explodeStrength=0;
     setUnlocalizedName(n);
   }
 
@@ -182,6 +185,7 @@ public class BlockFFFluid extends BlockFlowing {
     this.canBurn = false;
     this.burnConsumeRate = 0;
     this.burnNeighboursForExplosion = 26;
+    this.explodeStrength=0;
     setUnlocalizedName(n);
   }
 
@@ -1372,6 +1376,8 @@ public class BlockFFFluid extends BlockFlowing {
 
     /* See if an explosion is triggered */
     int nfires = 0;
+    if(newContent < BlockFFFluid.maximumContent / 4) return; // Small enough quantities will never explode
+    if(explodeStrength <= 0) return;
     if (burnNeighboursForExplosion > 25) return;
     if (FysiksFun.rand.nextInt(100) == 0) {
       for (int dz = -2; dz <= 2; dz++)
@@ -1384,7 +1390,8 @@ public class BlockFFFluid extends BlockFlowing {
       if (nfires > burnNeighboursForExplosion) {
         synchronized (FysiksFun.vanillaMutex) {
           setBlockContent(world, x0, y0, z0, 0);
-          float radius = (float) (0.5f + (4.5 * newContent) / (float) BlockFFFluid.maximumContent);
+          float radius = (float) ((explodeStrength * newContent) / (float) BlockFFFluid.maximumContent);
+
           world.newExplosion(null, x0, y0, z0, radius, true, true);
           world.playSoundEffect(x0 + 0.5, y0 + 0.5, z0 + 0.5, "random.explode", radius / 4.f, 1.0f);
         }

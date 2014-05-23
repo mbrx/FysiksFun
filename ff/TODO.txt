@@ -1,7 +1,6 @@
-  Interaction between Lava and Fuel/Oil gives incorrect results (it converts Fuel to water!)
-  /*
-   * TODO Leak through dirt cavities roof
-   */
+Make animals eat hay and grass as ItemEntities that are laying around on the ground.
+ 
+Tweak client graphics so that multiple liquids on top of each other are "merged down" - would look nicer 
 
 Make farm animals want to sleep at night (preferably on straw...)
 
@@ -9,7 +8,6 @@ Make milk a real liquid that can flow? What should it do? Fertilize, neutralize 
 
 Different viscocity for different fluids that affect the minimum amount of fluid that can be in a block and still flow to it's neighbours. 
 Different weights for different fluids to let oil/gas float on top of water. (Gas on top of oil)
-There is a bug that can replicate oil/fuel infinitly when it mixes with water!!!
 
 
 Random chance to force loading when moving gases? Could fix some problems...
