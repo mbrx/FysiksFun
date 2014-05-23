@@ -1,7 +1,9 @@
-package mbrx.ff;
+package mbrx.ff.solidBlockPhysics;
 
 import java.util.HashSet;
 
+import mbrx.ff.FysiksFun;
+import mbrx.ff.WorkerPhysicsSweep;
 import mbrx.ff.ecology.Trees;
 import mbrx.ff.fluids.Fluids;
 import mbrx.ff.fluids.Gases;

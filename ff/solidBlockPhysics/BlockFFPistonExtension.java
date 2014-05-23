@@ -1,7 +1,8 @@
-package mbrx.ff;
+package mbrx.ff.solidBlockPhysics;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
+import mbrx.ff.FysiksFun;
 import net.minecraft.block.BlockPistonBase;
 import net.minecraft.block.BlockPistonExtension;
 import net.minecraft.client.renderer.texture.IconRegister;

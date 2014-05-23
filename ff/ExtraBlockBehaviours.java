@@ -2,6 +2,10 @@ package mbrx.ff;
 
 import cpw.mods.fml.common.registry.GameRegistry;
 import mbrx.ff.fluids.Fluids;
+import mbrx.ff.solidBlockPhysics.BlockFFLeaves;
+import mbrx.ff.solidBlockPhysics.BlockFFPistonBase;
+import mbrx.ff.solidBlockPhysics.BlockFFPistonExtension;
+import mbrx.ff.solidBlockPhysics.BlockFFStone;
 import mbrx.ff.util.ChunkCache;
 import mbrx.ff.util.Counters;
 import net.minecraft.block.Block;

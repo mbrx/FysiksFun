@@ -57,6 +57,8 @@ import mbrx.ff.energy.BlockFFSensor;
 import mbrx.ff.energy.BlockTurbine;
 import mbrx.ff.fluids.Fluids;
 import mbrx.ff.fluids.Gases;
+import mbrx.ff.solidBlockPhysics.BlockFFBlockDispenser;
+import mbrx.ff.solidBlockPhysics.SolidBlockPhysicsRules;
 import mbrx.ff.util.BlockUpdateState;
 import mbrx.ff.util.ChunkCache;
 import mbrx.ff.util.ChunkMarkUpdateTask;

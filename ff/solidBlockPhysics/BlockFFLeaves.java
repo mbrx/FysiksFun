@@ -1,4 +1,4 @@
-package mbrx.ff;
+package mbrx.ff.solidBlockPhysics;
 
 import java.util.ArrayList;
 import java.util.Random;
@@ -6,6 +6,7 @@ import java.util.logging.Level;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
+import mbrx.ff.FysiksFun;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockLeaves;
 import net.minecraft.client.renderer.texture.IconRegister;

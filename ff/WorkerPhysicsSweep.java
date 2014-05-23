@@ -18,6 +18,8 @@ import mbrx.ff.fluids.BlockFFFluid;
 import mbrx.ff.fluids.BlockFFGas;
 import mbrx.ff.fluids.Fluids;
 import mbrx.ff.fluids.Gases;
+import mbrx.ff.solidBlockPhysics.SolidBlockPhysics;
+import mbrx.ff.solidBlockPhysics.SolidBlockPhysicsRules;
 import mbrx.ff.util.ChunkCache;
 import mbrx.ff.util.ChunkMarkUpdateTask;
 import mbrx.ff.util.ChunkTempData;

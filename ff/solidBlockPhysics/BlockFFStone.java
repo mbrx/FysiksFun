@@ -1,5 +1,6 @@
-package mbrx.ff;
+package mbrx.ff.solidBlockPhysics;
 
+import mbrx.ff.FysiksFun;
 import mbrx.ff.util.ChunkCache;
 import mbrx.ff.util.Counters;
 import mbrx.ff.util.Util;

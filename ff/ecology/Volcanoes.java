@@ -2,11 +2,11 @@ package mbrx.ff.ecology;
 
 import java.util.Objects;
 
-import mbrx.ff.BlockFFStone;
 import mbrx.ff.FysiksFun;
 import mbrx.ff.fluids.BlockFFFluid;
 import mbrx.ff.fluids.Fluids;
 import mbrx.ff.fluids.Gases;
+import mbrx.ff.solidBlockPhysics.BlockFFStone;
 import mbrx.ff.util.ChunkCache;
 import mbrx.ff.util.ChunkTempData;
 import mbrx.ff.util.Counters;

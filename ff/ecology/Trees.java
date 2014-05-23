@@ -3,9 +3,9 @@ package mbrx.ff.ecology;
 import java.util.Iterator;
 import java.util.LinkedList;
 
-import mbrx.ff.BlockFFLeaves;
 import mbrx.ff.FysiksFun;
 import mbrx.ff.fluids.Fluids;
+import mbrx.ff.solidBlockPhysics.BlockFFLeaves;
 import mbrx.ff.util.ChunkCache;
 import mbrx.ff.util.Counters;
 import mbrx.ff.util.Util;

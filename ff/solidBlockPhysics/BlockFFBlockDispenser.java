@@ -1,9 +1,11 @@
-package mbrx.ff;
+package mbrx.ff.solidBlockPhysics;
 
 import cpw.mods.fml.common.registry.GameRegistry;
 import cpw.mods.fml.common.registry.LanguageRegistry;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
+import mbrx.ff.FysiksFun;
+import mbrx.ff.TileEntityFFBlockDispenser;
 import mbrx.ff.energy.BlockTurbine;
 import mbrx.ff.fluids.Fluids;
 import mbrx.ff.fluids.Gases;

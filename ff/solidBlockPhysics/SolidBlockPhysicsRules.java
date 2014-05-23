@@ -1,5 +1,7 @@
-package mbrx.ff;
+package mbrx.ff.solidBlockPhysics;
 
+import mbrx.ff.FysiksFun;
+import mbrx.ff.WorkerPhysicsSweep;
 import mbrx.ff.fluids.Fluids;
 import mbrx.ff.fluids.Gases;
 import mbrx.ff.util.Util;
@@ -19,29 +21,28 @@ import buildcraft.transport.BlockGenericPipe;
 /** Static class containing all SolidBlock physics parameters */
 public class SolidBlockPhysicsRules {
 
-  public static int                          blockStrength[]         = new int[4096];
+  public static int     blockStrength[]         = new int[4096];
   /**
    * The weight of each blockID, negative weights corresponds to fractional
    * (stochastic) weights
    */
-  public static int                          blockWeight[]           = new int[4096];
-  public static boolean                      blockDoPhysics[]        = new boolean[4096];
+  public static int     blockWeight[]           = new int[4096];
+  public static boolean blockDoPhysics[]        = new boolean[4096];
   /**
    * 0 all normal blocks, 1+ blocks not affected by full (breakable) physics.
    * Lower numbers can support higher numbers.
    */
-  public static int                          blockDoSimplePhysics[]  = new int[4096];
-  public static boolean                      blockIsFragile[]        = new boolean[4096];
-  public static boolean                      blockIsSink[]           = new boolean[4096];
+  public static int     blockDoSimplePhysics[]  = new int[4096];
+  public static boolean blockIsFragile[]        = new boolean[4096];
+  public static boolean blockIsSink[]           = new boolean[4096];
 
-  public static int                         elasticStrengthConstant = 120;              // 240;
+  public static int     elasticStrengthConstant = 120;              // 240;
 
-  
   public static void postInit(Configuration physicsRuleConfig) {
 
     /* Setup a default value for all blocks */
     setupDefaultPhysicsRules();
-    
+
     /* Initialize the physics-rules file */
     String cat = "physics";
     physicsRuleConfig.addCustomCategoryComment(cat, "All entries in here modify the rules for physics blocks");
@@ -49,8 +50,8 @@ public class SolidBlockPhysicsRules {
      * For each block, if it exists in the config file use it otherwise add the
      * default value
      */
-    WorkerPhysicsSweep.maxChunkDist = physicsRuleConfig.get(cat, "0-maxDistanceForPhysics", "" + WorkerPhysicsSweep.maxChunkDist, "Radius around player in which physics are computed",
-        Property.Type.INTEGER).getInt(WorkerPhysicsSweep.maxChunkDist);
+    WorkerPhysicsSweep.maxChunkDist = physicsRuleConfig.get(cat, "0-maxDistanceForPhysics", "" + WorkerPhysicsSweep.maxChunkDist,
+        "Radius around player in which physics are computed", Property.Type.INTEGER).getInt(WorkerPhysicsSweep.maxChunkDist);
     elasticStrengthConstant = physicsRuleConfig.get(cat, "0-elasticStrengthConstant", "" + elasticStrengthConstant,
         "only change this if you know what you do, it effects the total time before physics kick in", Property.Type.INTEGER).getInt(elasticStrengthConstant);
 
@@ -78,11 +79,11 @@ public class SolidBlockPhysicsRules {
       if (i == Block.cobblestone.blockID) name = "cobbleStone";
       if (i == Block.stoneBrick.blockID) name = "stoneBrick";
 
-      SolidBlockPhysicsRules.blockDoPhysics[i] = physicsRuleConfig.get(cat, name + "-do-full", SolidBlockPhysicsRules.blockDoPhysics[i] ? "true" : "false", null, Property.Type.BOOLEAN).getBoolean(
-          SolidBlockPhysicsRules.blockDoPhysics[i]);
+      SolidBlockPhysicsRules.blockDoPhysics[i] = physicsRuleConfig.get(cat, name + "-do-full", SolidBlockPhysicsRules.blockDoPhysics[i] ? "true" : "false",
+          null, Property.Type.BOOLEAN).getBoolean(SolidBlockPhysicsRules.blockDoPhysics[i]);
       if (!SolidBlockPhysicsRules.blockDoPhysics[i])
-        SolidBlockPhysicsRules.blockDoSimplePhysics[i] = physicsRuleConfig.get(cat, name + "-do-simplified", "" + SolidBlockPhysicsRules.blockDoSimplePhysics[i], null, Property.Type.INTEGER).getInt(
-            SolidBlockPhysicsRules.blockDoSimplePhysics[i]);
+        SolidBlockPhysicsRules.blockDoSimplePhysics[i] = physicsRuleConfig.get(cat, name + "-do-simplified",
+            "" + SolidBlockPhysicsRules.blockDoSimplePhysics[i], null, Property.Type.INTEGER).getInt(SolidBlockPhysicsRules.blockDoSimplePhysics[i]);
       if (SolidBlockPhysicsRules.blockDoPhysics[i] || SolidBlockPhysicsRules.blockDoSimplePhysics[i] != 0) {
         blockIsFragile[i] = physicsRuleConfig.get(cat, name + "-is-fragile", blockIsFragile[i] ? "true" : "false", null, Property.Type.BOOLEAN).getBoolean(
             blockIsFragile[i]);
