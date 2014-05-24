@@ -11,7 +11,7 @@ The later category of effects include plant life that consume water and that spr
 The mod aims to be compatible with most other Forge mods.
 
 For further details please see the Minecraft Forum thread here:
-http://www.minecraftforum.net/topic/1734363-164-fysiks-fun-sspsmp-forge-9111/page__hl__%20fysiksfun
+http://www.minecraftforum.net/topic/1734363-164-fysiks-fun-sspsmp-forge-9111
 
 Compiling
 =========
