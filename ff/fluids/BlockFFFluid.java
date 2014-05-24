@@ -314,9 +314,6 @@ public class BlockFFFluid extends BlockFlowing {
   public void setBlockContent(World w, int x, int y, int z, int content) {
     Chunk chunk = ChunkCache.getChunk(w, x >> 4, z >> 4, true);
     ChunkTempData tempData = ChunkCache.getTempData(w, x >> 4, z >> 4);
-    // IChunkProvider chunkProvider = w.getChunkProvider();
-    // Chunk chunk = chunkProvider.provideChunk(x >> 4, z >> 4);
-    // ChunkTempData tempData = ChunkTempData.getChunk(w, x, y, z);
     setBlockContent(w, chunk, tempData, x, y, z, content, "", null);
   }
 

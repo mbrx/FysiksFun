@@ -38,7 +38,7 @@ public class FFCoreClassTransformer implements IClassTransformer {
   }
 
   private byte[] patchMemoryConnection(String targetClassName, byte[] bytecode, boolean isObfuscated) {
-    System.out.println("******** [FFCore] is patching " + targetClassName+"  obf: "+isObfuscated);
+    System.out.println("[FFCore] is patching " + targetClassName+"  obf: "+isObfuscated);
     
     String targetMethodName = "";
 
@@ -53,7 +53,7 @@ public class FFCoreClassTransformer implements IClassTransformer {
     while (methods.hasNext()) {
       MethodNode m = methods.next();
       if (m.name.equals(targetMethodName) && m.desc.equals("()V")) {        
-        System.out.println("Found the target method: "+m.desc);
+        //System.out.println("Found the target method: "+m.desc);
 
         Iterator<AbstractInsnNode> iter = m.instructions.iterator();
         // currentNode is first instruction in the function
@@ -72,7 +72,7 @@ public class FFCoreClassTransformer implements IClassTransformer {
         replacedInstructions.add(new IntInsnNode(Opcodes.SIPUSH, 20000));
         m.instructions.insertBefore(currentNode, replacedInstructions);
         m.instructions.remove(currentNode);
-        System.out.println("FF finished patching net.minecraft.network.MemoryConnection/processReadPackets to allow more packages per tick");      
+        //System.out.println("FF finished patching net.minecraft.network.MemoryConnection/processReadPackets to allow more packages per tick");      
         break;        
       }
     }
@@ -82,7 +82,7 @@ public class FFCoreClassTransformer implements IClassTransformer {
   }
 
   private byte[] patchEntity(String targetClassName, byte[] bytecode, boolean isObfuscated) {
-    System.out.println("******** [FFCore] is patching " + targetClassName+"  obf: "+isObfuscated);
+    System.out.println("[FFCore] is patching " + targetClassName+"  obf: "+isObfuscated);
 
     String targetMethodName = "";
 
@@ -99,7 +99,7 @@ public class FFCoreClassTransformer implements IClassTransformer {
 
       //System.out.println("Method: "+m.name+" sign: "+m.desc);
       if ((m.name.equals(targetMethodName) && m.desc.equals("(DDD)V"))) {        
-        System.out.println("Found the target method");
+        //System.out.println("Found the target method");
 
         Iterator<AbstractInsnNode> iter = m.instructions.iterator();
         // currentNode is first instruction in the function
@@ -142,7 +142,7 @@ public class FFCoreClassTransformer implements IClassTransformer {
         toInject.add(l5);
         
         m.instructions.insertBefore(currentNode, toInject);
-        System.out.println("FF finished patching net.minecraft.entity.Entity/moveEntity");            
+        //System.out.println("FF finished patching net.minecraft.entity.Entity/moveEntity");            
         break;
       }
     }
@@ -152,7 +152,7 @@ public class FFCoreClassTransformer implements IClassTransformer {
   }
 
   private byte[] patchWorldGenBigTree(String targetClassName, byte[] bytecode, boolean isObfuscated) {
-    System.out.println("******** [FFCore] is patching " + targetClassName+"  obf: "+isObfuscated);
+    System.out.println("[FFCore] is patching " + targetClassName+"  obf: "+isObfuscated);
 
     String targetMethodName = "";
 
@@ -168,9 +168,9 @@ public class FFCoreClassTransformer implements IClassTransformer {
     while (methods.hasNext()) {
       MethodNode m = methods.next();
 
-      System.out.println("Method: "+m.name+" sign: "+m.desc);
+      //System.out.println("Method: "+m.name+" sign: "+m.desc);
       if ((m.name.equals(targetMethodName) && m.desc.equals(targetDesc))) {        
-        System.out.println("Found the target method");
+        //System.out.println("Found the target method");
 
         Iterator<AbstractInsnNode> iter = m.instructions.iterator();
         // currentNode is first instruction in the function
@@ -190,7 +190,7 @@ public class FFCoreClassTransformer implements IClassTransformer {
         toInject.add(new InsnNode(Opcodes.RETURN));       
         
         m.instructions.insertBefore(currentNode, toInject);
-        System.out.println("FF finished patching net.minecraft.entity.Entity/moveEntity");
+        //System.out.println("FF finished patching net.minecraft.entity.Entity/moveEntity");
         
 
         iter = m.instructions.iterator();
@@ -198,7 +198,7 @@ public class FFCoreClassTransformer implements IClassTransformer {
         currentNode = iter.next();
         index=0;
         while(iter.hasNext()) {          
-          System.out.println(""+currentNode);
+          //System.out.println(""+currentNode);
           /*if(currentNode instanceof FieldInsnNode) {
             FieldInsnNode node = (FieldInsnNode) currentNode;
             System.out.println("FieldInsnNode name: "+node.name+" desc: "+node.desc);

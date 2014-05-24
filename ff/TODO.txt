@@ -1,4 +1,7 @@
+Fix that bug when animals are inside the ground...
+
 Make animals eat hay and grass as ItemEntities that are laying around on the ground.
+ Make animals eat pumpkins (maybe only pigs?) and let the pumpkins spread slowly
  
 Tweak client graphics so that multiple liquids on top of each other are "merged down" - would look nicer 
 

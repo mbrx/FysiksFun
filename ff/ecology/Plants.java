@@ -291,7 +291,7 @@ public class Plants {
           /* reducing the meta by one to avoid dropping anything too good */
           Counters.cropsDie++;
           FysiksFun.setBlockWithMetadataAndPriority(w, x + dx, y, z + dz, 0, 0, 0);
-          System.out.println("Killing crop at: " + Util.xyzString(x + dx, y, z + dz));
+          //System.out.println("Killing crop at: " + Util.xyzString(x + dx, y, z + dz));
           // w.setBlock(x + dx, y, z + dz, 0, 0, 0x01 + 0x02);
           // if(meta > 0) b.dropBlockAsItem(w, x + dx, y, z + dz, meta -
           // 1,

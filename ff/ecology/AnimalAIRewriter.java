@@ -12,6 +12,7 @@ import net.minecraft.entity.passive.EntityCow;
 import net.minecraft.entity.passive.EntityHorse;
 import net.minecraft.entity.passive.EntityPig;
 import net.minecraft.entity.passive.EntitySheep;
+import net.minecraft.item.Item;
 import net.minecraft.world.World;
 
 public class AnimalAIRewriter {
@@ -28,18 +29,28 @@ public class AnimalAIRewriter {
            if(taskEntry.action instanceof EntityAIFeeding) hasFeedingAI=true;              
          }
          if(!hasFeedingAI) {
-           EntityAICoward cowardAI = new EntityAICoward(animal, 1.5F);
+           EntityAICoward cowardAI = new EntityAICoward(animal, 2.0F);
            insertAI(animal, 2, cowardAI); 
 
            EntityAISleepAtNight sleepAI = new EntityAISleepAtNight(animal);
            insertAI(animal, 3, sleepAI); 
 
-           
-           EntityAIFeeding ai=new EntityAIFeeding(animal, 0.75f);
+           float foodPerEating=1.0F;
+           if(animal instanceof EntityChicken) foodPerEating = 2.0F;
+           EntityAIFeeding ai=new EntityAIFeeding(animal, 0.75f, foodPerEating );
            ai.addFoodtype(Block.tallGrass.blockID);
            ai.addFoodtype(Block.crops.blockID);
            ai.addFoodtype(Block.plantYellow.blockID);
            ai.addFoodtype(Block.plantRed.blockID);
+           if(o instanceof EntityCow || o instanceof EntitySheep || o instanceof EntityPig)
+             ai.addFoodtype(Item.wheat.itemID);
+           if(o instanceof EntityChicken)
+             ai.addFoodtype(Item.seeds.itemID);
+           if(o instanceof EntityPig) {
+             /* This may make it very hard to find carrots/potatoes...  have to test it */ 
+             ai.addFoodtype(Block.carrot.blockID);
+             ai.addFoodtype(Block.potato.blockID);
+           }
            insertAI(animal, 4, ai);
            EntityAIHerd herdAi = new EntityAIHerd(animal, 1.0F);
            insertAI(animal, 5, herdAi); 

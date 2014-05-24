@@ -51,6 +51,7 @@ import cpw.mods.fml.common.ModMetadata;
 import mbrx.ff.ecology.AnimalAIRewriter;
 import mbrx.ff.ecology.EntityAICoward;
 import mbrx.ff.ecology.ExtraFire;
+import mbrx.ff.ecology.OceanRepairGenerator;
 import mbrx.ff.ecology.Trees;
 import mbrx.ff.ecology.Wind;
 import mbrx.ff.energy.BlockFFSensor;
@@ -192,7 +193,7 @@ public class FysiksFun {
   public void postInit(FMLPostInitializationEvent event) {
     // Add our water repair generator AFTER the other generators
     // if (settings.repairOceans)
-    // GameRegistry.registerWorldGenerator(new OceanRepairGenerator());
+    GameRegistry.registerWorldGenerator(new OceanRepairGenerator());
 
     /* Figure out if we have buildcraft registered */
     for (Block b : Block.blocksList) {

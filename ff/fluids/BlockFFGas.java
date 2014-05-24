@@ -378,44 +378,6 @@ public class BlockFFGas extends Block {
     int height0, height1;
 
     return 0;
-    /*
-     * if (y >= 128) return 0;
-     * 
-     * Chunk c = ChunkCache.getChunk(w, x0>>4, z1>>0, false); if(c == null)
-     * return 0; for (height0 = y; height0 > 1; height0--) if (c.getBlockID(x0 &
-     * 15, height0, z0 & 15) != 0) break; c = chunkProvider.provideChunk(x1 >>
-     * 4, z1 >> 4); for (height1 = y; height1 > 1; height1--) if
-     * (c.getBlockID(x1 & 15, height1, z1 & 15) != 0) break; Chunk c1 =
-     * ChunkCache.getChunk(w, x1>>4, z1>>4, false); if(c1 == null) return 0; if
-     * (height1 > height0 + 2 && c1.getBlockID(x1, y+2, z1) == 0) return +2;
-     * else if (height1 > height0 && c1.getBlockID(x1, y+1, z1) == 0) return +1;
-     * else if (height1 < height0 - 1 && c1.getBlockID(x1, y-1, z1) == 0) return
-     * -1; else return 0;
-     */
-  }
-
-  /**
-   * Schedules an update for all neighbours that are of the same gas type as we
-   * are - but only if they have strictly MORE liquid than what is given
-   */
-  private void notifySameGasNeighboursWithMore(World w, int x, int y, int z, int limit, int delay) {
-    int id;
-    /*
-     * id = w.getBlockId(x + 1, y, z); if ((id == blockID) && getBlockContent(w,
-     * x + 1, y, z) > limit) { FysiksFun.scheduleBlockTick(w, this, x + 1, y, z,
-     * delay); } id = w.getBlockId(x - 1, y, z); if ((id == blockID) &&
-     * getBlockContent(w, x - 1, y, z) > limit) { FysiksFun.scheduleBlockTick(w,
-     * this, x - 1, y, z, delay); } id = w.getBlockId(x, y + 1, z); if ((id ==
-     * blockID) && getBlockContent(w, x, y + 1, z) > limit) {
-     * FysiksFun.scheduleBlockTick(w, this, x, y + 1, z, delay); } id =
-     * w.getBlockId(x, y - 1, z); if ((id == blockID) && getBlockContent(w, x, y
-     * - 1, z) > limit) { FysiksFun.scheduleBlockTick(w, this, x, y - 1, z,
-     * delay); } id = w.getBlockId(x, y, z + 1); if ((id == blockID) &&
-     * getBlockContent(w, x, y, z + 1) > limit) { FysiksFun.scheduleBlockTick(w,
-     * this, x, y, z + 1, delay); } id = w.getBlockId(x, y, z - 1); if ((id ==
-     * blockID) && getBlockContent(w, x, y, z - 1) > limit) {
-     * FysiksFun.scheduleBlockTick(w, this, x, y, z - 1, delay); }
-     */
   }
 
   public int idDropped(int par1, Random par2Random, int par3) {

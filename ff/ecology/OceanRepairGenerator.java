@@ -3,6 +3,7 @@ package mbrx.ff.ecology;
 import java.util.LinkedList;
 import java.util.Random;
 
+import mbrx.ff.FysiksFun;
 import mbrx.ff.fluids.BlockFFFluid;
 import mbrx.ff.fluids.Fluids;
 import mbrx.ff.util.ChunkCache;
@@ -68,17 +69,21 @@ public class OceanRepairGenerator implements IWorldGenerator {
 				}
 				if(waterCnt >= 4) {
 					/* Repair */
-					for (; y > 1; y--) { 
+				    int stonesPlaced=0;
+					for (; y > 1 && stonesPlaced<10; y--) { 
 						int idHere = c.getBlockID(x, y, z);
-						if(idHere == 0) {							
-							Fluids.stillWater.setBlockContent(world, c, ChunkTempData.getChunk(world,x,y,z), x, y, z, BlockFFFluid.maximumContent,"[repair ocean]", null);
+						
+						if(idHere == 0) {
+						  stonesPlaced++;
+						  FysiksFun.setBlockIDandMetadata(world, c, x+chunkX*16, y, z+chunkZ*16, Block.stone.blockID, 0, -1, -1, null);
+							//Fluids.stillWater.setBlockContent(world, c, ChunkTempData.getChunk(world,x,y,z), x, y, z, BlockFFFluid.maximumContent,"[repair ocean]", null);
 							repairCnt++;
 						}
 					}
 				}
 			}
-	//	if (repairCnt > 0)
-	//		System.out.println("Repaired " + repairCnt + " blocks under water");
+	//if (repairCnt > 0)
+	//	System.out.println("Repaired " + repairCnt + " blocks under water");
 	}
 
 }

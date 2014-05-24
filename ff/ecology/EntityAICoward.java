@@ -140,6 +140,7 @@ public class EntityAICoward extends EntityAIBase {
       double dy2 = theAnimal.posY - t.entity.posY;
       double dz2 = theAnimal.posZ - t.entity.posZ;
       double dist = dx2 * dx2 + dy2 * dy2 + dz2 * dz2; 
+      if(dy2 < 0) dist = dist/2; // Fake reduced distance if target is above us - we don't see that well
       if (dist < t.radius * t.radius && dist < minDist) {
         minDist = dist;
         lookX = t.entity.posX;
@@ -160,12 +161,16 @@ public class EntityAICoward extends EntityAIBase {
 
   public static void registerStaticThreat(World world, double posX, double posY, double posZ, DamageSource source) {
     if(source == DamageSource.starve) return;
-    staticThreats.add(new StaticThreat(world, posX, posY, posZ, 15.0));
+
+    /* Somewhat convoluted (and GC'wasting), but that since we don't want to use any concurrent modification checks during the AI processing part. */
+    LinkedList<StaticThreat> newStaticThreats = new LinkedList<StaticThreat>(staticThreats);
+    newStaticThreats.add(new StaticThreat(world, posX, posY, posZ, 15.0));
+    staticThreats = newStaticThreats;
   }
   public static void registerEntityThreat(Entity e) {
     if(e == null) {
-      FysiksFun.logger.log(Level.SEVERE,"Called registerEntityThreat with null entity");
-      Util.printStackTrace();
+      //FysiksFun.logger.log(Level.SEVERE,"Called registerEntityThreat with null entity");
+      //Util.printStackTrace();
       return;
     }
     for (EntityThreat t : entityThreats) {
@@ -175,7 +180,10 @@ public class EntityAICoward extends EntityAIBase {
         return;
       }
     }
-    System.out.println("Adding entity "+e+" as a NEW threat");
-    entityThreats.add(new EntityThreat(e, 10.0));
+    //System.out.println("Adding entity "+e+" as a NEW threat");
+    /* Somewhat convoluted (and GC'wasting), but that since we don't want to use any concurrent modification checks during the AI processing part. */
+    LinkedList<EntityThreat> newEntityThreats = new LinkedList<EntityThreat>(entityThreats);
+    newEntityThreats.add(new EntityThreat(e, 15.0));
+    entityThreats = newEntityThreats;
   }
 }

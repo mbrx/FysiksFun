@@ -38,7 +38,7 @@ public class EntityAIHerd extends EntityAIBase {
   @Override
   public void resetTask() {
 
-    for (int tries = 0; tries < 10; tries++) {
+    for (int tries = 0; tries < 20; tries++) {
       int range = 5 + tries * 5;
       List allEntities = new ArrayList(theWorld.loadedEntityList);      
       for (Object o : allEntities) {
@@ -54,8 +54,8 @@ public class EntityAIHerd extends EntityAIBase {
           double dist = dx * dx + dy * dy + dz * dz;
           if (dist < range * range) {
             //System.out.println(theAnimal + " is considering " + o);
-            destX = (int) (other.posX + (FysiksFun.rand.nextFloat() - 0.5F) * 2.F * 2.F);
-            destZ = (int) (other.posZ + (FysiksFun.rand.nextFloat() - 0.5F) * 2.F * 2.F);
+            destX = (int) (other.posX + (FysiksFun.rand.nextFloat() - 0.5F) * 2.F * 5.F);
+            destZ = (int) (other.posZ + (FysiksFun.rand.nextFloat() - 0.5F) * 2.F * 5.F);
             int oy = (int) other.posY;
             boolean foundAir = false;
             for (destY = oy+20; destY > oy-20; destY--) {
