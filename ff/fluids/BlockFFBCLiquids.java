@@ -53,7 +53,8 @@ public class BlockFFBCLiquids extends BlockBuildcraftFluid {
       oilFFWrapped.canBurn=true;
       oilFFWrapped.burnNeighboursForExplosion = 8;
       oilFFWrapped.burnConsumeRate = 2; //BlockFFFluid.maximumContent / 16;
-      oilFFWrapped.explodeStrength = 2;
+      // Oil should not be explodable since the oil sources in the world sometimes touches lava
+      oilFFWrapped.explodeStrength = 0;
     }
 
     {

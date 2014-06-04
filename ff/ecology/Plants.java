@@ -17,7 +17,7 @@ import net.minecraft.world.chunk.IChunkProvider;
 
 public class Plants {
 
-  public static int minDrink = BlockFFFluid.maximumContent / 32;
+  public static int minDrink = BlockFFFluid.maximumContent / 64;
 
   public static void doPlants(World w, int x, int z) {
     
@@ -29,6 +29,28 @@ public class Plants {
 
     if(FysiksFun.settings.mycelliumGrowth)
       doMycelium(w, x, z);
+    
+    doCreateGrass(w,x,z);
+  }
+
+  /** Small chance to create fresh grass seeds in the world (so that it will spread better) */
+  private static void doCreateGrass(World w, int x, int z) {
+    if(FysiksFun.rand.nextInt(2011) != 0) return;
+    Chunk c = ChunkCache.getChunk(w, x >> 4, z >> 4, true);
+    for (int tries = 0; tries < 1; tries++) {
+      int dx = FysiksFun.rand.nextInt(16);
+      int dz = (FysiksFun.rand.nextInt(16)+Counters.tick)%16;
+      
+      for (int y = c.getPrecipitationHeight(dx, dz)+1; y>0; y--) {
+        int id = c.getBlockID(dx, y, dz);
+        if(id == 0) continue;        
+        if(id == Block.grass.blockID) {
+          //System.out.println("doCreateGrass: "+Util.xyzString(dx, y, dz)+" id: "+id);
+          FysiksFun.setBlockIDandMetadata(w, c, x+dx, y+1, z+dz, Block.tallGrass.blockID, 1, id, 0, null);
+        }
+        break;
+      }
+    }
   }
 
   private static void doMycelium(World w, int x, int z) {
@@ -37,13 +59,22 @@ public class Plants {
     for (int tries = 0; tries < 10; tries++) {
       int dx = FysiksFun.rand.nextInt(16);
       int dz = (FysiksFun.rand.nextInt(16)+Counters.tick)%16;
-      
-      for (int y = 1; y < 255; y++) {
+      int maxY = c.getPrecipitationHeight(dx, dz)+1;
+      for (int y = 1; y < maxY; y++) {
         int id = c.getBlockID(dx, y, dz);
         if (id == Block.mycelium.blockID) {
-          //System.out.println("Attempting to spread mycellium from "+Util.xyzString(x+dx, y, z+dz));
           /* Found a mycelium block */
-          
+          int blockAbove = c.getBlockID(dx, y+1, dz);
+          if(blockAbove != 0) continue; // No point in spreading etc. inside the ground
+          int time = (int)(w.getTotalWorldTime() % 24000);
+          // Mushrooms have a small chance to grow at night
+          if(time>18000 && FysiksFun.rand.nextInt(101) == 0) {
+            if(FysiksFun.rand.nextBoolean())
+              FysiksFun.setBlockIDandMetadata(w, c, x+dx, y+1, z+dz, Block.mushroomBrown.blockID, 0, id, 0, null);
+            else
+              FysiksFun.setBlockIDandMetadata(w, c, x+dx, y+1, z+dz, Block.mushroomRed.blockID, 0, id, 0, null);
+          }
+            
           /*if(FysiksFun.rand.nextInt(10) == 0 && !checkForWater(w,x+dx,y,z+dz,10,-3,1,100,true)) {
             // There's no water for the mycellium to drink. Elliminate it
             //System.out.println("Removing mycellium block that has no moisture");
@@ -64,7 +95,7 @@ public class Plants {
             if (id2 == Block.grass.blockID || id2 == Block.dirt.blockID) {
               int light = c2.getBlockLightValue(x2 & 15, y + dy2+1, z2 & 15, 0);
               //System.out.println("Light at "+Util.xyzString(x+dx, y+1, z+dz)+" is "+light);
-              if (light > 0 && checkForWater(w,x2,y+dy2,z2,8,-3,1,10,true)) {
+              if (light > 0 && checkForWater(w,x2,y+dy2,z2,8,-3,1,10,FysiksFun.rand.nextInt(16) == 0)) {
                 /*  Spread to this block */
                 FysiksFun.setBlockIDandMetadata(w, c2, x2, y+dy2, z2, Block.mycelium.blockID, 0, id2, meta2, null);                
               }
@@ -82,12 +113,12 @@ public class Plants {
     //if (FysiksFun.rand.nextInt(10) > 5) return;
     boolean isDay = w.isDaytime();
 
-    for (int tries = 0; tries < FysiksFun.settings.plantsThirst; tries++) {
+    for (int tries = 0; tries < 2*FysiksFun.settings.plantsThirst; tries++) {
       int dx = FysiksFun.rand.nextInt(16);
       int dz = FysiksFun.rand.nextInt(16);
       int x0 = x + dx;
       int z0 = z + dz;
-      for (int y = 0; y < 256; y++) {
+      for (int y = 1; y < c.getPrecipitationHeight(dx, dz); y++) {
         int id = c.getBlockID(dx, y, dz);
         if (id == 0) continue;
         Block b = Block.blocksList[id];
@@ -162,7 +193,7 @@ public class Plants {
           } else {
             /* Let them spread naturally */
             if (FysiksFun.rand.nextInt(spreadFailures) == 0) {
-              for (int spreadTry = 0; spreadTry < 4; spreadTry++) {
+              for (int spreadTry = 0; spreadTry < 8; spreadTry++) {
                 /* Make a random walk until we find a place where it can grow */
                 int x2 = x0;
                 int z2 = z0;

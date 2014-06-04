@@ -18,13 +18,8 @@ public class ExtraFire {
   }
 
   public static void handleFireAt(World w, int x0, int y0, int z0) {
-
-    //if(x0 != -1223478654) return;
-    //if(FysiksFun.rand.nextInt(8) != 0) return;
     int fireCount=0;
-    
-   // System.out.println("Handling fire at: "+Util.xyzString(x0, y0, z0));
-    
+        
     for (int dx = -3; dx <= 3; dx++)
       for (int dy = -3; dy <= 3; dy++)
         for (int dz = -3; dz <= 3; dz++) {
@@ -44,7 +39,6 @@ public class ExtraFire {
         }    
     
     if (fireCount >= 4 && FysiksFun.rand.nextInt(1+100/fireCount) == 0 && false)  {
-      //System.out.println("Spreading fire!");
       for (int attempt = 0; attempt < 3; attempt++) {
         int dx = 0;
         int dy = 0;
@@ -101,7 +95,6 @@ public class ExtraFire {
     
     Chunk c = ChunkCache.getChunk(w, x0>>4, z0>>4, false);
     int idBelow = c.getBlockID(x0&15, y0-1, z0&15);
-    //System.out.println("Handling fire, ID below: "+idBelow+" isFluid: "+Fluids.isLiquid[idBelow]);
     if(Fluids.isLiquid[idBelow]) {
       Fluids.asFluid[idBelow].isBurning(w,c,x0,y0-1,z0);
     }

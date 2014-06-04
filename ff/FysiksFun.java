@@ -74,6 +74,9 @@ import net.minecraft.block.ITileEntityProvider;
 import net.minecraft.block.material.Material;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.passive.EntitySquid;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.InventoryPlayer;
+import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.DamageSource;
 import net.minecraft.world.ChunkCoordIntPair;
@@ -90,7 +93,7 @@ import com.google.common.base.Objects;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 
-@Mod(modid = "FysiksFun", name = "FysiksFun", version = "0.5.9", dependencies = "")
+@Mod(modid = "FysiksFun", name = "FysiksFun", version = "0.6.0", dependencies = "")
 @NetworkMod(clientSideRequired = true, serverSideRequired = false)
 public class FysiksFun {
   // Singleton instance of mod class instansiated by Forge
@@ -293,12 +296,13 @@ public class FysiksFun {
     if (Counters.tick % 47 == 0) {
       EntityAICoward.cleanup();
     }
-    /*
-     * if (Counters.tick == 500) {
-     * System.out.println("[FF] Dumping list of all blocks"); for (Block b :
-     * Block.blocksList) { if (b != null) System.out.println("Block " +
-     * b.blockID + " name: '" + b.getUnlocalizedName() + "'"); } }
-     */
+
+    /*if (Counters.tick == 20) {
+      System.out.println("[FF] Dumping list of all blocks");
+      for (Block b : Block.blocksList) {
+        if (b != null) System.out.println("Block " + b.blockID + " name: '" + b.getUnlocalizedName() + "'");
+      }            
+    }*/
 
     try {
       inWorldTick = true;
@@ -341,9 +345,8 @@ public class FysiksFun {
     observers.clear();
 
     /* Reset the cache regularly to make sure we get rid of old (swapped out) chunks and tempData objects. */
-    if((Counters.tick % 413) == 0) 
-      ChunkCache.resetCache();
-    
+    if ((Counters.tick % 413) == 0) ChunkCache.resetCache();
+
     // System.out.println("End of tickServer");
 
   }
@@ -356,11 +359,11 @@ public class FysiksFun {
 
     // System.out.println("Start of world tick");
 
-
     /*if(!w.isRemote && w.provider.dimensionId == 0) {
       int id = w.getBlockId(239, 74, 61);
       System.out.println("w: "+w+" ID@239,74,61: "+id);
     }*/
+
     
     ChunkTempData.cleanup(w);
 
@@ -373,6 +376,18 @@ public class FysiksFun {
       List allEntities = w.loadedEntityList;
       for (Object o : allEntities) {
         if (o instanceof Player) {
+          
+          /*EntityPlayer ply = (EntityPlayer) o;
+          if(ply != null) {
+            System.out.println("Found SSP player: "+ply);
+            InventoryPlayer inventory = ply.inventory;
+            for(ItemStack stack : inventory.mainInventory) {
+              if(stack == null) continue;
+              System.out.println("Player item with id: "+stack.itemID+" damage/meta: "+stack.getItemDamage());
+              if(stack.itemID == 2131) stack.setItemDamage(0);
+            }
+          }*/
+          
           Entity e = (Entity) o;
           WorldObserver observer = new WorldObserver();
           observer.w = w;

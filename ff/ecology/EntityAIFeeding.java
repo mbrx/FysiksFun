@@ -8,10 +8,12 @@ import mbrx.ff.util.ChunkCache;
 import mbrx.ff.util.Counters;
 import mbrx.ff.util.Util;
 import net.minecraft.block.Block;
+import net.minecraft.block.BlockMushroom;
 import net.minecraft.entity.ai.EntityAIBase;
 import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.passive.EntityAnimal;
 import net.minecraft.entity.passive.EntityCow;
+import net.minecraft.entity.passive.EntityMooshroom;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.DamageSource;
@@ -37,6 +39,7 @@ public class EntityAIFeeding extends EntityAIBase {
   ArrayList<Integer> eatingList = new ArrayList<Integer>();
 
   private EntityItem targetItem = null;
+  private int targetId=0;
   private int        destX, destY, destZ;
   private int        minTimeBetweenEating;
 
@@ -111,6 +114,7 @@ public class EntityAIFeeding extends EntityAIBase {
       intObject = itemStack.itemID;
       if (eatingList.contains(intObject)) {
         targetItem = entityItem;
+        targetId = itemStack.itemID;
         /* We don't need to check the distance to the target since the bounding box will only have returned objects within radius 10 */
         destX = (int) (targetItem.posX);
         destZ = (int) (targetItem.posZ);
@@ -156,6 +160,7 @@ public class EntityAIFeeding extends EntityAIBase {
               eatingTime = 0;
               attemptCounter = 0;
               success = true;
+              targetId = id;
               this.theAnimal.getLookHelper().setLookPosition(destX, destY, destZ, 10.0f, (float) this.theAnimal.getVerticalFaceSpeed());
               //System.out.println(" "+theAnimal+" starting to eat at "+destX+", "+destZ);
               return;
@@ -186,7 +191,6 @@ public class EntityAIFeeding extends EntityAIBase {
       destY = (int) (targetItem.posY + 0.5f);
       if (oldX != destX || oldY != destY || oldZ != destZ) {
         if (!theAnimal.getNavigator().tryMoveToXYZ(destX, destY, destZ, moveSpeed)) {
-          System.out.println("Giving up chasing an item since it has moved and we no longer can reach it...");
           attemptCounter = 1;
           return;
         } else this.theAnimal.getLookHelper().setLookPosition(destX, destY, destZ, 10.0f, (float) this.theAnimal.getVerticalFaceSpeed());
@@ -259,6 +263,27 @@ public class EntityAIFeeding extends EntityAIBase {
           theAnimal.inLove = 1000;
           // System.out.println(theAnimal+"is feeling amorous!");
         }
+        /* Finally, if a cow ate a mushroom it might turn into a Mooshroom ... */
+        if(Block.blocksList[targetId] instanceof BlockMushroom && theAnimal instanceof EntityCow && !(theAnimal instanceof EntityMooshroom) && FysiksFun.rand.nextInt(10) == 0) {
+          System.out.println("Upgrading a cow into a mooshroom ");
+          EntityAnimal newAnimal = new EntityMooshroom(theAnimal.worldObj);          
+          newAnimal.setGrowingAge(theAnimal.getGrowingAge());
+          newAnimal.setLocationAndAngles(theAnimal.posX, theAnimal.posY, theAnimal.posZ, theAnimal.rotationYaw, 0.0F);
+          newAnimal.worldObj.spawnEntityInWorld(newAnimal);
+          theAnimal.setDead();
+        } else if(theAnimal instanceof EntityMooshroom && FysiksFun.rand.nextInt(5) == 0) {
+          int x=(int)theAnimal.posX;
+          int y0=(int)theAnimal.posY;
+          int z=(int)theAnimal.posZ;
+          Chunk c = ChunkCache.getChunk(theAnimal.worldObj, x>>4, z>>4, true);          
+          for(int dy2=0;dy2>-2;dy2--) {
+            int id=c.getBlockID(x&15, y0+dy2, z&15);
+            if(id == Block.grass.blockID || id == Block.dirt.blockID) {
+              FysiksFun.setBlockIDandMetadata(theAnimal.worldObj, c, x, y0+dy2, z, Block.mycelium.blockID, 0, id, 0, null);
+              break;
+            } else if(id != 0) break;
+          }
+        }        
       }
     } else {
       if (eatingTime != 0) this.theAnimal.getLookHelper().setLookPosition(destX, destY, destZ, 10.0f, (float) this.theAnimal.getVerticalFaceSpeed());

@@ -102,7 +102,7 @@ public class BlockFFPistonBase extends BlockPistonBase {
       if(idN == Block.bedrock.blockID) { steps--; break; }
       if (idN == 0 || Fluids.isLiquid[idN] || Gases.isGas[idN]) break;
       Block bN = Block.blocksList[idN];
-      if(!bN.isOpaqueCube()) { steps++; break; }
+      //if(!bN.isOpaqueCube()) { steps++; break; }
     }
     System.out.println("Repell steps: " + steps);
     /* Next, pull in all these blocks */

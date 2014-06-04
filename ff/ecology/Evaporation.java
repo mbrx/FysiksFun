@@ -5,6 +5,7 @@ import mbrx.ff.fluids.BlockFFFluid;
 import mbrx.ff.fluids.Fluids;
 import mbrx.ff.fluids.Gases;
 import mbrx.ff.util.ChunkCache;
+import mbrx.ff.util.ChunkTempData;
 import mbrx.ff.util.Counters;
 import mbrx.ff.util.Settings;
 import mbrx.ff.util.Util;
@@ -23,25 +24,52 @@ public class Evaporation {
    * chunk center XZ
    */
   public static void doEvaporation(World w, int x, int z) {
-    
-    
+
     if (FysiksFun.settings.undergroundWater) {
       doUndergroundEvaporation(w, x, z);
       doHumidification(w, x, z);
     }
     doIndirectEvaporation(w, x, z);
     doSunlightEvaporation(w, x, z);
-    doDirectHeatEvaporation(w, x, z);    
+    doDirectHeatEvaporation(w, x, z);
+    doUndergroundSteamToWater(w, x, z);
+  }
+
+  private static void doUndergroundSteamToWater(World w, int x, int z) {
+    if (FysiksFun.rand.nextInt(51) != 0) return;
+
+    int y = (int) FysiksFun.rand.nextInt(64) + 16;
+    Chunk c = ChunkCache.getChunk(w, x >> 4, z >> 4, false);
+    if (c == null) return;
+
+    for (int dx = 0; dx < 16; dx++) {
+      for (int dz = 0; dz < 16; dz++) {
+        int id = c.getBlockID(dx, y, dz);
+        int x1 = x + dx;
+        int y1 = y;
+        int z1 = z + dz;
+        if (id == Gases.steam.blockID) {
+          int amount = Gases.steam.getBlockContent(c, x1, y1, z1);
+          amount = (BlockFFFluid.maximumContent * amount / 16);
+          if(FysiksFun.rand.nextInt(2) == 0)
+            Fluids.flowingWater.setBlockContent(w, x1, y1, z1, amount);
+          else 
+            // Sometimes the steam just dries up... so we get an equilibrium and don't fill too much water into the underground
+            Fluids.flowingWater.setBlockContent(w, x1, y1, z1, 0);
+          
+        }
+      }
+    }
   }
 
   /** Looks for heat sources (fire, lava) and evaporates any nearby water */
   private static void doDirectHeatEvaporation(World w, int x, int z) {
-    //if (FysiksFun.rand.nextInt(2) != 0) return;
-    
+    // if (FysiksFun.rand.nextInt(2) != 0) return;
+
     int y = (int) FysiksFun.rand.nextInt(160) + 2;
-    Chunk c = ChunkCache.getChunk(w, x>>4, z>>4, false);
-    if(c == null) return;
-    
+    Chunk c = ChunkCache.getChunk(w, x >> 4, z >> 4, false);
+    if (c == null) return;
+
     for (int dx = 0; dx < 16; dx++) {
       for (int dz = 0; dz < 16; dz++) {
         int id = c.getBlockID(dx, y, dz);
@@ -91,9 +119,13 @@ public class Evaporation {
                   if (burnedId == Block.grass.blockID) {
                     FysiksFun.setBlockWithMetadataAndPriority(w, x + dx, y - 1, z + dz, Block.dirt.blockID, 0, 0);
                   } else {
-                    // Remove whatever it is that is burning... 
-                    // Ignore this for now, vanilla MC does consume most burnable things, and burning fluids are already handled by the burning routine
-                    //if (FysiksFun.rand.nextInt(16) == 7) FysiksFun.setBlockWithMetadataAndPriority(w, x + dx, y - 1, z + dz, 0, 0, 0);
+                    // Remove whatever it is that is burning...
+                    // Ignore this for now, vanilla MC does consume most
+                    // burnable things, and burning fluids are already handled
+                    // by the burning routine
+                    // if (FysiksFun.rand.nextInt(16) == 7)
+                    // FysiksFun.setBlockWithMetadataAndPriority(w, x + dx, y -
+                    // 1, z + dz, 0, 0, 0);
                   }
                 }
                 break;
@@ -122,27 +154,21 @@ public class Evaporation {
   private static void doUndergroundEvaporation(World w, int x, int z) {
     // if (FysiksFun.rand.nextInt(71) != 0) return;
 
-    int y = (int) Math.round(Math.sqrt(1.0 * FysiksFun.rand.nextInt(24 * 24))) + 1;
-    Chunk c = ChunkCache.getChunk(w, x>>4, z>>4, false);   
-    if(c == null) return;
-
+    int y = 1 + FysiksFun.rand.nextInt(24); 
+    Chunk c = ChunkCache.getChunk(w, x >> 4, z >> 4, false);
+    if (c == null) return;
+    ChunkTempData tempData = ChunkCache.getTempData(w, x>>4, z>>4);
+    
     int tries;
-    for (tries = 0; tries < 16; tries++) {
+    for (tries = 0; tries < 8; tries++) {
       int dx = FysiksFun.rand.nextInt(16);
       int dz = FysiksFun.rand.nextInt(16);
-      // TODO - use BlockFFFluid.isOceanic instead
-      if(c.getBiomeGenForWorldCoords(dx, dz, w.provider.worldChunkMgr) == BiomeGenBase.ocean) continue;
+      //if (c.getBiomeGenForWorldCoords(dx, dz, w.provider.worldChunkMgr) == BiomeGenBase.ocean) continue;
       int id = c.getBlockID(dx, y, dz);
-      if (id == Fluids.stillWater.blockID || id == Fluids.flowingWater.blockID) {
-        int amount = Fluids.stillWater.getBlockContent(w, x + dx, y, z + dz);
+      if (id == Fluids.stillWater.blockID || id == Fluids.flowingWater.blockID) {        
+        int amount = Fluids.stillWater.getBlockContent(c, tempData, x+dx, y, z+dz);
         if (amount > 0) {
-          // TODO - setting that either uses consume or evaporate - if we want
-          // steam or not
-          // Fluids.stillWater.consume(w, c, x + dx, y, z + dz,
-          // evaporationStepsize);
-          Fluids.stillWater.evaporate(w, c, x + dx, y, z + dz, evaporationStepsize, false); // FysiksFun.rand.nextInt(20)
-                                                                                            // ==
-                                                                                            // 0);
+          Fluids.stillWater.evaporate(w, c, x + dx, y, z + dz, evaporationStepsize, false);
           Counters.worldHeatEvaporation++;
         }
         return;
@@ -157,8 +183,8 @@ public class Evaporation {
    */
   private static void doIndirectEvaporation(World w, int x, int z) {
     if (FysiksFun.rand.nextInt(921) != 0) return;
-    Chunk c = ChunkCache.getChunk(w, x>>4, z>>4, false);
-    if(c == null) return;
+    Chunk c = ChunkCache.getChunk(w, x >> 4, z >> 4, false);
+    if (c == null) return;
 
     for (int tries = 0; tries < 10; tries++) {
       int y = 30 + FysiksFun.rand.nextInt(128);
@@ -186,19 +212,20 @@ public class Evaporation {
 
   /**
    * Creates water at altitudes y=24 -> y=58 in air cells that are adjacent to a
-   * dirt, gravel or cobblestone cell
+   * dirt, gravel or cobblestone cell. Also converts underground steam back to
+   * water
    */
   private static void doHumidification(World w, int x, int z) {
     // Net effect of this is that water is created!
 
     // DEBUG
-    if (FysiksFun.rand.nextInt(2) != 0) return;
+    if (FysiksFun.rand.nextInt(10) != 0) return;
 
     // TODO - let the biome effect the underground humidification.
 
-    Chunk c = ChunkCache.getChunk(w, x>>4, z>>4, false);
-    if(c == null) return;
-    
+    Chunk c = ChunkCache.getChunk(w, x >> 4, z >> 4, false);
+    if (c == null) return;
+
     for (int tries = 0; tries < 1; tries++) {
       int dx = FysiksFun.rand.nextInt(16);
       int dz = FysiksFun.rand.nextInt(16);
@@ -230,14 +257,14 @@ public class Evaporation {
   /** Evaporates water liquids that are in direct sunlight */
   public static void doSunlightEvaporation(World w, int x, int z) {
 
-    Chunk chunk = ChunkCache.getChunk(w, x>>4, z>>4, true);
+    Chunk chunk = ChunkCache.getChunk(w, x >> 4, z >> 4, true);
 
     // Gives the current time of the day, so we only evaporate during daylight
     long timeNow = w.getWorldInfo().getWorldTime();
     if (w.rainingStrength == 0.0 && FysiksFun.rand.nextInt(10) == 0) {
       double sunIntensity = Math.cos(((double) (timeNow - 5000)) / 6000.0 * 1.57);
       if (sunIntensity < 0.0) return;
-      for (int i = 0; i < 20; i++) {
+      for (int i = 0; i < 10; i++) {
         int dx = (FysiksFun.rand.nextInt(117) + 13 * Counters.tick) % 16;
         int dz = (FysiksFun.rand.nextInt(187) + 17 * Counters.tick) % 16;
         BiomeGenBase biome = w.getBiomeGenForCoords(x + dx, z + dz);
@@ -255,9 +282,9 @@ public class Evaporation {
                 // pools
                 int idBelow = w.getBlockId(x + dx, y2 - 1, z + dz);
                 if ((waterAmount >= BlockFFFluid.maximumContent / 2 || idBelow == Fluids.stillWater.blockID || idBelow == Fluids.flowingWater.blockID)
-                    && FysiksFun.rand.nextInt(5) != 0) continue;
+                    && FysiksFun.rand.nextInt(10) != 0) continue;
                 Fluids.flowingWater.evaporate(w, chunk, x + dx, y2, z + dz, evaporationStepsize, false);
-                if(FysiksFun.settings.waterEvaporationMakesClouds && FysiksFun.rand.nextInt(10) == 0)
+                if (FysiksFun.settings.waterEvaporationMakesClouds && FysiksFun.rand.nextInt(10) == 0)
                   Gases.steam.setBlockContent(w, chunk, x + dx, Math.max(100, y2 + 1), z + dz, 1);
                 // FysiksFun.rand.nextInt(10) == 0);
                 Counters.directEvaporation++;

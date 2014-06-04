@@ -33,6 +33,7 @@ public class SolidBlockPhysicsRules {
    * Lower numbers can support higher numbers.
    */
   public static int     blockDoSimplePhysics[]  = new int[4096];
+  public static boolean blockDoRopePhysics[]    = new boolean[4096];
   public static boolean blockIsFragile[]        = new boolean[4096];
   public static boolean blockIsSink[]           = new boolean[4096];
 
@@ -64,6 +65,7 @@ public class SolidBlockPhysicsRules {
             "0",
             "Integer order of execution of simplified physics. 0 disables simplified physics. Lower numbers can support higher numbers (but never blocks of full-physics). See leaves and vines for example",
             Property.Type.INTEGER);
+    physicsRuleConfig.get(cat, "1-example-is-rope", "false", "Used only for blocks using simplified physics. Prevents them supporting blocks upwards.");
     physicsRuleConfig.get(cat, "1-example-is-fragile", "true", "If true, the block will break (like glass) when falling", Property.Type.BOOLEAN);
     physicsRuleConfig.get(cat, "1-example-strength", "16",
         "Strength of block, must be less than elasticStrenghtConstant. Typical values 5 - 30 times the weight of the block.", Property.Type.INTEGER);
@@ -81,9 +83,12 @@ public class SolidBlockPhysicsRules {
 
       SolidBlockPhysicsRules.blockDoPhysics[i] = physicsRuleConfig.get(cat, name + "-do-full", SolidBlockPhysicsRules.blockDoPhysics[i] ? "true" : "false",
           null, Property.Type.BOOLEAN).getBoolean(SolidBlockPhysicsRules.blockDoPhysics[i]);
-      if (!SolidBlockPhysicsRules.blockDoPhysics[i])
+      if (!SolidBlockPhysicsRules.blockDoPhysics[i]) {
         SolidBlockPhysicsRules.blockDoSimplePhysics[i] = physicsRuleConfig.get(cat, name + "-do-simplified",
             "" + SolidBlockPhysicsRules.blockDoSimplePhysics[i], null, Property.Type.INTEGER).getInt(SolidBlockPhysicsRules.blockDoSimplePhysics[i]);
+        blockDoRopePhysics[i] = physicsRuleConfig.get(cat, name + "-is-rope", blockDoRopePhysics[i] ? "true" : "false", null, Property.Type.BOOLEAN)
+            .getBoolean(SolidBlockPhysicsRules.blockDoRopePhysics[i]);
+      }
       if (SolidBlockPhysicsRules.blockDoPhysics[i] || SolidBlockPhysicsRules.blockDoSimplePhysics[i] != 0) {
         blockIsFragile[i] = physicsRuleConfig.get(cat, name + "-is-fragile", blockIsFragile[i] ? "true" : "false", null, Property.Type.BOOLEAN).getBoolean(
             blockIsFragile[i]);
@@ -104,6 +109,7 @@ public class SolidBlockPhysicsRules {
       blockIsSink[i] = false;
       blockStrength[i] = 16;
       blockWeight[i] = 4;
+      blockDoRopePhysics[i] = false;
       SolidBlockPhysicsRules.blockDoSimplePhysics[i] = 0;
       SolidBlockPhysicsRules.blockDoPhysics[i] = false;
       blockIsFragile[i] = false;
@@ -160,13 +166,12 @@ public class SolidBlockPhysicsRules {
     blockWeight[Block.bedrock.blockID] = 0;
     blockIsSink[Block.bedrock.blockID] = true;
 
-    SolidBlockPhysicsRules.blockDoPhysics[Block.leaves.blockID] = false;
-    SolidBlockPhysicsRules.blockDoSimplePhysics[Block.leaves.blockID] = 1;
-    /*blockWeight[Block.leaves.blockID] = 1;
-    blockStrength[Block.leaves.blockID] = 10;*/
+    blockDoPhysics[Block.leaves.blockID] = false;
+    blockDoSimplePhysics[Block.leaves.blockID] = 1;
 
-    SolidBlockPhysicsRules.blockDoPhysics[Block.vine.blockID] = false;
-    SolidBlockPhysicsRules.blockDoSimplePhysics[Block.vine.blockID] = 2;
+    blockDoPhysics[Block.vine.blockID] = false;
+    blockDoRopePhysics[Block.vine.blockID] = true;
+    blockDoSimplePhysics[Block.vine.blockID] = 2;
 
     blockStrength[Block.gravel.blockID] = 4;
     blockWeight[Block.gravel.blockID] = 4;

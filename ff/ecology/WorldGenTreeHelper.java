@@ -34,8 +34,14 @@ public class WorldGenTreeHelper {
     prevPos[1] = -1;
     prevPos[2] = 0;
 
+
+    
     int dx = Math.abs(stop[0] - start[0]);
     int dz = Math.abs(stop[2] - start[2]);
+
+    // TEST - use leaves instead of wood for branches!
+    if(Math.abs(dx)+Math.abs(dz) != 0) id = Block.leaves.blockID;
+    
     int deltaXZ = Math.max(dx, dz);
     boolean isBranch = deltaXZ > 0;
     if (isBranch) {

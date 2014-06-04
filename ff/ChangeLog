@@ -179,3 +179,9 @@ v0.5.6
     * Made animals flee from things that have hurt other animals (including players or other entities)
     * Made animals sleep at night (From 6pm to 5am +/- 30min)
     
+ v0.6.0
+    * Corrected tree falling behaviour when physics is running. Also removes snow on top of trees that are falling.
+    * Changed algorithm for overriding the tree generation, uses leaves instead of trunks now.  
+    * Modified physics rules for vine's and other rope like blocks.
+    * Added small chance for grass/mushroom to appear randomly on surface dirt/mycelium
+    * Fixed bug with in BlockDispenser using incorrect meta values for some blocks that was picked up

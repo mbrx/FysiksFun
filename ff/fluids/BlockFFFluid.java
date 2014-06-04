@@ -90,7 +90,11 @@ public class BlockFFFluid extends BlockFlowing {
   public boolean              canCauseErosion;
   /** True for fluids that can sustain and spread a fire */
   public boolean              canBurn;
-  /** The strength of explosions when this fluid explodes. Set to zero if the block should not be able to explode. Non-burnable blocks can only explode if this value is true AND if they do a direct liquid interaction with Lava */
+  /**
+   * The strength of explosions when this fluid explodes. Set to zero if the
+   * block should not be able to explode. Non-burnable blocks can only explode
+   * if this value is true AND if they do a direct liquid interaction with Lava
+   */
   public float          explodeStrength;
   /**
    * If liquid is burnable and atleast this number of neighbours in a 5x5 area

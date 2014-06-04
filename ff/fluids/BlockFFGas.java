@@ -96,10 +96,13 @@ public class BlockFFGas extends Block {
     return 16 - meta;
   }
 
+  /** Returns amount of gas in cell (assumes that it is a gas). Coordinates given in world or in local coordinates */
   public int getBlockContent(World w, int x, int y, int z) {
-    return 16 - w.getBlockMetadata(x, y, z);
+    Chunk c = ChunkCache.getChunk(w, x>>4, z>>4, true);
+    return getBlockContent(c,x,y,z);
   }
 
+  /** Returns amount of gas in cell (assumes that it is a gas). Coordinates given in world or in local coordinates */
   public int getBlockContent(Chunk c, int x, int y, int z) {
     return 16 - c.getBlockMetadata(x & 15, y, z & 15);
   }

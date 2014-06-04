@@ -20,6 +20,8 @@ import net.minecraft.world.World;
 
 public class EntityAICoward extends EntityAIBase {
 
+  private static final int maxStaticThreatsToKeep = 20;
+  private static final int maxEntityThreatsToKeep = 10;
   int          randOffset;
   World        theWorld;
   EntityAnimal theAnimal;
@@ -57,6 +59,7 @@ public class EntityAICoward extends EntityAIBase {
 
   public static boolean isPositionSafe(World w, double x, double y, double z) {
     for (StaticThreat t : staticThreats) {
+      if(t == null) continue;
       if (t.world != w) continue;
       double dx = x - t.posX;
       double dy = y - t.posY;
@@ -74,15 +77,22 @@ public class EntityAICoward extends EntityAIBase {
   }
 
   public static void cleanup() {
+    System.out.println("Threatlist sizes before: "+staticThreats.size()+" "+entityThreats.size());
     LinkedList<StaticThreat> staticThreatsToRemove = new LinkedList<StaticThreat>();
+    int cnt=staticThreats.size() - maxStaticThreatsToKeep;
     for (StaticThreat t : staticThreats) {
-      if(t.creationTick + 20*60*3 < Counters.tick) staticThreatsToRemove.add(t);
+      if(t == null) staticThreatsToRemove.add(t);      
+      else if(cnt>0 || t.creationTick + 20*60*3 < Counters.tick) staticThreatsToRemove.add(t);
+      cnt--;
     }
     staticThreats.removeAll(staticThreatsToRemove);
 
     LinkedList<EntityThreat> entityThreatsToRemove = new LinkedList<EntityThreat>();
+    cnt=staticThreats.size() - maxEntityThreatsToKeep;
     for (EntityThreat t : entityThreats) {
-      if(t.creationTick + 20*60*3 < Counters.tick) entityThreatsToRemove.add(t);
+      if(t == null) entityThreatsToRemove.add(t);
+      else if(cnt>0 || t.creationTick + 20*60*3 < Counters.tick) entityThreatsToRemove.add(t);
+      cnt--;
     }
     entityThreats.removeAll(entityThreatsToRemove);    
   }

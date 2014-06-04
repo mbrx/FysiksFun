@@ -7,6 +7,7 @@ import mbrx.ff.FysiksFun;
 import mbrx.ff.fluids.Fluids;
 import mbrx.ff.solidBlockPhysics.BlockFFLeaves;
 import mbrx.ff.util.ChunkCache;
+import mbrx.ff.util.ChunkTempData;
 import mbrx.ff.util.Counters;
 import mbrx.ff.util.Util;
 import net.minecraft.block.Block;
@@ -22,7 +23,7 @@ public class Trees {
   public static LinkedList<Trees> fallingTrees = new LinkedList<Trees>();
   public static LinkedList<Trees> landedTrees  = new LinkedList<Trees>();
 
-  enum TreeCategory {
+  public enum TreeCategory {
     NOT_TREE, TRUNK_PART, LEAF_PART
   };
 
@@ -122,7 +123,7 @@ public class Trees {
    * Creates and extracts a tree with it's footprint (XZ) center at the given
    * coordinates and footprint bottom at given Y
    */
-  public Trees(World w2, int x, int y, int z) {
+  public Trees(World w2, int x, int y, int z, boolean removeSnow) {
     this.w = w2;
     lastAngle = 0.0;
 
@@ -136,8 +137,8 @@ public class Trees {
 
     IChunkProvider chunkProvider = w.getChunkProvider();
     if (!chunkProvider.chunkExists(x >> 4, z >> 4)) return;
-    Chunk c = ChunkCache.getChunk(w2, x>>4, z>>4, false);
-    if(c == null) return;
+    Chunk c = ChunkCache.getChunk(w2, x >> 4, z >> 4, false);
+    if (c == null) return;
 
     blocks.add(new TreeBlock(0, 0, 0, c.getBlockID(x & 15, y, z & 15), c.getBlockMetadata(x & 15, y, z & 15)));
     int treeType = w.getBlockMetadata(x, y, z);
@@ -154,6 +155,7 @@ public class Trees {
               int dy2 = dy + t.dy;
               int dz2 = dz + t.dz;
 
+              /* Before we can add this block to the falling tree, check if it already in the set */
               boolean alreadyContains = false;
               for (TreeBlock t2 : blocks) {
                 if (t2.dx == dx2 && t2.dy == dy2 && t2.dz == dz2) {
@@ -168,14 +170,45 @@ public class Trees {
                 }
               }
               if (alreadyContains) continue;
+
+              /* Next, check if there is another potential tree it could belong to. This is done by checking if there is a "center" wood block (meta point straight up) 
+               * that is closer to this block than what our starting point is. 
+               */
+              int radius = Math.max(Math.abs(dx2), Math.abs(dz2));
+              int actualDist = Math.abs(dx2) + Math.abs(dz2);
+              boolean otherTreeFound = false;
+              searchForOtherTree:
+              for (int dx3 = -radius; dx3 <= radius; dx3++)
+                for (int dz3 = -radius; dz3 <= radius; dz3++) {
+                  int x3 = x + dx2 + dx3;
+                  int z3 = z + dz2 + dz3;
+                  if (Math.abs(dx3) + Math.abs(dz3) >= actualDist) continue;
+                  c = ChunkCache.getChunk(w, x3 >> 4, z3 >> 4, false);
+                  if (c == null) continue;
+                  for (int dy31 = -1; dy31 <= 0; dy31++) {
+                    int y3 = y + dy2 + dy31;
+                    int id3 = c.getBlockID(x3 & 15, y3, z3 & 15);
+                    int meta3 = c.getBlockMetadata(x3 & 15, y3, z3 & 15);
+                    /* Assumption: there are no trees with a bigger trunk than 3 blocks wide */
+                    if (treeCategory[id3] == TreeCategory.TRUNK_PART && (meta3 & 0xc) == 0 && Math.abs(dx3 + dx2) + Math.abs(dz3 + dz2) > 2) {
+                      // System.out.println("Deciding not to include block in tree felling 2:"
+                      // + Util.xyzString(dx2, dy2, dz2) + " 3: "
+                      // + Util.xyzString(dx3, dy2, dz3));
+                      otherTreeFound = true;
+                      break searchForOtherTree;
+                    }
+                  }
+                }
+              if (otherTreeFound) continue;
+
               int x2 = x + dx2, y2 = y + dy2, z2 = z + dz2;
-              c = ChunkCache.getChunk(w,x2>>4,z2>>4,false);
-              if(c == null) continue;
+              c = ChunkCache.getChunk(w, x2 >> 4, z2 >> 4, false);
+              if (c == null) continue;
 
               int id2 = c.getBlockID(x2 & 15, y2, z2 & 15);
               int meta2 = c.getBlockMetadata(x2 & 15, y2, z2 & 15);
 
-              if(treeCategory[id2] == TreeCategory.LEAF_PART) {
+              if (treeCategory[id2] == TreeCategory.LEAF_PART) {
                 if (firstLeaf == -1) firstLeaf = meta2;
                 // else if(meta2 != firstLeaf) continue;
               } else if (meta2 != treeType) continue;
@@ -183,6 +216,15 @@ public class Trees {
               // (allowFoilage && id2 == Block.leaves.blockID))
               if ((!allowFoilage && treeCategory[id2] == TreeCategory.TRUNK_PART) || (allowFoilage && treeCategory[id2] == TreeCategory.LEAF_PART))
                 blocksToAdd.add(new TreeBlock(dx2, dy2, dz2, id2, meta2));
+
+              // Finally, remove snow on top of falling tree if needed
+              if (removeSnow) {
+                int idAbove = c.getBlockID(x2 & 15, y2 + 1, z2 & 15);
+                if (idAbove == Block.snow.blockID) {
+                  FysiksFun.setBlockIDandMetadata(w, c, x2, y2 + 1, z2, 0, 0, idAbove, 0, null);
+                }
+              }
+
             }
       }
       if (blocksToAdd.size() > 0) {
@@ -218,20 +260,23 @@ public class Trees {
   }
 
   public static void doTrees(World w, int cx, int cz) {
-    
+
+    Chunk c = ChunkCache.getChunk(w, cx >> 4, cz >> 4, false);
     for (int tries = 0; tries < 10; tries++) {
       int dx = (FysiksFun.rand.nextInt(16) + tries) % 16;
       int dz = (FysiksFun.rand.nextInt(16) + Counters.tick) % 16;
       int x = cx + dx, z = cz + dz;
-      checkAndTickTree(w, x, z);
+      checkAndTickTree(w, c, x, z);
     }
   }
 
   /**
    * Tests if a tree can be found at the given XZ coordinates, and ticks it if
-   * so.
+   * so. Returns true if there was a tree.
+   * 
+   * @param c
    */
-  public static void checkAndTickTree(World w, int x, int z) {
+  public static boolean checkAndTickTree(World w, Chunk c, int x, int z) {
     int logCount = 0;
     int nLeaves = 0;
     // woodDown represents how many wood blocks straight down that we have
@@ -242,24 +287,25 @@ public class Trees {
 
     boolean foundTree = false;
     int treeYStart;
-    Chunk c = ChunkCache.getChunk(w, x >> 4, z >> 4, false);
-    for (treeYStart = 128; treeYStart > 20; treeYStart--) {
+    for (treeYStart = c.getPrecipitationHeight(x & 15, z & 15); treeYStart > 20; treeYStart--) {
       if (c == null) continue;
       int id = c.getBlockID(x & 15, treeYStart, z & 15);
-      //if (id == Block.wood.blockID) logCount++;
-      if((treeCategory[id] == TreeCategory.TRUNK_PART)) logCount++;
+      // if (id == Block.wood.blockID) logCount++;
+      if ((treeCategory[id] == TreeCategory.TRUNK_PART)) logCount++;
       else logCount = 0;
       if (logCount >= 2) {
         foundTree = true;
         break;
       }
-      if(id == 0) continue;
-      else if(treeCategory[id] != TreeCategory.NOT_TREE) continue;
-      else if(Block.blocksList[id] != null && !Block.blocksList[id].isOpaqueCube()) continue;
-      //if (id == 0 || id == Block.leaves.blockID || id == Block.wood.blockID || (Block.blocksList[id] != null && !Block.blocksList[id].isOpaqueCube())) continue;
+      if (id == 0) continue;
+      else if (treeCategory[id] != TreeCategory.NOT_TREE) continue;
+      else if (Block.blocksList[id] != null && !Block.blocksList[id].isOpaqueCube()) continue;
+      // if (id == 0 || id == Block.leaves.blockID || id == Block.wood.blockID
+      // || (Block.blocksList[id] != null &&
+      // !Block.blocksList[id].isOpaqueCube())) continue;
       else break;
     }
-    if (!foundTree) return;
+    if (!foundTree) return false;
     int y, steps;
     // tries += 4; // Reduce the CPU cost by doing fewer tries whenever we found
     // a potential tree...
@@ -273,53 +319,55 @@ public class Trees {
     int woodX = x, woodY = treeYStart, woodZ = z;
     woodDown = 0;
     c = ChunkCache.getChunk(w, x >> 4, z >> 4, false);
-    for (steps = 0, y = treeYStart; y > 0 && steps < 250; steps++) {
+    for (steps = 0, y = treeYStart; y > 0 && steps < 200; steps++) {
       if (c == null) continue;
       int id = c.getBlockID(x & 15, y - 1, z & 15);
-      if(treeCategory[id] == TreeCategory.TRUNK_PART) {
+      if (treeCategory[id] == TreeCategory.TRUNK_PART) {
         y--;
         woodX = x;
         woodY = y;
         woodZ = z;
         woodDown++;
         continue;
-      } else if(treeCategory[id] == TreeCategory.LEAF_PART && woodDown < 3) { 
+      } else if (treeCategory[id] == TreeCategory.LEAF_PART && woodDown < 3) {
         y--;
         nLeaves++;
       }
-      int dx2 = FysiksFun.rand.nextInt(3) - 1;
-      int dz2 = FysiksFun.rand.nextInt(3) - 1;
-      if (dx2 * dx2 + dz2 * dz2 == 1) {
+      int dir = FysiksFun.rand.nextInt(4);
+      int dx2 = Util.dirToDx(dir);
+      int dz2 = Util.dirToDz(dir);
 
-        int x2 = x + dx2, z2 = z + dz2;
-        Chunk c2 = ChunkCache.getChunk(w, x2 >> 4, z2 >> 4, false);
-        if (c2 == null) continue;
-        id = c2.getBlockID(x2 & 15, y, z2 & 15);
-        if(treeCategory[id] == TreeCategory.LEAF_PART) nLeaves++;
-        //if (id == Block.leaves.blockID) nLeaves++;        
-        //if (id == Block.wood.blockID || id == Block.leaves.blockID) {
-        if(treeCategory[id] != TreeCategory.NOT_TREE) {
-          x += dx2;
-          z += dz2;
-          c=c2;
-        }
+      int x2 = x + dx2, z2 = z + dz2;
+      Chunk c2 = ChunkCache.getChunk(w, x2 >> 4, z2 >> 4, false);
+      if (c2 == null) continue;
+      id = c2.getBlockID(x2 & 15, y, z2 & 15);
+      if (treeCategory[id] == TreeCategory.LEAF_PART) nLeaves++;
+      // if (id == Block.leaves.blockID) nLeaves++;
+      // if (id == Block.wood.blockID || id == Block.leaves.blockID) {
+      if (treeCategory[id] != TreeCategory.NOT_TREE) {
+        x += dx2;
+        z += dz2;
+        c = c2;
       }
+
     }
     // x=woodX; y=woodY; z=woodZ;
     int finalId = w.getBlockId(x, y, z);
-    if(treeCategory[finalId] == TreeCategory.TRUNK_PART && (woodDown >= 2 || nLeaves > 0)) {
-    //if (w.getBlockId(x, y, z) == Block.wood.blockID && (woodDown >= 2 || nLeaves > 0)) {
+    if (treeCategory[finalId] == TreeCategory.TRUNK_PART && (woodDown >= 2 || nLeaves > 0)) {
+      // if (w.getBlockId(x, y, z) == Block.wood.blockID && (woodDown >= 2 ||
+      // nLeaves > 0)) {
       // We have found a local minima (Y wise) that is wood. It "must" be the
       // bottom of a tree.
       tickTree(w, x, y, z);
       Counters.treeCounter++;
     }
+    return true;
   }
 
   public static void tickTree(World w, int x, int y, int z) {
     boolean killTree = false;
     int blockBelowId = w.getBlockId(x, y - 1, z);
-   // IChunkProvider chunkProvider = w.getChunkProvider();
+    // IChunkProvider chunkProvider = w.getChunkProvider();
 
     // Trees hanging in the air should fall in a semi-realistic manner.
     if (blockBelowId == 0 || (Block.blocksList[blockBelowId] != null && !Block.blocksList[blockBelowId].isOpaqueCube())) {
@@ -344,7 +392,7 @@ public class Trees {
     for (dx = -4; dx <= 4; dx++)
       for (dz = -4; dz <= 4; dz++)
         for (dy = 2; dy >= -4; dy--) {
-          Chunk c = ChunkCache.getChunk(w, (x+dx)>>4, (z+dz)>>4, true);
+          Chunk c = ChunkCache.getChunk(w, (x + dx) >> 4, (z + dz) >> 4, true);
           int id = c.getBlockID((x + dx) & 15, y + dy, (z + dz) & 15);
           if (id == Fluids.stillWater.blockID || id == Fluids.flowingWater.blockID) {
             surroundingWater++;
@@ -365,8 +413,9 @@ public class Trees {
         for (dx = -4; dx <= 4 && killFoilage; dx++)
           for (dz = -4; dz <= 4 && killFoilage; dz++) {
             int id = w.getBlockId(x + dx, y + dy, z + dz);
-            if(treeCategory[id] == TreeCategory.LEAF_PART || (treeCategory[id] == TreeCategory.TRUNK_PART && dx != 0 && dz != 0)) {
-              //if (id == Block.leaves.blockID || (id == Block.wood.blockID && dx != 0 && dz != 0)) {
+            if (treeCategory[id] == TreeCategory.LEAF_PART || (treeCategory[id] == TreeCategory.TRUNK_PART && dx != 0 && dz != 0)) {
+              // if (id == Block.leaves.blockID || (id == Block.wood.blockID &&
+              // dx != 0 && dz != 0)) {
               w.setBlock(x + dx, y + dy, z + dz, 0, 0, 0x02);
               killFoilage = false;
               Counters.treeKill++;
@@ -378,8 +427,8 @@ public class Trees {
         // remaining trunk of the tree
         for (dy = 20; dy >= 0; dy--) {
           int id = w.getBlockId(x, y + dy, z);
-          if(treeCategory[id] == TreeCategory.TRUNK_PART) {
-          //if (id == Block.wood.blockID) {
+          if (treeCategory[id] == TreeCategory.TRUNK_PART) {
+            // if (id == Block.wood.blockID) {
             w.setBlock(x, y + dy, z, 0, 0, 0x02);
             killFoilage = false;
             break;
@@ -389,7 +438,7 @@ public class Trees {
       return;
     } else {
       /* This tree seems to be in good health. See if it can spread */
-      if (FysiksFun.rand.nextInt(500) == 0) {
+      if (FysiksFun.rand.nextInt(2001) == 0) {
         findTreeToPlant:
         for (int tries = 0; tries < 1; tries++) {
           dx = FysiksFun.rand.nextInt(24) - 12;
@@ -420,10 +469,9 @@ public class Trees {
   private synchronized static void fellTree(final World w, final int x, final int y, final int z) {
 
     float volume = 1.0F;
-    float pitch = 1.0F;       
+    float pitch = 1.0F;
     w.playSoundEffect(x + 0.5, y + 0.5, z + 0.5, "fysiksfun:timber", volume, pitch);
-    
-    
+
     int dx, dz;
     for (dx = -1; dx <= 1; dx++)
       for (dz = -1; dz <= 1; dz++) {
@@ -439,7 +487,7 @@ public class Trees {
     }
 
     /* It doesn't, register it as a new tree that is falling */
-    Trees t = new Trees(w, x, y, z);
+    Trees t = new Trees(w, x, y, z, true);
     t.fallingAngle = 0;
 
     // Determine best falling direction
@@ -463,7 +511,13 @@ public class Trees {
       dy = b.AngleToDy(oldAngle, fallingDirection);
       dz = b.AngleToDz(oldAngle, fallingDirection);
       int id = w.getBlockId(centerX + dx, centerY + dy, centerZ + dz);
-      if (id == b.id) w.setBlock(centerX + dx, centerY + dy, centerZ + dz, 0, 0, 0x01 + 0x02);
+      if (id == b.id) {
+        // w.setBlock(centerX + dx, centerY + dy, centerZ + dz, 0, 0, 0x01 +
+        // 0x02);
+        Chunk c = ChunkCache.getChunk(w, (centerX + dx) >> 4, (centerZ + dz) >> 4, false);
+        if (c == null) continue;
+        FysiksFun.setBlockIDandMetadata(w, c, centerX + dx, centerY + dy, centerZ + dz, 0, 0, b.id, b.meta, null);
+      }
     }
 
     double newAngle = (fallingAngle + 1) * (Math.PI / stepsToFall);
@@ -473,14 +527,15 @@ public class Trees {
      */
     boolean hasCollided = false;
     for (TreeBlock b : blocks) {
-      if(treeCategory[b.id] != TreeCategory.TRUNK_PART) continue;
-      //if (b.id != Block.wood.blockID) continue;
+      if (treeCategory[b.id] != TreeCategory.TRUNK_PART) continue;
+      // if (b.id != Block.wood.blockID) continue;
       dx = b.AngleToDx(newAngle, fallingDirection);
       dy = b.AngleToDy(newAngle, fallingDirection);
       dz = b.AngleToDz(newAngle, fallingDirection);
       int id = w.getBlockId(centerX + dx, centerY + dy, centerZ + dz);
       if (id != 0 && treeCategory[id] != TreeCategory.LEAF_PART && Block.blocksList[id] != null && Block.blocksList[id].isOpaqueCube()) {
-        //if (id != 0 && id != Block.leaves.blockID && Block.blocksList[id] != null && Block.blocksList[id].isOpaqueCube()) {
+        // if (id != 0 && id != Block.leaves.blockID && Block.blocksList[id] !=
+        // null && Block.blocksList[id].isOpaqueCube()) {
         hasCollided = true;
         break;
       }
@@ -490,14 +545,15 @@ public class Trees {
     if (!hasCollided) {
       boolean canFall = true;
       for (TreeBlock b : blocks) {
-        if(treeCategory[b.id] != TreeCategory.TRUNK_PART) continue;
-        //if (b.id != Block.wood.blockID) continue;
+        if (treeCategory[b.id] != TreeCategory.TRUNK_PART) continue;
+        // if (b.id != Block.wood.blockID) continue;
         dx = b.AngleToDx(newAngle, fallingDirection);
         dy = b.AngleToDy(newAngle, fallingDirection);
         dz = b.AngleToDz(newAngle, fallingDirection);
         int id = w.getBlockId(centerX + dx, centerY + dy - 1, centerZ + dz);
         if (id != 0 && treeCategory[id] != TreeCategory.LEAF_PART && Block.blocksList[id] != null && Block.blocksList[id].isOpaqueCube()) {
-          //if (id != 0 && id != Block.leaves.blockID && Block.blocksList[id] != null && Block.blocksList[id].isOpaqueCube()) {
+          // if (id != 0 && id != Block.leaves.blockID && Block.blocksList[id]
+          // != null && Block.blocksList[id].isOpaqueCube()) {
           canFall = false;
           break;
         }
@@ -521,41 +577,42 @@ public class Trees {
     }
   }
 
-  /*
-   * int dy, dx, dz; for (dy = 0; dy < maxDy; dy++) { for (dx = minDx; dx <=
-   * maxDx; dx++) for (dz = minDz; dz <= maxDz; dz++) { TreeBlock t = null; for
-   * (TreeBlock t2 : blocksToFall) { if (t2.dx == dx && t2.dy == dy && t2.dz ==
-   * dz) { t = t2; break; } } if (t == null) continue;
-   * 
-   * int metaHere = w.getBlockMetadata(x + dx, y + dy, z + dz); w.setBlock(x +
-   * dx, y + dy, z + dz, 0, 0, 0x02); for (int fall = 0; fall < 256; fall++) {
-   * int id2 = w.getBlockId(x - dy, y + dx - fall - 1, z + dz); if (id2 != 0 &&
-   * id2 != Block.leaves.blockID) { // Foliage that lands under other wood
-   * pieces will be crushed by // the above wood pieces w.setBlock(x - dy, y +
-   * dx - fall, z + dz, t.id, t.meta, 3); break; } } } }
-   */
-
   private void placeTreeInWorld(double angle) {
     lastAngle = angle;
     int dx, dy, dz;
     /* First place the leaves on air */
     for (TreeBlock b : blocks) {
-      if(treeCategory[b.id] != TreeCategory.LEAF_PART) continue;
-      //if (b.id != Block.leaves.blockID) continue;
+      if (treeCategory[b.id] != TreeCategory.LEAF_PART) continue;
+      // if (b.id != Block.leaves.blockID) continue;
       dx = b.AngleToDx(angle, fallingDirection);
       dy = b.AngleToDy(angle, fallingDirection);
       dz = b.AngleToDz(angle, fallingDirection);
+      int x0 = centerX + dx;
+      int y0 = centerY + dy;
+      int z0 = centerZ + dz;
       int id = w.getBlockId(centerX + dx, centerY + dy, centerZ + dz);
-      if (id == 0 || (Block.blocksList[id] != null && !Block.blocksList[id].isOpaqueCube()))
-        w.setBlock(centerX + dx, centerY + dy, centerZ + dz, b.id, b.meta, 0x01 + 0x02);
+      if (id == 0 || (Block.blocksList[id] != null && !Block.blocksList[id].isOpaqueCube())) {
+        // w.setBlock(centerX + dx, centerY + dy, centerZ + dz, b.id, b.meta,
+        // 0x01 + 0x02);
+        Chunk c = ChunkCache.getChunk(w, (centerX + dx) >> 4, (centerZ + dz) >> 4, false);
+        if (c == null) continue;
+        int oldId = c.getBlockID(x0 & 15, y0, z0 & 15);
+        int oldMeta = c.getBlockMetadata(x0 & 15, y0, z0 & 15);
+        FysiksFun.setBlockIDandMetadata(w, c, centerX + dx, centerY + dy, centerZ + dz, b.id, b.meta, oldId, oldMeta, null);
+        ChunkTempData temp = ChunkCache.getTempData(w, (centerX + dx) >> 4, (centerZ + dz) >> 4);
+        temp.setTempData((centerX + dx) & 15, centerY + dy, (centerZ + dz) & 15, 0);
+      }
     }
     /* Second, place the wood blocks */
     for (TreeBlock b : blocks) {
-      if(treeCategory[b.id] != TreeCategory.TRUNK_PART) continue;
-      //if (b.id != Block.wood.blockID) continue;
+      if (treeCategory[b.id] != TreeCategory.TRUNK_PART) continue;
+      // if (b.id != Block.wood.blockID) continue;
       dx = b.AngleToDx(angle, fallingDirection);
       dy = b.AngleToDy(angle, fallingDirection);
       dz = b.AngleToDz(angle, fallingDirection);
+      int x0 = centerX + dx;
+      int y0 = centerY + dy;
+      int z0 = centerZ + dz;
       int id = w.getBlockId(centerX + dx, centerY + dy, centerZ + dz);
       if (id == 0 || treeCategory[b.id] == TreeCategory.LEAF_PART || (Block.blocksList[id] != null && !Block.blocksList[id].isOpaqueCube())) {
         int newMeta = b.meta;
@@ -563,7 +620,15 @@ public class Trees {
           if (fallingDirection == 0 || fallingDirection == 1) newMeta ^= 0x04;
           else if (fallingDirection == 2 || fallingDirection == 3) newMeta ^= 0x08;
         }
-        w.setBlock(centerX + dx, centerY + dy, centerZ + dz, b.id, newMeta, 0x01 + 0x02);
+        // w.setBlock(centerX + dx, centerY + dy, centerZ + dz, b.id, newMeta,
+        // 0x01 + 0x02);
+        Chunk c = ChunkCache.getChunk(w, (centerX + dx) >> 4, (centerZ + dz) >> 4, false);
+        if (c == null) continue;
+        int oldId = c.getBlockID(x0 & 15, y0, z0 & 15);
+        int oldMeta = c.getBlockMetadata(x0 & 15, y0, z0 & 15);
+        FysiksFun.setBlockIDandMetadata(w, c, centerX + dx, centerY + dy, centerZ + dz, b.id, newMeta, oldId, oldMeta, null);
+        ChunkTempData temp = ChunkCache.getTempData(w, (centerX + dx) >> 4, (centerZ + dz) >> 4);
+        temp.setTempData((centerX + dx) & 15, centerY + dy, (centerZ + dz) & 15, 0);
       }
     }
 

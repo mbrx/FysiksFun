@@ -45,7 +45,7 @@ public class BlockFFBlockDispenser extends BlockDispenser {
     blockBlockDispenser.setHardness(2.0F);
     // blockBlockDispenser.setIconName("fysiksfun:blockDispenser");
     ItemStack blockBlockDispenserStack = new ItemStack(blockBlockDispenser);
-    GameRegistry.addRecipe(blockBlockDispenserStack, "mmm", "cpm", "mmm", 'm', Block.cobblestoneMossy, 'c', Block.chest, 'p', Block.pistonBase);
+    GameRegistry.addRecipe(blockBlockDispenserStack, "blb", "cpr", "blb", 'b', Block.stoneBrick, 'c', Block.chest, 'p', Block.pistonBase, 'l', Block.blockClay, 'r', Item.redstone);
     GameRegistry.registerBlock(blockBlockDispenser, "blockDispenser");
     LanguageRegistry.addName(blockBlockDispenserStack, "blockDispenser");
 
@@ -170,7 +170,7 @@ public class BlockFFBlockDispenser extends BlockDispenser {
     Chunk c1 = ChunkCache.getChunk(w, x1 >> 4, z1 >> 4, false);
     if (c1 == null) return;
     int id = c1.getBlockID(x1 & 15, y1, z1 & 15);
-    int meta = c1.getBlockID(x1 & 15, y1, z1 & 15);
+    int meta = c1.getBlockMetadata(x1 & 15, y1, z1 & 15);
     if (id == 0 || Block.blocksList[id] == null || Block.blocksList[id].blockID != id) return;
     if(id == Block.fire.blockID) return;
     if(id == Block.pistonExtension.blockID) return;

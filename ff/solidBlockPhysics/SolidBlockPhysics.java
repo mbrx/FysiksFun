@@ -34,30 +34,33 @@ import buildcraft.transport.BlockGenericPipe;
 
 public class SolidBlockPhysics {
 
-  
   /**
    * Class instance fields for holding the current state of a block that is
    * beeing modified between multiple function calls
    */
-  private int                                curClock, curBreak, curPressure;
-  private int                                nSoundEffectsLeft;
-  private int                                soundEffectAttempts;
-  private static final int                   maxSoundEffects         = 3;
-  private World jobWorld;
-  private boolean restartPhysics;
-  /** Current clock in the private clock unit of the solidBlockPhysics engine. Used for calculating connectedness to anchors */
-  private int timeNow;
-  
+  private int              curClock, curBreak, curPressure;
+  private int              nSoundEffectsLeft;
+  private int              soundEffectAttempts;
+  private static final int maxSoundEffects = 3;
+  private World            jobWorld;
+  private boolean          restartPhysics;
+  /**
+   * Current clock in the private clock unit of the solidBlockPhysics engine.
+   * Used for calculating connectedness to anchors
+   */
+  private int              timeNow;
 
- 
-  /** Instances of this class is used for holding temporary data for the duration of physics calculations. The same instances must never be entered by more than one thread. */
-  public SolidBlockPhysics() {
-  }
-  
+  /**
+   * Instances of this class is used for holding temporary data for the duration
+   * of physics calculations. The same instances must never be entered by more
+   * than one thread.
+   */
+  public SolidBlockPhysics() {}
+
   /* Constants for internal calculations */
-  private static final int                   timeToFall              = 4;
-  public static final int                   countdownToAction       = 80;
-  public static final int                   fallForce               = 0;                // 20;
+  private static final int timeToFall         = 5;
+  public static final int  countdownToAction  = 80;
+  public static final int  fallForce          = 0;     // 20;
 
   /*
    * Use of the break counter: Value 0: The block is stable, can move at most
@@ -69,17 +72,16 @@ public class SolidBlockPhysics {
    * breakThreshold+forceWhileBreaking*(curBreak-breakAtCounter), so it smoothly
    * steps up how much force is transmitted.
    */
-  private static final int                   pressureBitsMask        = 0xffff;
-  private static final int                   clockBitsStart          = 16;
-  private static final int                   clockBitsMask           = 0x0ff;
-  private static final int                   clockModulo             = 256;
-  private static final int                   clockMaxDist            = 127;
-  private static final int                   breakBitsStart          = 24;
-  private static final int                   breakBitsMask           = 0x07f;
-  private static final int                   breakAtCounter          = 40;
-  private static final int                   counterIsFalling        = 127;
-  private static int                         forceWhileBreaking      = 3;
-
+  private static final int pressureBitsMask   = 0xffff;
+  private static final int clockBitsStart     = 16;
+  private static final int clockBitsMask      = 0x0ff;
+  private static final int clockModulo        = 256;
+  private static final int clockMaxDist       = 127;
+  private static final int breakBitsStart     = 24;
+  private static final int breakBitsMask      = 0x07f;
+  private static final int breakAtCounter     = 40;
+  private static final int counterIsFalling   = 127;
+  private static int       forceWhileBreaking = 3;
 
   public void doSolidBlockPhysics(World w, Chunk chunk0, ChunkTempData tempData0, ExtendedBlockStorage[] blockStorage, int x0, int y0, int z0, int id,
       HashSet<ChunkMarkUpdateTask> delayedBlockMarkSet) throws InterruptedException {
@@ -124,8 +126,7 @@ public class SolidBlockPhysics {
     }
 
     // Propagate forces
-    totalMoved = propagateForces(chunk0, tempData0, blockStorage, x0, y0, z0, id, timeNow, origPressure, isFalling, simplifiedPhysics,
-        breakThreshold, debugMe);
+    totalMoved = propagateForces(chunk0, tempData0, blockStorage, x0, y0, z0, id, timeNow, origPressure, isFalling, simplifiedPhysics, breakThreshold, debugMe);
     // Make blocks at y=1 as well as all sink blocks act as sinks/supports for
     // the forces
     if (y0 <= 1 || SolidBlockPhysicsRules.blockIsSink[id]) {
@@ -212,8 +213,6 @@ public class SolidBlockPhysics {
       if (newTempValue != origTempValue) tempData0.setTempData(x0, y0, z0, newTempValue);
     }
   }
-  
-  
 
   private int propagateForces(Chunk c, ChunkTempData tempData, ExtendedBlockStorage[] blockStorage, int x0, int y0, int z0, int id, int timeNow,
       int origPressure, boolean isFalling, int simplifiedPhysics, int breakThreshold, boolean debugMe) {
@@ -279,8 +278,16 @@ public class SolidBlockPhysics {
       if (nnIsFalling == isFalling) {
         // nnBreak != breakAtCounter && curBreak !=
         // breakAtCounter)
-        if (ahead) curClock = nnClock;
-        else nnClock = curClock;
+        if (ahead) {
+          // We make all "simplifiedPhysics" blocks act as ropes, not propagating forces upwards
+          if(SolidBlockPhysicsRules.blockDoRopePhysics[nnId] && y2 <= y0) {}  
+          else curClock = nnClock;        
+        }
+        else {
+          // We make all "simplifiedPhysics" blocks act as ropes, not propagating forces upwards
+          if(SolidBlockPhysicsRules.blockDoRopePhysics[id] && y2 >= y0) {}
+          else nnClock = curClock;
+        }
       }
 
       if (debugMe) {
@@ -352,7 +359,6 @@ public class SolidBlockPhysics {
     return totalMoved;
   }
 
-
   /**
    * Returns true if block successfully fell or broke. If doBreak false we
    * assume we are supposed to make a fall.
@@ -372,6 +378,12 @@ public class SolidBlockPhysics {
     int targetX, targetY, targetZ, targetId;
     Chunk targetChunk = c;
 
+    if(Trees.treeCategory[id] == Trees.TreeCategory.TRUNK_PART && Trees.treeCategory[idBelow] != Trees.TreeCategory.TRUNK_PART && (myMeta&0xc) == 0 && FysiksFun.rand.nextInt(20) != 0) {
+      //System.out.println("Preventing a trunk block from falling since it seems to be part of an actual tree...");
+      Trees.checkAndTickTree(jobWorld, c, x0, z0);
+      return true;
+    }
+    
     if (!SolidBlockPhysicsRules.blockDoPhysics[idBelow]) {
       targetX = x0;
       targetY = y0 - 1;
@@ -438,9 +450,12 @@ public class SolidBlockPhysics {
     // not handled by the physics. If so, break them
     // into items.
     if (!SolidBlockPhysicsRules.blockDoPhysics[idAbove] && idAbove != 0 && !Fluids.isLiquid[idAbove] && !Gases.isGas[idAbove]) {
-      synchronized (FysiksFun.vanillaMutex) {
-        Block.blocksList[idAbove].dropBlockAsItem(jobWorld, x0, y0 + 1, z0, 0, 0);
+      if (idAbove == Block.snow.blockID) {} else {
+        synchronized (FysiksFun.vanillaMutex) {
+          Block.blocksList[idAbove].dropBlockAsItem(jobWorld, x0, y0 + 1, z0, 0, 0);
+        }
       }
+
       // This is done with the wrong 'old meta', but that doesn't matter since
       // we in the worst case just make a mark too much
       FysiksFun.setBlockIDandMetadata(jobWorld, c, x0, y0 + 1, z0, 0, 0, idAbove, 0, delayedBlockMarkSet);
@@ -524,12 +539,12 @@ public class SolidBlockPhysics {
     }
 
     boolean useSlowSetBlock = false;
-    useSlowSetBlock = true; // !!!! for now
+    //useSlowSetBlock = true; // !!!! for now
     if (idAbove == 0 || (Block.blocksList[idAbove] != null && !Block.blocksList[idAbove].isOpaqueCube())) {
       useSlowSetBlock = true;
     }
 
-    /** DEBUG - let water/steam be eliminated when blocks fall throught them */
+    /** DEBUG - let water/steam be eliminated when blocks fall through them */
     targetId = 0;
     targetTmp = 0;
     targetMeta = 0;
@@ -540,10 +555,10 @@ public class SolidBlockPhysics {
     if (useSlowSetBlock) {
       synchronized (FysiksFun.vanillaMutex) {
         c.setBlockIDWithMetadata(x0 & 15, y0, z0 & 15, targetId, targetMeta);
-        ChunkMarkUpdateTask task = ObjectPool.poolChunkMarkUpdateTask.getObject();
-        task.set(jobWorld, x0, y0, z0, id, myMeta);
-        delayedBlockMarkSet.add(task);
       }
+      ChunkMarkUpdateTask task = ObjectPool.poolChunkMarkUpdateTask.getObject();
+      task.set(jobWorld, x0, y0, z0, id, myMeta);
+      delayedBlockMarkSet.add(task);
     } else {
       FysiksFun.setBlockIDandMetadata(jobWorld, c, x0, y0, z0, targetId, targetMeta, id, myMeta, delayedBlockMarkSet);
     }
@@ -554,7 +569,7 @@ public class SolidBlockPhysics {
      * to be triggered early.
      */
     if (idAbove == Block.wood.blockID && id == Block.wood.blockID && idBelow != Block.wood.blockID) {
-      Trees.checkAndTickTree(jobWorld, x0, z0);
+      Trees.checkAndTickTree(jobWorld, c, x0, z0);
     }
     return true;
   }
@@ -565,7 +580,6 @@ public class SolidBlockPhysics {
     if (b instanceof BlockWood || b instanceof BlockLog) return "fysiksfun:woodCrack";
     return "fysiksfun:rubble";
   }
-  
 
   public static void addPressure(World w, int x1, int y1, int z1, int increment) {
     ChunkTempData tempData = ChunkCache.getTempData(w, x1 >> 4, z1 >> 4);
@@ -578,7 +592,7 @@ public class SolidBlockPhysics {
 
   /** Start of the processing for a chunk, sets up chunk specific variables. */
   public void startProcessingChunk(Chunk c, ChunkTempData tempData, boolean doDetailedPhysics) {
-    
+
     if (doDetailedPhysics) {
       if (tempData.solidBlockPhysicsLastTick < Counters.tick - WorkerPhysicsSweep.ticksPerUpdate * 5) {
         tempData.solidBlockPhysicsCountdownToAction = countdownToAction;

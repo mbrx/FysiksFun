@@ -4,6 +4,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import net.minecraft.block.Block;
+import net.minecraft.block.BlockFlower;
 import net.minecraft.entity.ai.EntityAIBase;
 import net.minecraft.entity.ai.EntityAITaskEntry;
 import net.minecraft.entity.passive.EntityAnimal;
@@ -18,57 +19,68 @@ import net.minecraft.world.World;
 public class AnimalAIRewriter {
 
   public static void rewriteAnimalAIs(World w) {
-    
-     List allEntities = w.loadedEntityList;
-     for(Object o : allEntities) {
-       if(o instanceof EntityCow || o instanceof EntitySheep || o instanceof EntityPig || o instanceof EntityChicken) {
-         EntityAnimal animal = (EntityAnimal) o;
-         boolean hasFeedingAI=false;
-         for(Object o2 : animal.tasks.taskEntries) {
-           EntityAITaskEntry taskEntry = (EntityAITaskEntry) o2;
-           if(taskEntry.action instanceof EntityAIFeeding) hasFeedingAI=true;              
-         }
-         if(!hasFeedingAI) {
-           EntityAICoward cowardAI = new EntityAICoward(animal, 2.0F);
-           insertAI(animal, 2, cowardAI); 
 
-           EntityAISleepAtNight sleepAI = new EntityAISleepAtNight(animal);
-           insertAI(animal, 3, sleepAI); 
+    List allEntities = w.loadedEntityList;
+    for (Object o : allEntities) {
+      if (o instanceof EntityCow || o instanceof EntitySheep || o instanceof EntityPig || o instanceof EntityChicken) {
+        EntityAnimal animal = (EntityAnimal) o;
+        boolean hasFeedingAI = false;
+        for (Object o2 : animal.tasks.taskEntries) {
+          EntityAITaskEntry taskEntry = (EntityAITaskEntry) o2;
+          if (taskEntry.action instanceof EntityAIFeeding) hasFeedingAI = true;
+        }
+        if (!hasFeedingAI) {
+          EntityAICoward cowardAI = new EntityAICoward(animal, 2.0F);
+          insertAI(animal, 2, cowardAI);
 
-           float foodPerEating=1.0F;
-           if(animal instanceof EntityChicken) foodPerEating = 2.0F;
-           EntityAIFeeding ai=new EntityAIFeeding(animal, 0.75f, foodPerEating );
-           ai.addFoodtype(Block.tallGrass.blockID);
-           ai.addFoodtype(Block.crops.blockID);
-           ai.addFoodtype(Block.plantYellow.blockID);
-           ai.addFoodtype(Block.plantRed.blockID);
-           if(o instanceof EntityCow || o instanceof EntitySheep || o instanceof EntityPig)
-             ai.addFoodtype(Item.wheat.itemID);
-           if(o instanceof EntityChicken)
-             ai.addFoodtype(Item.seeds.itemID);
-           if(o instanceof EntityPig) {
-             /* This may make it very hard to find carrots/potatoes...  have to test it */ 
-             ai.addFoodtype(Block.carrot.blockID);
-             ai.addFoodtype(Block.potato.blockID);
-           }
-           insertAI(animal, 4, ai);
-           EntityAIHerd herdAi = new EntityAIHerd(animal, 1.0F);
-           insertAI(animal, 5, herdAi); 
-         }
-       }                     
-     }
-    
+          EntityAISleepAtNight sleepAI = new EntityAISleepAtNight(animal);
+          insertAI(animal, 3, sleepAI);
+
+          float foodPerEating = 1.0F;
+          if (animal instanceof EntityChicken) foodPerEating = 2.0F;
+          EntityAIFeeding ai = new EntityAIFeeding(animal, 0.75f, foodPerEating);
+          ai.addFoodtype(Block.tallGrass.blockID);
+          ai.addFoodtype(Block.crops.blockID);
+          if (o instanceof EntityCow) {
+            for (int i = 0; i < 4096; i++)
+              if (Block.blocksList[i] != null && Block.blocksList[i] instanceof BlockFlower) ai.addFoodtype(i);
+            // ai.addFoodtype(Block.plantYellow.blockID);
+            // ai.addFoodtype(Block.plantRed.blockID);
+          }
+          if (o instanceof EntitySheep) {
+            ai.addFoodtype(Block.sapling.blockID);
+          }
+          if(o instanceof EntityCow || o instanceof EntityPig || o instanceof EntitySheep) ai.addFoodtype(Item.appleRed.itemID);
+          if (o instanceof EntityCow || o instanceof EntitySheep || o instanceof EntityPig) ai.addFoodtype(Item.wheat.itemID);
+          if (o instanceof EntityChicken) ai.addFoodtype(Item.seeds.itemID);
+          if (o instanceof EntityPig) {
+            /* This may make it very hard to find carrots/potatoes...  have to test it */
+            ai.addFoodtype(Block.carrot.blockID);
+            ai.addFoodtype(Block.potato.blockID);
+          }          
+          insertAI(animal, 4, ai);
+          EntityAIHerd herdAi = new EntityAIHerd(animal, 1.0F);
+          insertAI(animal, 5, herdAi);
+        }
+      }
+    }
+
   }
 
-  /** All AI's with higher or equal priority value (less valued) is incremented by one before this AI is inserted. Thus it comes before an old AI with same priority value */ 
+  /**
+   * All AI's with higher or equal priority value (less valued) is incremented
+   * by one before this AI is inserted. Thus it comes before an old AI with same
+   * priority value
+   */
   private static void insertAI(EntityAnimal animal, int priority, EntityAIBase aitask) {
-    // System.out.println("Rewriting the animal: "+cow);    
-    // First increment the priority of every taskEntry that has same-or-higher priority as the new one
-    for(Object o2 : animal.tasks.taskEntries) {
+    // System.out.println("Rewriting the animal: "+cow);
+    // First increment the priority of every taskEntry that has same-or-higher
+    // priority as the new one
+    for (Object o2 : animal.tasks.taskEntries) {
       EntityAITaskEntry taskEntry = (EntityAITaskEntry) o2;
-      if(taskEntry.priority >= priority) {
-        taskEntry.priority++;              
-      }      
+      if (taskEntry.priority >= priority) {
+        taskEntry.priority++;
+      }
     }
     animal.tasks.addTask(priority, aitask);
   }

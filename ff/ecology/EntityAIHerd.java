@@ -38,7 +38,7 @@ public class EntityAIHerd extends EntityAIBase {
   @Override
   public void resetTask() {
 
-    for (int tries = 0; tries < 20; tries++) {
+    for (int tries = 0; tries < 10; tries++) {
       int range = 5 + tries * 5;
       List allEntities = new ArrayList(theWorld.loadedEntityList);      
       for (Object o : allEntities) {
