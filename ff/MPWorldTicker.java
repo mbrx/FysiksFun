@@ -55,9 +55,9 @@ public class MPWorldTicker {
         for (int dist = 0; dist < 1024; dist += 8) {
           int x = (int) (observer.posX + dist * Math.sin(angle));
           int z = (int) (observer.posZ + dist * Math.cos(angle));
-          if(((x+z)&1) == oddeven) {
-            ChunkCoordIntPair xz = new ChunkCoordIntPair(x>>4,z>>4);
-            if(!alreadyScheduled.contains(xz)) {
+          if (((x + z) & 1) == oddeven) {
+            ChunkCoordIntPair xz = new ChunkCoordIntPair(x >> 4, z >> 4);
+            if (!alreadyScheduled.contains(xz)) {
               Chunk chunk = ChunkCache.getChunk(w, xz.chunkXPos, xz.chunkZPos, true);
               Runnable worker = new WorkerUpdateChunks(w, chunk, xz, delayedBlockMarkSets);
               Future f = FysiksFun.executor.submit(worker);
@@ -94,10 +94,9 @@ public class MPWorldTicker {
   public static void doBlockSweeps(World w) {
 
     int nStepsPerSweep = 6;
-    //int sweep = wstate.sweepStepCounter % nStepsPerSweep;
+    // int sweep = wstate.sweepStepCounter % nStepsPerSweep;
     int yPerStep = 256 / nStepsPerSweep;
-  
-    
+
     // Make sure all chunks/tempData are loaded... if this is not done first we
     // may have problems since the loading
     // functions are not thread safe
@@ -125,7 +124,8 @@ public class MPWorldTicker {
         }
       }
       /* Make a sweep around every observer and process a few more chunks in those directions to allow water etc. to flow */
-      for (FysiksFun.WorldObserver observer : FysiksFun.observers) {
+      // Skip this for now, these blocks will anyway not actually pass the radius test inside WorkerPhysicsSweep. 
+      /*for (FysiksFun.WorldObserver observer : FysiksFun.observers) {
         double angle = ((double) (Counters.tick / 200)) * Math.PI * 2.0 / 100.0;
         for (int dist = 0; dist < 1024; dist += 8) {
           int x = (int) (observer.posX + dist * Math.sin(angle));
@@ -141,7 +141,7 @@ public class MPWorldTicker {
             }
           }
         }
-      }
+      }*/
       for (Future f : toWaitFor) {
         try {
           f.get();
