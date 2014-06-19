@@ -35,6 +35,7 @@ import cpw.mods.fml.common.Mod.Init;
 import cpw.mods.fml.common.Mod.Instance;
 import cpw.mods.fml.common.Mod.PostInit;
 import cpw.mods.fml.common.Mod.PreInit;
+import cpw.mods.fml.common.ModContainer;
 import cpw.mods.fml.common.SidedProxy;
 import cpw.mods.fml.common.event.FMLInitializationEvent;
 import cpw.mods.fml.common.event.FMLPostInitializationEvent;
@@ -59,6 +60,7 @@ import mbrx.ff.energy.BlockTurbine;
 import mbrx.ff.fluids.Fluids;
 import mbrx.ff.fluids.Gases;
 import mbrx.ff.solidBlockPhysics.BlockFFBlockDispenser;
+import mbrx.ff.solidBlockPhysics.OpenCLBlockPhysics;
 import mbrx.ff.solidBlockPhysics.SolidBlockPhysicsRules;
 import mbrx.ff.util.BlockUpdateState;
 import mbrx.ff.util.ChunkCache;
@@ -92,6 +94,7 @@ import net.minecraftforge.common.Property;
 import com.google.common.base.Objects;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
+
 
 @Mod(modid = "FysiksFun", name = "FysiksFun", version = "0.6.0", dependencies = "")
 @NetworkMod(clientSideRequired = true, serverSideRequired = false)
@@ -160,12 +163,18 @@ public class FysiksFun {
     System.out.println("[FF] FysiksFun, by M. Broxvall ");
     System.out.println("[FF] Credits: Rubble sounds created by Dan Oberbaur; Earthquake/volcano sound created by Tim Kahn");
 
+    /* not used in this version of Forge?? */
     proxy.registerRenderers();
     proxy.registerSounds();
 
     eventListener = new EventListener();
     MinecraftForge.EVENT_BUS.register(eventListener);
 
+    if(settings.useOpenCL) {
+      OpenCL.initOpenCL();
+      OpenCLBlockPhysics.init();
+    }
+      
     /*
      * Let these modules load even when not used. Make it easier to not break
      * when disabled.

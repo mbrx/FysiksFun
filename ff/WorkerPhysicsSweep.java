@@ -201,8 +201,9 @@ public class WorkerPhysicsSweep implements Runnable {
 
             // Perform solid block physics
             else if (FysiksFun.settings.doPhysics) {
-              if (y > 0 && (SolidBlockPhysicsRules.blockDoPhysics[id] || SolidBlockPhysicsRules.blockDoSimplePhysics[id] != 0))
-                solidBlockPhysics.doSolidBlockPhysics(jobWorld, c, tempData, blockStorage, x0, y0, z0, id, delayedBlockMarkSet);
+              // Temporarily disabled when experimenting with OpenCL physics
+              //if (y > 0 && (SolidBlockPhysicsRules.blockDoPhysics[id] || SolidBlockPhysicsRules.blockDoSimplePhysics[id] != 0))
+              //  solidBlockPhysics.doSolidBlockPhysics(jobWorld, c, tempData, blockStorage, x0, y0, z0, id, delayedBlockMarkSet);
             }
           }
         }

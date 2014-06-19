@@ -183,5 +183,5 @@ v0.5.6
     * Corrected tree falling behaviour when physics is running. Also removes snow on top of trees that are falling.
     * Changed algorithm for overriding the tree generation, uses leaves instead of trunks now.  
     * Modified physics rules for vine's and other rope like blocks.
-    * Added small chance for grass/mushroom to appear randomly on surface dirt/mycelium
+    * Added small chance for grass/mushroom to appear randomly on surface dirt/mycelium to reseed when depleted by animals
     * Fixed bug with in BlockDispenser using incorrect meta values for some blocks that was picked up

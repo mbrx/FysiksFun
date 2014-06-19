@@ -51,11 +51,9 @@ public class ChunkTempData {
   private short[]                                         gasHistogramData;
   private boolean                                         histogramsInitialized;
 
-  private static boolean                                  foo            = false;
-
   /** Removes old chunkTempData for chunks that are no longer loaded. */
   public static void cleanup(World w) {
-    System.out.println("Total tempDataEntries: "+chunks.size()+" size: "+(chunks.size()*16*16*256*4)/(1024*1024)+" mb");
+    //System.out.println("Total tempDataEntries: "+chunks.size()+" size: "+(chunks.size()*16*16*256*4)/(1024*1024)+" mb");
 
     synchronized (chunks) {
       Set<Entry<CoordinateWXYZ, ChunkTempData>> toDelete = new HashSet<Entry<CoordinateWXYZ, ChunkTempData>>();

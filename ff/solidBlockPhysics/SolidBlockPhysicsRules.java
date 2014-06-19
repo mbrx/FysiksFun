@@ -18,7 +18,9 @@ import net.minecraftforge.common.Property;
 import buildcraft.factory.BlockFrame;
 import buildcraft.transport.BlockGenericPipe;
 
-/** Static class containing all SolidBlock physics parameters */
+/** Static class containing all SolidBlock physics parameters 
+ * @author Mathias Broxvall
+ * */
 public class SolidBlockPhysicsRules {
 
   public static int     blockStrength[]         = new int[4096];

@@ -95,7 +95,7 @@ public class Settings {
   public int blockSupportBlockDefaultID;
   public String worldSupportBlockString;
 
-
+  public boolean useOpenCL;
 
 
   public void loadFromConfig(Configuration config) {
@@ -241,6 +241,7 @@ public class Settings {
     threadPoolSize = config.get(categoryGeneric, "thread-pool-size", "17", "Number of threads used in physics calculations. Recommended for AMD number of cores+1, for Intel number of cores*2+1", Property.Type.INTEGER)
         .getInt(17);
     
+    useOpenCL = config.get(categoryOther, "use-opencl", "true", "Requires that you have drivers for OpenCL 1.2 or later.\nOpenCL is GPU based acceleration for general computations and gives very large speed improvements.\nYou can find them at AMD/NVidia's pages", Property.Type.BOOLEAN).getBoolean(true);    
   }
 
 

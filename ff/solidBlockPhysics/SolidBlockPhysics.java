@@ -32,11 +32,16 @@ import net.minecraftforge.common.Property;
 import buildcraft.factory.BlockFrame;
 import buildcraft.transport.BlockGenericPipe;
 
+/** Logic for all solid block physics on the cpu. For the game rules (paramters and constants) see SolidBlockPhysicsRules.
+ * 
+ * @author Mathias Broxvall
+ *
+ */
 public class SolidBlockPhysics {
 
   /**
    * Class instance fields for holding the current state of a block that is
-   * beeing modified between multiple function calls
+   * being modified between multiple function calls
    */
   private int              curClock, curBreak, curPressure;
   private int              nSoundEffectsLeft;
