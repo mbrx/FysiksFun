@@ -299,7 +299,7 @@ public class BlockFFFluid extends BlockFlowing {
   }
 
   /**
-   * Gets the fluid content in this cell, XYZ expressed in world coordinates
+   * Gets the fluid content in this cell. XYZ expressed in world coordinates
    * (ie. >16 allowed)
    */
   public int getBlockContent(Chunk chunk, ChunkTempData tempData, int x, int y, int z) {
@@ -309,7 +309,7 @@ public class BlockFFFluid extends BlockFlowing {
       // System.out.println("Reconstructing hires water at: "+Util.xyzString(x,y,z));
       // Reconstruct content from lores data
       int meta = chunk.getBlockMetadata(x & 15, y, z & 15);
-      int content = (8 - meta) * (maximumContent / 8);
+      int content = (8 - meta) * (maximumContent / 7); // Calculation was wrong by 1/8, Meta 7 -> Max content
       tempData.setTempData(x, y, z, content);
       return content;
     } else return temp;
@@ -420,7 +420,7 @@ public class BlockFFFluid extends BlockFlowing {
     int id0 = chunk0.getBlockID(x0 & 15, y0, z0 & 15);
     // if (!isSameLiquid(id0)) return; Impossible to not be true, since we the
     // 'safe' function
-    
+        
     try {
       preventSetBlockLiquidFlowover = true;
 
@@ -490,7 +490,7 @@ public class BlockFFFluid extends BlockFlowing {
           ChunkTempData tempData1 = ChunkCache.getTempData(world, x1 >> 4, z1 >> 4);
 
           int content1 = getBlockContent(chunk1, tempData1, x1, y1, z1);
-          if (content1 < maximumContent) continue;
+          //if (content1 < maximumContent) continue;
           int pressure1 = content1 + dY * pressurePerY - pressureLossPerStep;
           if (isDiagonal) pressure1 -= pressureLossPerStep / 2;
           if (pressure1 > content0) content0 = pressure1;
@@ -507,6 +507,7 @@ public class BlockFFFluid extends BlockFlowing {
 
       int dirOffset = FysiksFun.rand.nextInt(8);
       for (int dir0 = 0; dir0 < 10; dir0++) {
+        
         // Compute a direction of interest such that we
         // (a) First consider the down direction
         // (b) Next consider the horizontal directions (including diagonals) in
@@ -531,7 +532,6 @@ public class BlockFFFluid extends BlockFlowing {
           dZ = directions[dir][1];
           isDiagonal = !(dX == 0 || dZ == 0);
         }
-        // if ((!moveNormally) && dir0 != 0) continue;
         
         int x1 = x0 + dX;
         int y1 = y0 + dY;
@@ -548,7 +548,7 @@ public class BlockFFFluid extends BlockFlowing {
 
         int id1 = chunk1.getBlockID(x1 & 15, y1, z1 & 15);
         int content1 = 0;
-        
+                
         /*
          * Check if this is a block we can flow over and if we have enough
          * liquid left.
@@ -558,7 +558,7 @@ public class BlockFFFluid extends BlockFlowing {
           if (Block.blocksList[id1] == null) continue;
           Material m = Block.blocksList[id1].blockMaterial;
           if (!m.blocksMovement() && (dY == -1 || (content0 > minimumLiquidLevel && !Fluids.canFlowThrough[id1]))) {
-            /* Flow over this block, dropping the contents */
+            // Flow over this block, dropping the contents
             int metaData1 = chunk1.getBlockMetadata(x1 & 15, y1, z1 & 15);
             if (id1 == Block.fire.blockID && canBurn) {
               if (dY == -1) {
@@ -576,7 +576,6 @@ public class BlockFFFluid extends BlockFlowing {
             if (id1 != Block.snow.blockID && id1 != Block.tallGrass.blockID) Block.blocksList[id1].dropBlockAsItem(world, x1, y1, z1, metaData1, 0);
             synchronized (FysiksFun.vanillaMutex) {
               FysiksFun.setBlockIDandMetadata(world, chunk1, x1, y1, z1, 0, 0, -1, -1, delayedBlockMarkSet);
-              // chunk1.setBlockIDWithMetadata(x1 & 15, y1, z1 & 15, 0, 0);
             }
             id1 = 0;
             content1 = 0;
@@ -606,8 +605,7 @@ public class BlockFFFluid extends BlockFlowing {
         
         // Check for special interactions
         if (id1 != 0 && !isSameLiquid(id1)) {
-          // Allow fluid interactions, but only sideways and down; or up when
-          // pressurized
+          // Allow fluid interactions, but only sideways and down; or up when pressurized
           if (Fluids.liquidCanInteract(movingID, id1) && (dY < 1 || content0 > maximumContent)) {
             content0 = Fluids.liquidInteract(world, x1, y1, z1, movingID, content0, id1, content1);
           } else {
@@ -618,7 +616,7 @@ public class BlockFFFluid extends BlockFlowing {
                 this.setBlockContent(world, chunk1, tempData1, x1, y1, z1, content0, "swapping fluids", delayedBlockMarkSet);
                 return;
               }
-            } */
+            }*/
             /* not giving good results... maybe later
             else if(content1 < maximumContent && content0 > content1 + maximumContent/4) {
               int toMove = (content0 - content1)/2;
@@ -645,19 +643,18 @@ public class BlockFFFluid extends BlockFlowing {
               return;              
             }            
             */
-          }
+          } 
           continue;
         }
-
-        if (logExcessively)
-          FysiksFun.logger.log(Level.INFO, Util.logHeader() + "considering " + Util.xyzString(x1, y1, z1) + " id1: " + id1 + " content1: " + content1);
 
         int prevContent0 = content0;
         if (dY < 0) {
           if (content1 < maximumContent) {
             // Move liquid downwards
-            content0 = Math.max(0, Math.min(maximumContent, content0) + content1 - maximumContent);
-            content1 = Math.min(maximumContent, content1 + prevContent0);
+            content0 = Math.min(maximumContent, content0);
+            int toMove = Math.min(content0, maximumContent-content1);
+            content0 -= toMove;
+            content1 += toMove;
             setBlockContent(world, chunk1, tempData1, x1, y1, z1, content1, "[Fall down]", delayedBlockMarkSet);
           }
         } else if (dY > 0 && content0 >= maximumContent + pressurePerY + pressureLossPerStep) {
@@ -683,22 +680,19 @@ public class BlockFFFluid extends BlockFlowing {
               content1 += toMove;
               setBlockContent(world, chunk1, tempData1, x1, y1, z1, content1, "[Flowing sideways]", delayedBlockMarkSet);
             } else if (id1 == 0) {
-              /*
-               * Special case to make sure we can move the last drop of liquid
-               * over an edge
-               */
+              // Special case to make sure we can move the last drop of liquid over an edge
               int id1b = chunk1.getBlockID(x1 & 15, y1 - 1, z1 & 15);
               int content1b = 0;
               ChunkTempData tempData1b = tempData1;
               if (id1b == 0 || isSameLiquid(id1b)) {
                 content1b = (id1b == 0 ? 0 : getBlockContent(chunk1, tempData1b, x1, y1 - 1, z1));
-                if (content1b < maximumContent - content0) {
+                if(maximumContent-content1b > content0) {
+                  // There is space for these water drops here
                   content1b += content0;
                   content0 = 0;
                   // System.out.println("Flowing diagonally down... checking for erosion");
                   setBlockContent(world, chunk1, tempData1, x1, y1 - 1, z1, content1b, "[Flowing diagonally down]", delayedBlockMarkSet);
-                  // Possibly trigger an erosion event
-                  // DEBUG
+                  // Possibly trigger an erosion event                  
                   int erodeChance = FysiksFun.settings.erosionRate * erodeMultiplier;
                   if (r.nextInt(500) < erodeChance) {
                     int id0b = chunk0.getBlockID(x0 & 15, y0 - 1, z0 & 15);
@@ -709,15 +703,12 @@ public class BlockFFFluid extends BlockFlowing {
                           int sideId = world.getBlockId(x0 + dx0, y0 - 1, z0 + dz0);
                           if (sideId != 0 && !Fluids.isLiquid[sideId]) cnt++;
                         }
-                      /* If two or more blocks are missing at the layer below us, then cause erosion */
+                      // If two or more blocks are missing at the layer below us, then cause erosion
                       if (cnt <= 7) {
                         // System.out.println("Erosion A: "+x0+" "+(y0-1)+" "+z0);
                         erodeBlock(world, x0, y0 - 1, z0);
 
-                        /*
-                         * If this was a diagnonal movement, also remove a
-                         * straight neighbour
-                         */
+                        // If this was a diagonal movement, also remove a straight neighbour                         
                         if (dX != 0 && dZ != 0) {
                           int idA = world.getBlockId(x0 + dX, y0 - 1, z0 + 0);
                           if (idA != 0 && !Fluids.isLiquid[idA]) erodeBlock(world, x0 + dX, y0 - 1, z0 + 0);
@@ -726,7 +717,7 @@ public class BlockFFFluid extends BlockFlowing {
                         }
                       }
                     }
-                  }
+                  }              
                 }
               }
             }
@@ -735,9 +726,10 @@ public class BlockFFFluid extends BlockFlowing {
         // We have moved sideways to some extent, see if we should remove any
         // surrounding dirt wall as erosion
         int erodeChance = FysiksFun.settings.erosionRate * erodeMultiplier;
-        /* Higher chance toerode so we get rid or diagonal movements */
+        /* Higher chance to erode so we get rid of diagonal movements */
         // if (dY == 0 && dZ != 0 && dX != 0) erodeChance *= 2;
 
+        /*
         if (content0 != prevContent0 && dY == 0 && r.nextInt(1000000) < erodeChance) {
           // System.out.println("Erode B");
           int idSideA = world.getBlockId(x0 + dZ, y0, z0 + dX);
@@ -751,6 +743,7 @@ public class BlockFFFluid extends BlockFlowing {
             if (canErodeBlock(idSideD)) erodeBlock(world, x0 + 0, y0, z0 + dZ);
           }
         }
+        */
       }
 
       /*
@@ -815,7 +808,6 @@ public class BlockFFFluid extends BlockFlowing {
           else toMove = Math.min((contentN - content0) / 2, maximumContent - content0);
           contentN -= toMove;
           content0 += toMove;
-
           setBlockContent(world, chunkN, tempDataN, xN, yN, zN, contentN, "[Propagated pressurized liquid]", delayedBlockMarkSet);
           if (content0 == maximumContent) content0 = oldContent0;
         }

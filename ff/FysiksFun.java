@@ -56,6 +56,7 @@ import mbrx.ff.ecology.Trees;
 import mbrx.ff.ecology.Wind;
 import mbrx.ff.energy.BlockFFSensor;
 import mbrx.ff.energy.BlockTurbine;
+import mbrx.ff.fluids.BlockFFFluid;
 import mbrx.ff.fluids.Fluids;
 import mbrx.ff.fluids.Gases;
 import mbrx.ff.solidBlockPhysics.BlockFFBlockDispenser;
@@ -122,6 +123,8 @@ public class FysiksFun {
   public static ExecutorService              executor;
 
   public static boolean                      hasBuildcraft          = false;
+
+  public static int totalWater;
 
   public static class WorldObserver {
     public World w;
@@ -293,9 +296,9 @@ public class FysiksFun {
     }
     if (settings.doFluids) Fluids.checkBlockOverwritten();
 
-    if (Counters.tick % 47 == 0) {
+    /*if (Counters.tick % 47 == 0) {
       EntityAICoward.cleanup();
-    }
+    }*/
 
     /*if (Counters.tick == 20) {
       System.out.println("[FF] Dumping list of all blocks");
@@ -403,13 +406,13 @@ public class FysiksFun {
     if (settings.doAnimalAI) AnimalAIRewriter.rewriteAnimalAIs(w);
     if (settings.doGases) Gases.doWorldTick(w);
     if (settings.doTreeFalling) Trees.doTick(w);
-
-    // System.out.println("Players found: "+observers.size());
-
     Wind.doTick(w);
+    totalWater=0;
     MPWorldTicker.doBlockSweeps(w);
     MPWorldTicker.doUpdateChunks(w);
-
+    //if(w.provider.dimensionId == 0)
+    //  System.out.println("Total water in world: "+(totalWater/(double) BlockFFFluid.maximumContent)+ "    "+w);
+    
     // Do this last to remove any entites that are now inside any blocks
     ExtraEntityBehaviours.doTick(w);
 

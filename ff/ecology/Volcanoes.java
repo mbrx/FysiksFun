@@ -25,14 +25,11 @@ public class Volcanoes {
     x = ((x >> 16) ^ x) * 0x45d9f3b;
     x = ((x >> 16) ^ x);
     return x;
-
-    // hashCode ^= (hashCode >>> 20) ^ (hashCode >>> 12);
-    // return hashCode ^ (hashCode >>> 7) ^ (hashCode >>> 4);
   }
 
   public static void doChunkTick(World w, ChunkCoordIntPair xz) {
     if (w.provider.dimensionId == -1) return; // No volcanos in hell
-
+    
     /* All get functions from vanilla MC are thread safe so no synchronized here */
 
     WorldInfo winfo = w.getWorldInfo();
@@ -398,7 +395,6 @@ public class Volcanoes {
                         // dz2 != 0)) continue;
                         if (testY + dy2 <= 0 || testY + dy2 > 255) continue;
                         // if (dy2 != +1) continue; //
-                        // DEBUG
 
                         Chunk testChunk = ChunkCache.getChunk(w, (testX + dx2) >> 4, (testZ + dz2) >> 4, false);
                         if (testChunk == null) continue;

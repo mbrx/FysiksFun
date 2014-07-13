@@ -128,7 +128,9 @@ public class WorkerPhysicsSweep implements Runnable {
       boolean doLiquidTicks = (staggeredTime % liquidUpdateRate) == 0;
       boolean doFireTicks = true; // (staggeredTime % liquidUpdateRate) == 0;
       boolean doGasTicks = (staggeredTime % gasUpdateRate) == 0;
+      
       if (!doDetailedPhysics && !doLiquidTicks && !doGasTicks) return;
+      
       int minY, maxY;
       if (isOcean && !doOceanTicks) minY = 70;
       else minY = 0;
@@ -137,20 +139,17 @@ public class WorkerPhysicsSweep implements Runnable {
       solidBlockPhysics.startProcessingChunk(c, tempData, doDetailedPhysics);
       ExtendedBlockStorage blockStorage[] = c.getBlockStorageArray();
 
+      int totalWaterHere=0;
+      
+      minY=0;
+      maxY=192;
       for (int y = minY; y < maxY; y++) {
         int fluidCount = 0;
         int gasCount = 0;
 
         ExtendedBlockStorage ebs = blockStorage[y >> 4];
-        int ox = 0, oz = 0;
-        // This is a mechanism for visiting the blocks out-of-order (but atmost
-        // once), however it is not good for the current physics rules
-        // int ox=FysiksFun.rand.nextInt(16);
-        // int oz=FysiksFun.rand.nextInt(16);
-        for (int dxTmp = 0; dxTmp < 16; dxTmp++) {
-          int dx = (dxTmp + ox) & 15;
-          for (int dzTmp = 0; dzTmp < 16; dzTmp++) {
-            int dz = (dzTmp + oz) & 15;
+        for (int dx = 0; dx < 16; dx++) {
+          for (int dz = 0; dz < 16; dz++) {
             int x0 = x + dx, y0 = y, z0 = z + dz;
 
             int id = 0;
@@ -180,9 +179,18 @@ public class WorkerPhysicsSweep implements Runnable {
             }
 
             /* For fluids */
-            if (doLiquidTicks && Fluids.isLiquid[id] && FysiksFun.settings.doFluids) {
+            //if (doLiquidTicks && Fluids.isLiquid[id] && FysiksFun.settings.doFluids) {
+            if (Fluids.isLiquid[id] && FysiksFun.settings.doFluids) {
+
               BlockFFFluid b = Fluids.asFluid[id];
-              b.updateTickSafe(jobWorld, c, tempData, x + dx, y, z + dz, FysiksFun.rand, delayedBlockMarkSet);
+              //if(Counters.tick % 3 == 0)
+                b.updateTickSafe(jobWorld, c, tempData, x + dx, y, z + dz, FysiksFun.rand, delayedBlockMarkSet);
+              // DEBUG
+              int content = b.getBlockContent(c, tempData, x+dx, y, z+dz);
+              totalWaterHere += Math.min(BlockFFFluid.maximumContent, content);
+              
+              //if(Counters.tick % 10 == 0)
+              //  b.updateRandomWalk(jobWorld, c, tempData, x + dx, y, z + dz, FysiksFun.rand);
               if (FysiksFun.rand.nextInt(5 * b.liquidUpdateRate) == 0) b.updateRandomWalk(jobWorld, c, tempData, x + dx, y, z + dz, FysiksFun.rand);
               if (FysiksFun.rand.nextInt(10) == 0) b.expensiveTick(jobWorld, c, tempData, x + dx, y, z + dz, FysiksFun.rand);
               fluidCount++;
@@ -208,6 +216,11 @@ public class WorkerPhysicsSweep implements Runnable {
         }
         tempData.setFluidHistogram(y, fluidCount);
         tempData.setGasHistogram(y, gasCount);
+      }
+      //System.out.println(".");
+      synchronized(FysiksFun.vanillaMutex) {
+        //System.out.println("Total water blocks: "+(totalWaterHere/(double)BlockFFFluid.maximumContent)+" in chunk: "+c);
+        FysiksFun.totalWater += totalWaterHere;
       }
       // Finally, update the "last tick" counter for this chunk.
       tempData.solidBlockPhysicsLastTick = Counters.tick;

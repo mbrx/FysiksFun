@@ -50,7 +50,7 @@ public class MPWorldTicker {
         }
       }
       /* Make a sweep around every observer and process a few more chunks in those directions to allow water etc. to flow */
-      for (FysiksFun.WorldObserver observer : FysiksFun.observers) {
+      /*for (FysiksFun.WorldObserver observer : FysiksFun.observers) {
         double angle = ((double) (Counters.tick / 200)) * Math.PI * 2.0 / 100.0;
         for (int dist = 0; dist < 1024; dist += 8) {
           int x = (int) (observer.posX + dist * Math.sin(angle));
@@ -66,7 +66,7 @@ public class MPWorldTicker {
             }
           }
         }
-      }
+      }*/
       for (Future f : toWaitFor) {
         try {
           if (f != null) f.get();
@@ -112,7 +112,7 @@ public class MPWorldTicker {
     Set alreadyScheduled = new HashSet();
 
     // Schedule jobs, first the odd coordinates, then the even coordinates
-    for (int oddeven = 0; oddeven < 2; oddeven++) {
+    for (int oddeven = 0; oddeven < 2; oddeven++) {     
       List<Future> toWaitFor = new ArrayList<Future>();
       for (Object o : w.activeChunkSet) {
         ChunkCoordIntPair xz = (ChunkCoordIntPair) o;

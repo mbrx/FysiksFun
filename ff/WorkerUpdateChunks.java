@@ -36,7 +36,6 @@ class WorkerUpdateChunks implements Runnable {
       int z = xz.chunkZPos << 4;
       Settings settings = FysiksFun.settings;
 
-      
       if (settings.doVolcanoes) Volcanoes.doChunkTick(world, xz);
       if (settings.doRain) Rain.doPrecipation(world, x, z);
       if (settings.doEvaporation) Evaporation.doEvaporation(world, x, z);

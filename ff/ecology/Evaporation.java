@@ -218,7 +218,6 @@ public class Evaporation {
   private static void doHumidification(World w, int x, int z) {
     // Net effect of this is that water is created!
 
-    // DEBUG
     if (FysiksFun.rand.nextInt(10) != 0) return;
 
     // TODO - let the biome effect the underground humidification.

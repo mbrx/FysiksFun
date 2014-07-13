@@ -185,3 +185,4 @@ v0.5.6
     * Modified physics rules for vine's and other rope like blocks.
     * Added small chance for grass/mushroom to appear randomly on surface dirt/mycelium
     * Fixed bug with in BlockDispenser using incorrect meta values for some blocks that was picked up
+    * Found a bug causing loss of liquids when swapping in/out tempData objects. 
