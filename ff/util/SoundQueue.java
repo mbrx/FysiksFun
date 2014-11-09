@@ -34,9 +34,9 @@ public class SoundQueue {
 
   /** Sends all scheduled sound effects to main sound system */
   public static void doSoundEffects() {
-    for (SoundFxObject obj : fxQueue) {
+    /*for (SoundFxObject obj : fxQueue) {
       obj.w.playSoundEffect(obj.x, obj.y, obj.z, obj.name, obj.volume, obj.pitch);
-    }
+    }*/
     fxQueue.clear();
   }
 }

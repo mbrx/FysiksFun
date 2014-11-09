@@ -19,7 +19,7 @@ public class WorldTickHandler implements IScheduledTickHandler {
 	/** Run the fluid world updates */
 	public void tickStart(EnumSet<TickType> type, Object... tickData) {
 		if(tickData[0] instanceof World) {
-			FysiksFun.doWorldTick((World) tickData[0]);
+			FysiksFun.tickWorld((World) tickData[0]);
 		}
 	}
 	@Override

@@ -111,7 +111,8 @@ public class FysiksFun {
 
   private static WorldTickHandler            worldTickHandler       = new WorldTickHandler();
   private static ServerTickHandler           serverTickHandler      = new ServerTickHandler();
-
+  private static ClientTickHandler           clientTickHandler      = new ClientTickHandler();
+  
   public static Object                       blockTickQueueRing[]   = new Object[300];
   public static ArrayDeque<BlockUpdateState> blockTickQueueFreePool = new ArrayDeque<BlockUpdateState>(10);
 
@@ -178,6 +179,7 @@ public class FysiksFun {
     // TickRegistry.registerTickHandler(worldTickHandler, Side.CLIENT);
     TickRegistry.registerTickHandler(worldTickHandler, Side.SERVER);
     TickRegistry.registerTickHandler(serverTickHandler, Side.SERVER);
+    TickRegistry.registerTickHandler(clientTickHandler, Side.CLIENT);
 
     rand = new Random(4711);
     for (int i = 0; i < 300; i++) {
@@ -351,15 +353,18 @@ public class FysiksFun {
 
     // System.out.println("End of tickServer");
     
-    SoundQueue.doSoundEffects();
+    //SoundQueue.doSoundEffects();
   }
 
   /**
    * Performs the ticks that should happen for each world on the SERVER and the
    * CLIENT
    */
-  public static void doWorldTick(World w) {
+  public static void tickWorld(World w) {
 
+    //if(w.isRemote) {
+    //}
+    
     //System.out.println("Start of world tick");
 
     /*if(!w.isRemote && w.provider.dimensionId == 0) {
