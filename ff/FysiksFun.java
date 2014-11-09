@@ -26,7 +26,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Semaphore;
 
 import cpw.mods.fml.common.FMLCommonHandler;
 import cpw.mods.fml.common.Mod;
@@ -69,6 +68,7 @@ import mbrx.ff.util.ChunkTempData;
 import mbrx.ff.util.Counters;
 import mbrx.ff.util.ObjectPool;
 import mbrx.ff.util.Settings;
+import mbrx.ff.util.SoundQueue;
 import mbrx.ff.util.Util;
 import net.minecraft.block.Block;
 import net.minecraft.block.ITileEntityProvider;
@@ -130,7 +130,6 @@ public class FysiksFun {
     public World w;
     public double posX, posY, posZ;
   };
-
   public static ArrayList<WorldObserver> observers    = new ArrayList<WorldObserver>();
 
   /**
@@ -351,7 +350,8 @@ public class FysiksFun {
     if ((Counters.tick % 413) == 0) ChunkCache.resetCache();
 
     // System.out.println("End of tickServer");
-
+    
+    SoundQueue.doSoundEffects();
   }
 
   /**
@@ -360,7 +360,7 @@ public class FysiksFun {
    */
   public static void doWorldTick(World w) {
 
-    // System.out.println("Start of world tick");
+    //System.out.println("Start of world tick");
 
     /*if(!w.isRemote && w.provider.dimensionId == 0) {
       int id = w.getBlockId(239, 74, 61);
@@ -408,8 +408,10 @@ public class FysiksFun {
     if (settings.doTreeFalling) Trees.doTick(w);
     Wind.doTick(w);
     totalWater=0;
+    
     MPWorldTicker.doBlockSweeps(w);
     MPWorldTicker.doUpdateChunks(w);
+    
     //if(w.provider.dimensionId == 0)
     //  System.out.println("Total water in world: "+(totalWater/(double) BlockFFFluid.maximumContent)+ "    "+w);
     
@@ -453,6 +455,7 @@ public class FysiksFun {
         c.setBlockIDWithMetadata(x & 15, y, z & 15, id, meta);
       }
     } else {
+      // This code intentionally left dead...
       if (y > c.heightMap[(x & 15) + (z & 15) * 16]) c.generateSkylightMap();
       c.updateSkylightColumns[(x & 15) + (z & 15) * 16] = true;
 
@@ -526,4 +529,6 @@ public class FysiksFun {
     isCurrentlyMovingABlock = false;
   }
 
+
+  
 }

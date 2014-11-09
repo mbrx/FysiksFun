@@ -10,6 +10,7 @@ import mbrx.ff.solidBlockPhysics.BlockFFStone;
 import mbrx.ff.util.ChunkCache;
 import mbrx.ff.util.ChunkTempData;
 import mbrx.ff.util.Counters;
+import mbrx.ff.util.SoundQueue;
 import mbrx.ff.util.Util;
 import net.minecraft.block.Block;
 import net.minecraft.world.ChunkCoordIntPair;
@@ -29,7 +30,7 @@ public class Volcanoes {
 
   public static void doChunkTick(World w, ChunkCoordIntPair xz) {
     if (w.provider.dimensionId == -1) return; // No volcanos in hell
-    
+
     /* All get functions from vanilla MC are thread safe so no synchronized here */
 
     WorldInfo winfo = w.getWorldInfo();
@@ -141,16 +142,12 @@ public class Volcanoes {
                 canDoExpensiveSound = false;
                 float volume = (float) (4.0F + 4.0F * activity);
                 float pitch = (float) (1.4 - FysiksFun.rand.nextFloat() * 0.4 - activity * 0.2);
-                synchronized (FysiksFun.vanillaMutex) {
-                  w.playSoundEffect(x0 + 0.5, y0 + 0.5, z0 + 0.5, "fysiksfun:earthquake", volume, pitch);
-                }
+                SoundQueue.queueSound(w,x0 + 0.5, y0 + 0.5, z0 + 0.5, "fysiksfun:earthquake", volume, pitch);
               }
               if (FysiksFun.rand.nextInt(1000) == 0) {
                 float volume = (float) (activity * 1.0 + 1.0);
                 float pitch = (float) (1.4 - FysiksFun.rand.nextFloat() * 0.4 - activity * 0.3) * 0.2F;
-                synchronized (FysiksFun.vanillaMutex) {
-                  w.playSoundEffect(x0 + 0.5, y0 + 0.5, z0 + 0.5, "random.explode", volume, pitch);
-                }
+                SoundQueue.queueSound(w,x0 + 0.5, y0 + 0.5, z0 + 0.5, "random.explode", volume, pitch);
               }
 
               int r0 = smear(seed + (cnt / 5) * 4711);
@@ -345,171 +342,6 @@ public class Volcanoes {
             }
           }
         }
-  }
-
-  /* TODO - delete this function, it is not used */
-  private static void feedVolcanoOld(World w, int volcanoFillY, int startX, int startZ, int radius) {
-    for (int dx = -radius; dx <= radius; dx++) {
-      for (int dz = -radius; dz <= radius; dz++) {
-        if (dx * dx + dz * dz <= radius * radius) {
-          int x0 = startX + dx;
-          int z0 = startZ + dz;
-
-          // Make a random walk towards lower pressure that may
-          // trigger
-          // explosions if the lava finds no way out
-          for (int feedingChance = 0; feedingChance < 1; feedingChance++)
-            if (FysiksFun.rand.nextInt(FysiksFun.settings.volcanoFeeding) == 0 || true) {
-              // System.out.println("Trying to feed volcano");
-
-              /*
-               * Find a point in which we either (a) add lava, or (b) make an
-               * explosion. The point should be the lowest pressure reachable
-               * point, or a point that has a free neighbour We do this by
-               * making multiple random walks (biased towards lower pressures)
-               * out from the magma source.
-               */
-
-              int sourceX = x0, sourceY = volcanoFillY, sourceZ = z0;
-              int sourcePressure = Fluids.stillLava.getBlockContent(w, sourceX, sourceY, sourceZ);
-              int targetPressure = sourcePressure;
-              int targetX = sourceX, targetY = sourceY, targetZ = sourceZ;
-              // System.out.println("Source: "+Util.xyzString(sourceX,
-              // sourceY,
-              // sourceZ)+" with pressure: "+sourcePressure);
-
-              for (int randomWalk = 0; randomWalk < 5; randomWalk++) {
-                int currentX = sourceX, currentY = sourceY, currentZ = sourceZ;
-                int currentPressure = sourcePressure;
-
-                for (int steps = 0; steps < 128; steps++) {
-                  int testX = currentX, testY = currentY, testZ = currentZ;
-
-                  for (int dy2 = +1; dy2 >= -1; dy2--)
-                    for (int dz2 = -1; dz2 <= 1; dz2++)
-                      for (int dx2 = -1; dx2 <= 1; dx2++) {
-                        // Limit to the same 10
-                        // neighbourhood as pressure
-                        // updates??
-                        // if(dy2 != 0 && (dx2 != 0 ||
-                        // dz2 != 0)) continue;
-                        if (testY + dy2 <= 0 || testY + dy2 > 255) continue;
-                        // if (dy2 != +1) continue; //
-
-                        Chunk testChunk = ChunkCache.getChunk(w, (testX + dx2) >> 4, (testZ + dz2) >> 4, false);
-                        if (testChunk == null) continue;
-                        ChunkTempData testTempData = ChunkCache.getTempData(w, (testX + dx2) >> 4, (testZ + dz2) >> 4);
-                        int testId = testChunk.getBlockID((testX + dx2) & 15, (testY + dy2), (testZ + dz2) & 15);
-                        if (testId != 0 && testId != Fluids.stillLava.blockID && testId != Fluids.flowingLava.blockID) continue;
-                        int testPressure = 0;
-                        if (testId == 0) {
-                          steps = 256;
-                          break;
-                        }
-                        if (testId != 0)
-                          testPressure = Fluids.stillLava.getBlockContent(testChunk, testTempData, (testX + dx2) & 15, (testY + dy2), (testZ + dz2) & 15);
-                        if (true) { // if (testPressure
-                          // -
-                          // FysiksFun.rand.nextInt(10)
-                          // - dy2 <
-                          // currentPressure)
-                          // {
-                          currentPressure = testPressure;
-                          currentX = testX + dx2;
-                          currentY = testY + dy2;
-                          currentZ = testZ + dz2;
-                          // System.out.println("  current: "+Util.xyzString(currentX,
-                          // currentY, currentZ));
-                        }
-                      }
-                  if (currentX == testX && currentY == testY && currentZ == testZ) break;
-                }
-                if (currentPressure < targetPressure) {
-                  targetX = currentX;
-                  targetY = currentY;
-                  targetZ = currentZ;
-                  targetPressure = currentPressure;
-                }
-              }
-
-              if (targetPressure < BlockFFFluid.maximumContent) {
-                for (int dy2 = +1; dy2 >= -1; dy2--)
-                  for (int dz2 = -1; dz2 <= 1; dz2++)
-                    for (int dx2 = -1; dx2 <= 1; dx2++) {
-                      int id = w.getBlockId(targetX + dx2, targetY + dy2, targetZ + dz2);
-                      if (id == 0) {
-                        Fluids.stillLava.setBlockContent(w, targetX + dx2, targetY + dy2, targetZ + dz2, BlockFFFluid.maximumContent);
-                        // System.out.println("  added lava to "+dx2+","+dy2+","+dz2+" relative");
-                      }
-                    }
-                int contentBefore = Fluids.stillLava.getBlockContent(w, targetX, targetY, targetZ);
-                Fluids.stillLava.setBlockContent(w, targetX, targetY, targetZ, BlockFFFluid.maximumContent + BlockFFFluid.pressurePerY * 2);
-                // Fluids.stillLava.updateTick(w, targetX, targetY, targetZ,
-                // FysiksFun.rand);
-                // System.out.println("Adding "+(BlockFluid.maximumContent-lowestPressure)+" lava to "+x1+" "+y1+" "+z1);
-                int contentAfter = Fluids.stillLava.getBlockContent(w, targetX, targetY, targetZ);
-                // System.out.println("Lava before update: " +
-                // contentBefore
-                // + " after update: "+contentAfter);
-              } else { // if (targetPressure >
-                // BlockFluid.maximumContent +
-                // BlockFluid.pressurePerY * 16) {
-                /*
-                 * See if it has no free neighbour to flow to, if not make an
-                 * explosion
-                 */
-                boolean makeExplosion = true;
-                for (int dy2 = +1; dy2 >= -1; dy2--)
-                  for (int dz2 = -1; dz2 <= 1; dz2++)
-                    for (int dx2 = -1; dx2 <= 1; dx2++) {
-                      if (dy2 != 0 && (dz2 != 0 || dx2 != 0)) continue;
-
-                      if (targetY + dy2 <= 0 || targetY + dy2 > 255) continue;
-                      Chunk targetChunk1 = ChunkCache.getChunk(w, (targetX + dx2) >> 4, (targetZ + dz2) >> 4, false);
-                      if (targetChunk1 == null) continue;
-                      ChunkTempData targetTempData1 = ChunkCache.getTempData(w, (targetX + dx2) >> 4, (targetZ + dz2) >> 4);
-                      if (targetChunk1.getBlockID((targetX + dx2) & 15, targetY + dy2, (targetZ + dz2) & 15) == 0) {
-                        Fluids.stillLava.setBlockContent(w, targetChunk1, targetTempData1, targetX + dx2, targetY + dy2, targetZ + dz2,
-                            BlockFFFluid.maximumContent, "", null);
-                        makeExplosion = false;
-                      }
-                      int content2 = Fluids.stillLava.getBlockContent(targetChunk1, targetTempData1, targetX + dx2, targetY + dy2, targetZ + dz2);
-                      if (content2 < BlockFFFluid.maximumContent) makeExplosion = false;
-                    }
-
-                // System.out.println(" explode: "+makeExplosion);
-                int explodeRadius = 2;
-                int offsetY = +2;
-                if (makeExplosion) {
-                  System.out.println("Explosion at: " + targetX + " " + targetY + " " + targetZ);
-
-                  float explodeStrength = 1.0f + (1.f * radius) * FysiksFun.rand.nextFloat();
-                  w.newExplosion(null, targetX, targetY + offsetY, targetZ, explodeStrength, true, true);
-                  explodeRadius = ((int) explodeStrength) + 1;
-                }
-                for (int dy2 = -explodeRadius; dy2 <= explodeRadius; dy2++)
-                  for (int dz2 = -explodeRadius; dz2 <= explodeRadius; dz2++)
-                    for (int dx2 = -explodeRadius; dx2 <= explodeRadius; dx2++) {
-                      if (targetY + dy2 + offsetY > 0 && targetY + dy2 + offsetY < 255 && dx2 * dx2 + dy2 * dy2 + dz2 * dz2 <= explodeRadius * explodeRadius) {
-                        Chunk chunkE = ChunkCache.getChunk(w, (targetX + dx2) >> 4, (targetZ + dz2) >> 4, true);
-                        ChunkTempData tempDataE = ChunkCache.getTempData(w, (targetX + dx2) >> 4, (targetZ + dz2) >> 4);
-                        int idE = chunkE.getBlockID((targetX + dx2) & 15, targetY + dy2, (targetZ + dz2) & 15);
-                        int content = 0;
-                        if (idE == 0) {} else if (Fluids.stillLava.isSameLiquid(idE)) content = Fluids.stillLava.getBlockContent(chunkE, tempDataE, targetX
-                            + dx2, targetY + dy2, targetZ + dz2);
-                        else continue;
-                        if (content < BlockFFFluid.maximumContent) {
-                          Fluids.stillLava.setBlockContent(w, targetX + dx2, targetY + dy2 + offsetY, targetZ + dz2, BlockFFFluid.maximumContent);
-                        }
-                        Fluids.stillLava.updateTick(w, targetX + dx2, targetY + offsetY + dy2, targetZ + dz2, FysiksFun.rand);
-                      }
-                    }
-
-              }
-            }
-        }
-      }
-    }
   }
 
   private static void visualizeVolcano(Chunk chunk0, int startX, int startZ, int radius) {

@@ -7,6 +7,7 @@ import mbrx.ff.fluids.Fluids;
 import mbrx.ff.fluids.Gases;
 import mbrx.ff.util.ChunkCache;
 import mbrx.ff.util.ChunkMarkUpdater;
+import mbrx.ff.util.SoundQueue;
 import mbrx.ff.util.Util;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockPistonBase;
@@ -59,12 +60,13 @@ public class BlockFFPistonBase extends BlockPistonBase {
       /* Event wants to extend the piston out, see if it works */
       if (!this.tryExtend(w, x, y, z, direction, false)) { return false; }
       /* It worked (guess that tryExtend added the PistonExtension?) */
+      /* All this code is executed within main thread, no semaphores needed */
       w.setBlockMetadataWithNotify(x, y, z, direction | 8, 2);
-      w.playSoundEffect((double) x + 0.5D, (double) y + 0.5D, (double) z + 0.5D, "tile.piston.out", 0.5F, w.rand.nextFloat() * 0.25F + 0.6F);
+      SoundQueue.queueSound(w, (double) x + 0.5D, (double) y + 0.5D, (double) z + 0.5D, "tile.piston.out", 0.5F, w.rand.nextFloat() * 0.25F + 0.6F);
     } else if (eventId == 1) {
       if (!this.tryRepel(w, x, y, z, direction, false)) { return false; }
       w.setBlockMetadataWithNotify(x, y, z, direction, 2);
-      w.playSoundEffect((double) x + 0.5D, (double) y + 0.5D, (double) z + 0.5D, "tile.piston.in", 0.5F, w.rand.nextFloat() * 0.25F + 0.6F);
+      SoundQueue.queueSound(w, (double) x + 0.5D, (double) y + 0.5D, (double) z + 0.5D, "tile.piston.in", 0.5F, w.rand.nextFloat() * 0.25F + 0.6F);
     }
     return false;
   }

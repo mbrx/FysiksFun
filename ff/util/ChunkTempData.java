@@ -5,7 +5,6 @@ import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.concurrent.Semaphore;
 import java.util.logging.Level;
 
 import com.google.common.base.Objects;

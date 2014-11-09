@@ -1,6 +1,8 @@
 package mbrx.ff.fluids;
 
+import mbrx.ff.FysiksFun;
 import mbrx.ff.util.ChunkCache;
+import mbrx.ff.util.SoundQueue;
 import net.minecraft.block.Block;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.Chunk;
@@ -45,9 +47,10 @@ public class CombustibleFluidAndLavaInteraction implements FluidInteraction {
     if (incommingIsLava) explodeStrength = Fluids.asFluid[targetBlockID].explodeStrength;
     else explodeStrength = Fluids.asFluid[incomingBlockID].explodeStrength;
     float radius = (float) ((explodeStrength * combustibleAmount) / (float) BlockFFFluid.maximumContent);
-    w.newExplosion(null, x, y, z, radius, true, true);
-    w.playSoundEffect(x + 0.5, y + 0.5, z + 0.5, "random.explode", radius / 4.f, 1.0f);
-
+    synchronized (FysiksFun.vanillaMutex) {
+      w.newExplosion(null, x, y, z, radius, true, true);
+      SoundQueue.queueSound(w, x + 0.5, y + 0.5, z + 0.5, "random.explode", radius / 4.f, 1.0f);
+    }
     return incommingIsLava ? incommingAmount : 0;
   }
 

@@ -2,6 +2,7 @@ package mbrx.ff.fluids;
 
 import mbrx.ff.FysiksFun;
 import mbrx.ff.util.ChunkCache;
+import mbrx.ff.util.SoundQueue;
 import mbrx.ff.util.Util;
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
@@ -10,13 +11,12 @@ import net.minecraft.world.chunk.Chunk;
 
 public class WaterLavaInteraction implements FluidInteraction {
 
-  public WaterLavaInteraction() {
-  }
+  public WaterLavaInteraction() {}
 
   @Override
   public boolean canInteract(Block affectedBlock, Block incommingBlock) {
-    return (Fluids.stillLava.isSameLiquid(affectedBlock.blockID) && Fluids.stillWater.isSameLiquid(incommingBlock.blockID)) ||
-        (Fluids.stillWater.isSameLiquid(affectedBlock.blockID) && Fluids.stillLava.isSameLiquid(incommingBlock.blockID));
+    return (Fluids.stillLava.isSameLiquid(affectedBlock.blockID) && Fluids.stillWater.isSameLiquid(incommingBlock.blockID))
+        || (Fluids.stillWater.isSameLiquid(affectedBlock.blockID) && Fluids.stillLava.isSameLiquid(incommingBlock.blockID));
   }
 
   @Override
@@ -60,7 +60,9 @@ public class WaterLavaInteraction implements FluidInteraction {
             if (chunk1 != null && chunk1.getBlockID((x + dx) & 15, targetY + dy, (z + dz) & 15) == Block.obsidian.blockID) hasObsidianNeighbour = true;
           }
         }
-    if (FysiksFun.rand.nextInt(10) < nReactions) w.playSoundEffect(x + 0.5, y + 0.5, z + 0.5, "random.fizz", 1.0F, 1.0F);
+    if (FysiksFun.rand.nextInt(10) < nReactions) {
+      SoundQueue.queueSound(w, x + 0.5, y + 0.5, z + 0.5, "random.fizz", 1.0F, 1.0F);
+    }
 
     for (int i = 0; i < nReactions; i++) {
       int r = w.rand.nextInt(200);

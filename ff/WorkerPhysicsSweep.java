@@ -5,7 +5,6 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Semaphore;
 import java.util.logging.Level;
 
 import buildcraft.factory.BlockFrame;
@@ -212,6 +211,7 @@ public class WorkerPhysicsSweep implements Runnable {
               if (y > 0 && (SolidBlockPhysicsRules.blockDoPhysics[id] || SolidBlockPhysicsRules.blockDoSimplePhysics[id] != 0))
                 solidBlockPhysics.doSolidBlockPhysics(jobWorld, c, tempData, blockStorage, x0, y0, z0, id, delayedBlockMarkSet);
             }
+            
           }
         }
         tempData.setFluidHistogram(y, fluidCount);

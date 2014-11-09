@@ -9,6 +9,7 @@ import mbrx.ff.solidBlockPhysics.BlockFFLeaves;
 import mbrx.ff.util.ChunkCache;
 import mbrx.ff.util.ChunkTempData;
 import mbrx.ff.util.Counters;
+import mbrx.ff.util.SoundQueue;
 import mbrx.ff.util.Util;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockLeaves;
@@ -371,10 +372,6 @@ public class Trees {
 
     // Trees hanging in the air should fall in a semi-realistic manner.
     if (blockBelowId == 0 || (Block.blocksList[blockBelowId] != null && !Block.blocksList[blockBelowId].isOpaqueCube())) {
-      /**
-       * TODO add a sound effect when trees are falling (is this dobe
-       * client-side?)
-       */
       if (FysiksFun.settings.treesFall) fellTree(w, x, y, z);
       return;
     }
@@ -470,8 +467,8 @@ public class Trees {
 
     float volume = 1.0F;
     float pitch = 1.0F;
-    w.playSoundEffect(x + 0.5, y + 0.5, z + 0.5, "fysiksfun:timber", volume, pitch);
-
+    SoundQueue.queueSound(w, x + 0.5, y + 0.5, z + 0.5, "fysiksfun:timber", volume, pitch);
+    
     int dx, dz;
     for (dx = -1; dx <= 1; dx++)
       for (dz = -1; dz <= 1; dz++) {

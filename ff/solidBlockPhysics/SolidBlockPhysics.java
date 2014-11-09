@@ -12,6 +12,7 @@ import mbrx.ff.util.ChunkMarkUpdateTask;
 import mbrx.ff.util.ChunkTempData;
 import mbrx.ff.util.Counters;
 import mbrx.ff.util.ObjectPool;
+import mbrx.ff.util.SoundQueue;
 import mbrx.ff.util.Util;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockBed;
@@ -279,14 +280,13 @@ public class SolidBlockPhysics {
         // nnBreak != breakAtCounter && curBreak !=
         // breakAtCounter)
         if (ahead) {
-          // We make all "simplifiedPhysics" blocks act as ropes, not propagating forces upwards
-          if(SolidBlockPhysicsRules.blockDoRopePhysics[nnId] && y2 <= y0) {}  
-          else curClock = nnClock;        
-        }
-        else {
-          // We make all "simplifiedPhysics" blocks act as ropes, not propagating forces upwards
-          if(SolidBlockPhysicsRules.blockDoRopePhysics[id] && y2 >= y0) {}
-          else nnClock = curClock;
+          // We make all "simplifiedPhysics" blocks act as ropes, not
+          // propagating forces upwards
+          if (SolidBlockPhysicsRules.blockDoRopePhysics[nnId] && y2 <= y0) {} else curClock = nnClock;
+        } else {
+          // We make all "simplifiedPhysics" blocks act as ropes, not
+          // propagating forces upwards
+          if (SolidBlockPhysicsRules.blockDoRopePhysics[id] && y2 >= y0) {} else nnClock = curClock;
         }
       }
 
@@ -378,12 +378,13 @@ public class SolidBlockPhysics {
     int targetX, targetY, targetZ, targetId;
     Chunk targetChunk = c;
 
-    if(Trees.treeCategory[id] == Trees.TreeCategory.TRUNK_PART && Trees.treeCategory[idBelow] != Trees.TreeCategory.TRUNK_PART && (myMeta&0xc) == 0 && FysiksFun.rand.nextInt(20) != 0) {
-      //System.out.println("Preventing a trunk block from falling since it seems to be part of an actual tree...");
+    if (Trees.treeCategory[id] == Trees.TreeCategory.TRUNK_PART && Trees.treeCategory[idBelow] != Trees.TreeCategory.TRUNK_PART && (myMeta & 0xc) == 0
+        && FysiksFun.rand.nextInt(20) != 0) {
+      // System.out.println("Preventing a trunk block from falling since it seems to be part of an actual tree...");
       Trees.checkAndTickTree(jobWorld, c, x0, z0);
       return true;
     }
-    
+
     if (!SolidBlockPhysicsRules.blockDoPhysics[idBelow]) {
       targetX = x0;
       targetY = y0 - 1;
@@ -425,17 +426,17 @@ public class SolidBlockPhysics {
         int effectiveWeight = weight <= 0 ? 1 : weight;
         if (id == Block.stone.blockID) effectiveWeight = 8;
         else if (id == Block.dirt.blockID) effectiveWeight = 4;
-        synchronized (FysiksFun.vanillaMutex) {
-          nSoundEffectsLeft--;
-          float volume = (float) (0.25F * effectiveWeight + soundEffectAttempts * 0.1);
-          float pitch = (float) (FysiksFun.rand.nextFloat() + 1.0F) * 0.5F / effectiveWeight;
-          String soundEffect = blockIdToSound(id);
-          jobWorld.playSoundEffect(targetX + 0.5, targetY + 0.5, targetZ + 0.5, soundEffect, volume, pitch);
-        }
+
+        nSoundEffectsLeft--;
+        float volume = (float) (0.25F * effectiveWeight + soundEffectAttempts * 0.1);
+        float pitch = (float) (FysiksFun.rand.nextFloat() + 1.0F) * 0.5F / effectiveWeight;
+        String soundEffect = blockIdToSound(id);
+        SoundQueue.queueSound(jobWorld, targetX + 0.5, targetY + 0.5, targetZ + 0.5, soundEffect, 1.0F, 1.0F);
+
       }
     }
     if (SolidBlockPhysicsRules.blockIsFragile[id] && (doBreak || hasLanded)) {
-      jobWorld.playSoundEffect(targetX + 0.5, targetY + 0.5, targetZ + 0.5, "random.break", 1.0F, 1.0F);
+      SoundQueue.queueSound(jobWorld, targetX + 0.5, targetY + 0.5, targetZ + 0.5, "random.break", 1.0F, 1.0F);
       id = 0;
     }
 
@@ -539,7 +540,7 @@ public class SolidBlockPhysics {
     }
 
     boolean useSlowSetBlock = false;
-    //useSlowSetBlock = true; // !!!! for now
+    // useSlowSetBlock = true; // !!!! for now
     if (idAbove == 0 || (Block.blocksList[idAbove] != null && !Block.blocksList[idAbove].isOpaqueCube())) {
       useSlowSetBlock = true;
     }
@@ -549,7 +550,7 @@ public class SolidBlockPhysics {
     targetTmp = 0;
     targetMeta = 0;
 
-    /*
+    /*6
      * Swap our block with the target, and update target entity if applicable
      */
     if (useSlowSetBlock) {

@@ -6,7 +6,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
-import java.util.concurrent.Semaphore;
 
 import com.google.common.base.Objects;
 
@@ -38,7 +37,6 @@ public class ChunkMarkUpdater {
   }
 
   public CoordinateWXZ                                      coordinate;
-  //private static Semaphore                                  mutex                  = new Semaphore(1);
 
   private HashMap<CoordinateWXYZ, MarkOriginalValue>        markList;
   private static CoordinateWXZ                              tmpCoordinateWXZ       = new CoordinateWXZ(null, -1, -1);

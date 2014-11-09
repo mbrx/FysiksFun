@@ -33,14 +33,18 @@ public abstract class TileEntityLiquidTurbine extends TileEntityTurbineBase {
 
       if (FysiksFun.rand.nextInt(100) == 0 && contentAbove - contentBelow > BlockFFFluid.maximumContent + getMaxSurvivablePressure()) {
         System.out.println("Turbine exploded due to overpressure");
-        worldObj.newExplosion(null, xCoord + 0.5D, yCoord + 0.5D, zCoord + 0.5D, 2.0F, true, true);
+        synchronized (FysiksFun.vanillaMutex) {
+          worldObj.newExplosion(null, xCoord + 0.5D, yCoord + 0.5D, zCoord + 0.5D, 2.0F, true, true);
+        }
       }
 
-      if(!canSurviveLiquid(idAbove)) {
+      if (!canSurviveLiquid(idAbove)) {
         System.out.println("Turbine exploded due to bad liquid");
-        worldObj.newExplosion(null, xCoord + 0.5D, yCoord + 0.5D, zCoord + 0.5D, 2.0F, true, true);
+        synchronized (FysiksFun.vanillaMutex) {
+          worldObj.newExplosion(null, xCoord + 0.5D, yCoord + 0.5D, zCoord + 0.5D, 2.0F, true, true);
+        }
       }
-      
+
       double pressureMultiplier = 1.0;
       if (contentAbove > BlockFFFluid.maximumContent) {
         pressureMultiplier = 1.0 + getPressureEfficiency() * (contentAbove - BlockFFFluid.maximumContent) / (double) BlockFFFluid.pressurePerY;
@@ -63,12 +67,12 @@ public abstract class TileEntityLiquidTurbine extends TileEntityTurbineBase {
       // BlockFFFluid.maximumContent);
     }
   }
-  
+
   /*
    * Override these methods with new getters/setters for inherited turbines with
    * other properties
    */
-  
+
   public abstract double getFFEnergyPerTon();
 
   public abstract int getMaxSurvivablePressure();

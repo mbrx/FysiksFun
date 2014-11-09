@@ -16,6 +16,7 @@ import mbrx.ff.util.ChunkMarkUpdater;
 import mbrx.ff.util.ChunkTempData;
 import mbrx.ff.util.Counters;
 import mbrx.ff.util.ObjectPool;
+import mbrx.ff.util.SoundQueue;
 import mbrx.ff.util.Util;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockDoor;
@@ -1381,12 +1382,11 @@ public class BlockFFFluid extends BlockFlowing {
             if (id1 == Block.fire.blockID) nfires++;
           }
       if (nfires > burnNeighboursForExplosion) {
+        setBlockContent(world, x0, y0, z0, 0);
+        float radius = (float) ((explodeStrength * newContent) / (float) BlockFFFluid.maximumContent);
         synchronized (FysiksFun.vanillaMutex) {
-          setBlockContent(world, x0, y0, z0, 0);
-          float radius = (float) ((explodeStrength * newContent) / (float) BlockFFFluid.maximumContent);
-
           world.newExplosion(null, x0, y0, z0, radius, true, true);
-          world.playSoundEffect(x0 + 0.5, y0 + 0.5, z0 + 0.5, "random.explode", radius / 4.f, 1.0f);
+          SoundQueue.queueSound(world, x0 + 0.5, y0 + 0.5, z0 + 0.5, "random.explode", radius / 4.f, 1.0f);
         }
       }
     }
